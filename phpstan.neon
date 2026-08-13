@@ -1,0 +1,49 @@
+#
+# PHPStan configuration for J2XML
+#
+# J2XML is a Joomla extension that depends heavily on the Joomla CMS
+# framework (Joomla\CMS\*).  The framework is not installed via Composer
+# in this repository, so PHPStan cannot resolve those symbols on its own.
+#
+# Instead of pulling in the full Joomla CMS as a dev dependency (heavy and
+# version-coupled), we provide lightweight stub files in `stubs/` that
+# declare the classes, interfaces, functions and constants the codebase
+# references.  This keeps the static-analysis setup self-contained.
+#
+# See: https://magazine.joomla.org/issues/2026/january-2026/test-your-extension-part-3-phpstan
+#
+
+parameters:
+    level: 0
+
+    # Only analyse our own code, not vendored/bundled libraries.
+    paths:
+        - administrator
+        - components
+        - libraries/eshiol/J2xml
+        - plugins
+        - cli
+
+    # Exclude bundled third-party libraries that have their own upstream.
+    excludePaths:
+        - libraries/eshiol/phpxmlrpc/*
+
+    # Joomla framework symbols are not available via Composer in this
+    # repo.  We declare the subset we use in a single scan file so
+    # PHPStan can discover classes, functions and constants without
+    # pulling in the full Joomla CMS source.
+    #
+    # (Use scanFiles, NOT stubFiles — stubFiles only override PHPDocs;
+    #  scanFiles declare symbols for discovery.  See:
+    #  https://phpstan.org/user-guide/discovering-symbols)
+    scanFiles:
+        - stubs/joomla.php
+
+    # Don't fail on ignored-error lines that no longer match (e.g. after
+    # a file is edited and a previously-baselined error disappears).
+    reportUnmatchedIgnoredErrors: false
+
+# Baseline of known issues (generated with --generate-baseline).
+# Keeps the report focused on new/changed code.
+includes:
+    - phpstan-baseline.neon

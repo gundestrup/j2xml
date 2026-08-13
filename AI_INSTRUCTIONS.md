@@ -163,6 +163,7 @@ Releases are produced externally (eshiol.it tooling) which:
 
 **CI is deferred**. The plan is to add GitHub
 Actions workflows that:
+
 - Lint + run PHPStan on every push/PR (PHP 8.4 and 8.5 matrix).
 - Build release zips on git tag push (`v*`) and publish GitHub Releases.
 
@@ -174,17 +175,50 @@ A git pre-commit hook is included at `scripts/git-hooks/pre-commit` and
 installed via `scripts/install-hooks.sh`. It runs on every `git commit`:
 
 1. **PHP lint** with PHP 8.4 and 8.5 (all available binaries).
-2. **PHPStan** static analysis on staged files (level 0, `--memory-limit=512M`).
+2. **PHPStan** static analysis (level 0, `--memory-limit=512M`). When a
+   committed `phpstan.neon` config exists, PHPStan runs against the
+   config's `paths` (not just staged files) so that the baseline and
+   `scanFiles` are applied correctly. PHPStan's result cache keeps
+   re-runs fast.
 3. **PHPUnit** if a `phpunit.xml` exists (placeholder — no test suite yet).
 
 **Install (once after cloning):**
+
 ```bash
 ./scripts/install-hooks.sh
 ```
 
 **Bypass temporarily:**
+
 ```bash
 git commit --no-verify
+```
+
+### PHPStan configuration
+
+PHPStan is configured via `phpstan.neon` at the repo root. Because J2XML
+depends on the Joomla CMS framework (`Joomla\CMS\*`) which is not
+installed via Composer, PHPStan cannot resolve those symbols on its own.
+Instead of pulling in the full Joomla CMS as a dev dependency, we declare
+the subset of Joomla classes, functions, and constants in a single scan
+file (`stubs/joomla.php`) referenced via the `scanFiles` config key.
+
+> **Key:** use `scanFiles` (not `stubFiles`) — `stubFiles` only override
+> PHPDocs, while `scanFiles` declare symbols for discovery.
+> See <https://phpstan.org/user-guide/discovering-symbols>
+
+A baseline (`phpstan-baseline.neon`) suppresses known pre-existing issues
+so the report focuses on new/changed code. To regenerate the baseline
+after fixing existing issues:
+
+```bash
+phpstan analyse --generate-baseline=phpstan-baseline.neon
+```
+
+To run PHPStan manually:
+
+```bash
+phpstan analyse --no-progress --memory-limit=1G
 ```
 
 The hook is version-controlled in `scripts/git-hooks/` and symlinked into
@@ -364,8 +398,8 @@ ls administrator/components/com_j2xml/sql/updates/mysql/
 /opt/homebrew/opt/php@8.4/bin/php -l libraries/eshiol/J2xml/Exporter.php
 /opt/homebrew/opt/php@8.5/bin/php -l libraries/eshiol/J2xml/Exporter.php
 
-# Run PHPStan on the whole codebase
-phpstan analyse libraries/eshiol/J2xml plugins/system/j2xml --memory-limit=512M
+# Run PHPStan on the whole codebase (uses phpstan.neon + stubs + baseline)
+phpstan analyse --no-progress --memory-limit=1G
 
 # Run the Docker-based integration test suite (Joomla 5 + 6, PHP 8.4)
 cd tests/docker && docker compose up -d && cd ../..
@@ -397,6 +431,7 @@ modernisation effort:
 | 5   | Useless menu item                                            | Low — UX complaint |
 
 **PHP 8.4/8.5 fixes applied (2026-07):**
+
 - `E_STRICT` constant removed (fatal on PHP 8.4) — 2 files
 - `utf8_encode()` replaced with `mb_convert_encoding()` (removed in PHP 8.3) — 5 files
 - Non-canonical casts `(boolean)`/`(integer)`/`(double)` → `(bool)`/`(int)`/`(float)` — 4 files
@@ -465,9 +500,11 @@ Two things are configured, both required per DeepWiki best practice:
 ### 11.1 README badge (indexing + auto-refresh)
 
 `README.md` contains a DeepWiki badge:
+
 ```markdown
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/gundestrup/j2xml)
 ```
+
 DeepWiki **auto-refreshes the wiki** when it detects the badge in the repo's
 README. Without the badge, the wiki may not be indexed or kept up to date.
 The badge links to <https://deepwiki.com/gundestrup/j2xml>.
@@ -476,6 +513,7 @@ The badge links to <https://deepwiki.com/gundestrup/j2xml>.
 
 `.devin/mcp_config.json` registers the DeepWiki MCP server so Devin CLI can
 query the indexed wiki at runtime:
+
 ```json
 {
   "mcpServers": {
@@ -486,13 +524,14 @@ query the indexed wiki at runtime:
   }
 }
 ```
+
 This exposes three tools to the agent: `ask_question`, `read_wiki_structure`,
 and `read_wiki_contents`. No auth is required for public repos.
 
 ### 11.3 Badge vs MCP — why both
 
 | | README badge | `.devin/mcp_config.json` |
-|---|---|---|
+| --- | --- | --- |
 | **Purpose** | Index + auto-refresh the wiki | Let agents query the wiki |
 | **Read by** | DeepWiki's crawler | Devin CLI / Claude Code / Cursor |
 | **Without it** | Wiki goes stale or unindexed | Agents can't query the wiki |
@@ -501,6 +540,7 @@ They are complementary — keep both. If you fork to a new repo, update the
 badge URL in `README.md` to point to the new `owner/repo`.
 
 To verify the MCP server is connected:
+
 ```bash
 devin mcp list
 devin mcp get deepwiki

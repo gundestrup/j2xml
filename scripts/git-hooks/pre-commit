@@ -108,9 +108,19 @@ phpstan_bin=$(command -v phpstan 2>/dev/null || true)
 if [ -n "$phpstan_bin" ]; then
 	info "Running PHPStan…"
 
-	# Build a config on the fly if none exists, targeting PHP 8.4+.
-	# Only analyse staged files (not the whole codebase) for speed.
-	if [ ! -f "phpstan.neon" ] && [ ! -f "phpstan.neon.dist" ]; then
+	tmp_dir=""
+
+	# If a committed phpstan.neon config exists, run PHPStan against the
+	# config's paths (not just staged files).  This ensures the baseline
+	# and scanFiles are applied correctly.  PHPStan's result cache makes
+	# re-runs fast.
+	#
+	# When no config exists, fall back to a minimal level-0 config and
+	# analyse only the staged files.
+	if [ -f "phpstan.neon" ] || [ -f "phpstan.neon.dist" ]; then
+		phpstan_config_arg=""
+		phpstan_paths=""
+	else
 		tmp_dir=$(mktemp -d -t j2xml-phpstan.XXXXXX)
 		tmp_config="$tmp_dir/phpstan.neon"
 		cat > "$tmp_config" <<'NEON'
@@ -119,15 +129,13 @@ parameters:
 	reportUnmatchedIgnoredErrors: false
 NEON
 		phpstan_config_arg="--configuration=$tmp_config"
-	else
-		phpstan_config_arg=""
-	fi
 
-	# Pass staged PHP files as the paths to analyse.
-	phpstan_paths=""
-	while IFS= read -r f; do
-		phpstan_paths="$phpstan_paths $f"
-	done <<< "$staged_php_files"
+		# Pass staged PHP files as the paths to analyse.
+		phpstan_paths=""
+		while IFS= read -r f; do
+			phpstan_paths="$phpstan_paths $f"
+		done <<< "$staged_php_files"
+	fi
 
 	if ! $phpstan_bin analyse $phpstan_config_arg $phpstan_paths --no-progress --memory-limit=512M --error-format=table; then
 		error "PHPStan found issues. Fix them above or use --no-verify to bypass."

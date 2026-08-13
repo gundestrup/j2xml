@@ -1,0 +1,187 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method J2xmlControllerCategories\:\:display\(\) should return J2xmlControllerUser but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: administrator/components/com_j2xml/controllers/categories.php
+
+		-
+			message: '#^Method J2xmlControllerContact\:\:display\(\) should return J2xmlControllerUser but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: administrator/components/com_j2xml/controllers/contact.php
+
+		-
+			message: '#^Method J2xmlControllerContent\:\:display\(\) should return J2xmlControllerUser but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: administrator/components/com_j2xml/controllers/content.php
+
+		-
+			message: '#^Class JResponseJson constructor invoked with 0 parameters, 1\-3 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: administrator/components/com_j2xml/controllers/json.php
+
+		-
+			message: '#^Undefined variable\: \$xml$#'
+			identifier: variable.undefined
+			count: 2
+			path: administrator/components/com_j2xml/controllers/json.php
+
+		-
+			message: '#^Method J2xmlControllerUsernotes\:\:display\(\) should return J2xmlControllerUser but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: administrator/components/com_j2xml/controllers/usernotes.php
+
+		-
+			message: '#^Method J2xmlControllerUsers\:\:display\(\) should return J2xmlControllerUser but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: administrator/components/com_j2xml/controllers/users.php
+
+		-
+			message: '#^Undefined variable\: \$current$#'
+			identifier: variable.undefined
+			count: 1
+			path: administrator/components/com_j2xml/helpers/j2xml.php
+
+		-
+			message: '#^Undefined variable\: \$app$#'
+			identifier: variable.undefined
+			count: 7
+			path: administrator/components/com_j2xml/models/import.php
+
+		-
+			message: '#^Undefined variable\: \$xml$#'
+			identifier: variable.undefined
+			count: 2
+			path: administrator/components/com_j2xml/views/raw.php
+
+		-
+			message: '#^Call to an undefined static method Joomla\\CMS\\Application\\CliApplication\:\:getInstance\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: libraries/eshiol/J2xml/Exporter.php
+
+		-
+			message: '#^Static call to instance method Joomla\\CMS\\Application\\CMSApplication\:\:setHeader\(\)\.$#'
+			identifier: method.staticCall
+			count: 3
+			path: libraries/eshiol/J2xml/Exporter.php
+
+		-
+			message: '#^Call to an undefined static method Joomla\\CMS\\Application\\CliApplication\:\:getInstance\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: libraries/eshiol/J2xml/Importer.php
+
+		-
+			message: '#^Class xmlrpc_client constructor invoked with 1 parameter, 2\-3 required\.$#'
+			identifier: arguments.count
+			count: 2
+			path: libraries/eshiol/J2xml/Sender.php
+
+		-
+			message: '#^Access to an undefined property eshiol\\J2xml\\Table\\Category\:\:\$extension\.$#'
+			identifier: property.notFound
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Category.php
+
+		-
+			message: '#^Access to an undefined property eshiol\\J2xml\\Table\\Contact\:\:\$type_alias\.$#'
+			identifier: property.notFound
+			count: 2
+			path: libraries/eshiol/J2xml/Table/Contact.php
+
+		-
+			message: '#^Static call to instance method Joomla\\CMS\\Application\\CMSApplication\:\:getRouter\(\)\.$#'
+			identifier: method.staticCall
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Content.php
+
+		-
+			message: '#^Access to an undefined property eshiol\\J2xml\\Table\\Field\:\:\$fieldparams\.$#'
+			identifier: property.notFound
+			count: 2
+			path: libraries/eshiol/J2xml/Table/Field.php
+
+		-
+			message: '#^Access to an undefined property eshiol\\J2xml\\Table\\Menu\:\:\$component_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Menu.php
+
+		-
+			message: '#^Class eshiol\\J2xml\\Table\\Content referenced with incorrect case\: eshiol\\J2XML\\Table\\Content\.$#'
+			identifier: class.nameCase
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Menu.php
+
+		-
+			message: '#^Class eshiol\\J2xml\\Table\\Table referenced with incorrect case\: eshiol\\J2XML\\Table\\Table\.$#'
+			identifier: class.nameCase
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Menu.php
+
+		-
+			message: '#^Method eshiol\\J2xml\\Table\\Menu\:\:export\(\) should return eshiol\\J2xml\\Table\\SimpleXMLElement but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Menu.php
+
+		-
+			message: '#^Class eshiol\\J2xml\\Table\\Menutype referenced with incorrect case\: eshiol\\J2xml\\Table\\MenuType\.$#'
+			identifier: class.nameCase
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Menutype.php
+
+		-
+			message: '#^Class eshiol\\J2xml\\Table\\Table referenced with incorrect case\: eshiol\\J2XML\\Table\\Table\.$#'
+			identifier: class.nameCase
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Menutype.php
+
+		-
+			message: '#^Method eshiol\\J2xml\\Table\\Menutype\:\:export\(\) should return eshiol\\J2xml\\Table\\SimpleXMLElement but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Menutype.php
+
+		-
+			message: '#^Class eshiol\\J2xml\\Table\\Table referenced with incorrect case\: eshiol\\J2XML\\Table\\Table\.$#'
+			identifier: class.nameCase
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Module.php
+
+		-
+			message: '#^Result of static method Joomla\\Utilities\\ArrayHelper\:\:toInteger\(\) \(void\) is used\.$#'
+			identifier: staticMethod.void
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Table.php
+
+		-
+			message: '#^Undefined variable\: \$app$#'
+			identifier: variable.undefined
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Table.php
+
+		-
+			message: '#^Undefined variable\: \$associationsContext$#'
+			identifier: variable.undefined
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Table.php
+
+		-
+			message: '#^Instantiated class Joomla\\Component\\Tags\\Administrator\\Table\\TagTable not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Tag.php
+
+		-
+			message: '#^Class Joomla\\CMS\\HTML\\HTMLHelper referenced with incorrect case\: Joomla\\CMS\\HTML\\HtmlHelper\.$#'
+			identifier: class.nameCase
+			count: 2
+			path: plugins/system/j2xml/layouts/joomla4/toolbar/modal.php

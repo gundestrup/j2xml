@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Docker-based integration test suite** — `tests/docker/` with Joomla 5 + 6 containers (PHP 8.4, MySQL 8.0); `tests/scripts/run-all-tests.sh` verifies issues #72, #71, #70 and Joomla 6 compatibility
 - **Test fixtures** — `tests/fixtures/articles-j3.xml`, `users-j3.xml`, `categories-j3.xml` with J3-era XML format (version 21.12.0)
+- **PHPStan static analysis** — committed `phpstan.neon` config with `stubs/joomla.php` scan file declaring the Joomla CMS framework symbols used by J2XML (classes, functions, constants, legacy J* aliases); `phpstan-baseline.neon` suppresses known pre-existing issues; pre-commit hook updated to use the committed config
 
 ### Changed
 - **phpxmlrpc vendored library upgraded from 4.10.1 to 4.11.5** (latest stable, Nov 2025) — replaced all files in `libraries/eshiol/phpxmlrpc/src/` and `lib/`; preserved J2XML-specific `Log/Logger/XmlrpcLogger.php`; re-applied `utf8_encode()` → `mb_convert_encoding()` patches on top of 4.11.5
