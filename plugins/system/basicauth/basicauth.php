@@ -18,7 +18,7 @@ defined ('_JEXEC') or die ('Restricted access');
 /**
  * Basic HTTP authentication for Joomla
  */
-class plgSystemBasicauth extends JPlugin
+class plgSystemBasicauth extends \Joomla\CMS\Plugin\CMSPlugin
 {
 	/**
 	 * Application object.
@@ -40,27 +40,27 @@ class plgSystemBasicauth extends JPlugin
 	{
 		parent::__construct($subject, $config);
 
-		$cparams = JComponentHelper::getParams('com_basicauth');
+		$cparams = \Joomla\CMS\Component\ComponentHelper::getParams('com_basicauth');
 		if ($this->params->get('debug', $cparams->get('debug', false)) || defined('JDEBUG') && JDEBUG)
 		{
-			JLog::addLogger(array('text_file' => $this->params->get('log', 'eshiol.log.php'), 'extension' => 'plg_system_basicauth_file'), JLog::ALL, array('plg_system_basicauth'));
+			\Joomla\CMS\Log\Log::addLogger(array('text_file' => $this->params->get('log', 'eshiol.log.php'), 'extension' => 'plg_system_basicauth_file'), \Joomla\CMS\Log\Log::ALL, array('plg_system_basicauth'));
 		}
 		if (PHP_SAPI == 'cli')
 		{
-			JLog::addLogger(array('logger' => 'echo', 'extension' => 'plg_system_basicauth'), JLog::ALL & ~ JLog::DEBUG, array('plg_system_basicauth'));
+			\Joomla\CMS\Log\Log::addLogger(array('logger' => 'echo', 'extension' => 'plg_system_basicauth'), \Joomla\CMS\Log\Log::ALL & ~ \Joomla\CMS\Log\Log::DEBUG, array('plg_system_basicauth'));
 		}
 		else
 		{
-			JLog::addLogger(array('logger' => (null !== $this->params->get('logger')) ? $this->params->get('logger') : 'messagequeue', 'extension' => 'plg_system_basicauth'), JLog::ALL & ~ JLog::DEBUG, array('plg_system_basicauth'));
+			\Joomla\CMS\Log\Log::addLogger(array('logger' => (null !== $this->params->get('logger')) ? $this->params->get('logger') : 'messagequeue', 'extension' => 'plg_system_basicauth'), \Joomla\CMS\Log\Log::ALL & ~ \Joomla\CMS\Log\Log::DEBUG, array('plg_system_basicauth'));
 		}
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'plg_system_basicauth'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_basicauth'));
 
-		if (!JFactory::getUser()->get('guest'))
+		if (!\Joomla\CMS\Factory::getUser()->get('guest'))
 		{
 			return;
 		}
 
-		JLog::add(new JLogEntry('PHP_SAPI: ' . PHP_SAPI, JLog::DEBUG, 'plg_system_basicauth'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('PHP_SAPI: ' . PHP_SAPI, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_basicauth'));
 
 		$input = $this->app->input;
 
@@ -73,7 +73,7 @@ class plgSystemBasicauth extends JPlugin
 		{
 			$authorization = $input->server->get('HTTP_AUTHORIZATION', '', 'string');
 		}
-		JLog::add(new JLogEntry('authorization: ' . $authorization, JLog::DEBUG, 'plg_system_basicauth'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('authorization: ' . $authorization, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_basicauth'));
 
 		// If basic authorization is available, store the username and password in the $_SERVER globals
 		if (strstr($authorization, 'Basic'))
@@ -97,9 +97,9 @@ class plgSystemBasicauth extends JPlugin
 	 */
 	public function onAfterRoute()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'plg_system_basicauth'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_basicauth'));
 
-		if (!JFactory::getUser()->get('guest'))
+		if (!\Joomla\CMS\Factory::getUser()->get('guest'))
 		{
 			return;
 		}
@@ -109,8 +109,8 @@ class plgSystemBasicauth extends JPlugin
 
 		if ($username && $password)
 		{
-			JLog::add(new JLogEntry('username: ' . $username, JLog::DEBUG, 'plg_system_basicauth'));
-			JLog::add(new JLogEntry('password: ***', JLog::DEBUG, 'plg_system_basicauth'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('username: ' . $username, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_basicauth'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('password: ***', \Joomla\CMS\Log\Log::DEBUG, 'plg_system_basicauth'));
 				if (!$this->_login($username, $password, $this->app))
 			{
 				throw new Exception('Login failed', 401);
@@ -127,9 +127,9 @@ class plgSystemBasicauth extends JPlugin
 	 */
 	public function onBeforeRender()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'plg_system_basicauth'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_basicauth'));
 
-		if (!JFactory::getUser()->get('guest'))
+		if (!\Joomla\CMS\Factory::getUser()->get('guest'))
 		{
 			return;
 		}
@@ -156,7 +156,7 @@ class plgSystemBasicauth extends JPlugin
 	 */
 	protected function _login($username, $password, $application)
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'plg_system_basicauth'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_basicauth'));
 
 		// If we did receive the user credentials from the user, try to login
 		if ($application->login(array('username' => $username, 'password' => $password)) !== true)

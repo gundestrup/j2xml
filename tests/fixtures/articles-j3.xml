@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Test fixture: Articles exported from Joomla 3.10.x format
+  Used to test issue #71 (import articles from J3 to J5)
+  and issue #72 (import HTTP 500 on J5.2+)
+
+  XML format version: 12.5.0 (J3 era)
+-->
+<j2xml version="21.12.0">
+  <content>
+    <id>1</id>
+    <title>Test Article One</title>
+    <alias>test-article-one</alias>
+    <introtext><![CDATA[<p>This is the intro text of the first test article.</p>]]></introtext>
+    <fulltext><![CDATA[<p>This is the full text of the first test article.</p>]]></fulltext>
+    <state>1</state>
+    <catid>2</catid>
+    <created>2023-01-15 10:00:00</created>
+    <created_by>42</created_by>
+    <created_by_alias>Test Author</created_by_alias>
+    <modified>2023-01-16 12:00:00</modified>
+    <modified_by>42</modified_by>
+    <metakey>test, article, one</metakey>
+    <metadesc>This is a test article for J2XML import testing.</metadesc>
+    <language>*</language>
+    <featured>0</featured>
+    <hits>42</hits>
+    <publish_up>2023-01-15 10:00:00</publish_up>
+    <publish_down>0000-00-00 00:00:00</publish_down>
+    <access>1</access>
+  </content>
+  <content>
+    <id>2</id>
+    <title>Test Article Two</title>
+    <alias>test-article-two</alias>
+    <introtext><![CDATA[<p>Second test article intro.</p>]]></introtext>
+    <fulltext><![CDATA[]]></fulltext>
+    <state>1</state>
+    <catid>2</catid>
+    <created>2023-02-20 14:30:00</created>
+    <created_by>42</created_by>
+    <created_by_alias></created_by_alias>
+    <modified>2023-02-20 14:30:00</modified>
+    <modified_by>42</modified_by>
+    <metakey></metakey>
+    <metadesc>Second test article.</metadesc>
+    <language>*</language>
+    <featured>1</featured>
+    <hits>0</hits>
+    <publish_up>2023-02-20 14:30:00</publish_up>
+    <publish_down>0000-00-00 00:00:00</publish_down>
+    <access>1</access>
+  </content>
+  <content>
+    <id>3</id>
+    <title>Test Article with Special Characters</title>
+    <alias>test-article-special-chars</alias>
+    <introtext><![CDATA[<p>Article with special chars: &amp; &lt; &gt; "quotes" 'apostrophes' and unicode: café naïve résumé 日本語</p>]]></introtext>
+    <fulltext><![CDATA[<p>More special content: €100 ©2023 ®™</p>]]></fulltext>
+    <state>1</state>
+    <catid>2</catid>
+    <created>2023-03-01 09:00:00</created>
+    <created_by>42</created_by>
+    <modified>2023-03-01 09:00:00</modified>
+    <modified_by>42</modified_by>
+    <metakey></metakey>
+    <metadesc></metadesc>
+    <language>*</language>
+    <featured>0</featured>
+    <hits>5</hits>
+    <publish_up>2023-03-01 09:00:00</publish_up>
+    <publish_down>0000-00-00 00:00:00</publish_down>
+    <access>1</access>
+  </content>
+</j2xml>

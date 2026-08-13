@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Test fixture: Categories exported from Joomla 3.10.x format
+  Used alongside articles-j3.xml for import testing
+
+  XML format version: 12.5.0 (J3 era)
+-->
+<j2xml version="21.12.0">
+  <category>
+    <id>2</id>
+    <title>Test Category</title>
+    <alias>test-category</alias>
+    <description><![CDATA[<p>A test category for J2XML import testing.</p>]]></description>
+    <published>1</published>
+    <access>1</access>
+    <parent_id>1</parent_id>
+    <level>1</level>
+    <path>test-category</path>
+    <language>*</language>
+    <metadesc></metadesc>
+    <metakey></metakey>
+    <params></params>
+    <extension>com_content</extension>
+  </category>
+</j2xml>

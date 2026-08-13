@@ -24,26 +24,26 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Session\Session;
 
-$version = new JVersion();
+$version = new \Joomla\CMS\Version();
 
 $ui = $version->isCompatible('4') ? 'uitab' : 'bootstrap';
 
 // MooTools is loaded for B/C for extensions generating JavaScript in their install scripts, this call will be removed at 4.0
-JHtml::_('jquery.framework', true);
-JHtml::_('bootstrap.tooltip');
+\Joomla\CMS\HTML\HTMLHelper::_('jquery.framework', true);
+\Joomla\CMS\HTML\HTMLHelper::_('bootstrap.tooltip');
 
 if (!$version->isCompatible('4'))
 {
-	JHtml::_('behavior.framework');
+	\Joomla\CMS\HTML\HTMLHelper::_('behavior.framework');
 }
 
-JFactory::getDocument()->addScriptDeclaration('
+\Joomla\CMS\Factory::getDocument()->addScriptDeclaration('
 	Joomla.submitbutton4 = function() {
 		var form = document.getElementById("adminForm");
 
 		// do field validation
 		if (form.install_url.value == "" || form.install_url.value == "http://" || form.install_url.value == "https://") {
-			alert("' . JText::_('COM_J2XML_MSG_INSTALL_ENTER_A_URL', true) . '");
+			alert("' . \Joomla\CMS\Language\Text::_('COM_J2XML_MSG_INSTALL_ENTER_A_URL', true) . '");
 		}
 		else
 		{
@@ -79,9 +79,9 @@ JFactory::getDocument()->addScriptDeclaration('
 		}
 	};');
 
-JFactory::getDocument()->addStyleDeclaration('
+\Joomla\CMS\Factory::getDocument()->addStyleDeclaration('
 	#loading {
-		background: rgba(255, 255, 255, .8) url(\'' . JHtml::_('image', 'jui/ajax-loader.gif', '', null, true, true) . '\') 50% 15% no-repeat;
+		background: rgba(255, 255, 255, .8) url(\'' . \Joomla\CMS\HTML\HTMLHelper::_('image', 'jui/ajax-loader.gif', '', null, true, true) . '\') 50% 15% no-repeat;
 		position: fixed;
 		opacity: 0.8;
 		-ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity = 80);
@@ -90,10 +90,10 @@ JFactory::getDocument()->addStyleDeclaration('
 	}');
 ?>
 
-<?php JFactory::getApplication()->getLanguage()->load('com_j2xml.sys'); ?>
+<?php \Joomla\CMS\Factory::getApplication()->getLanguage()->load('com_j2xml.sys'); ?>
 
 <div id="j2xml-import" class="clearfix">
-	<form enctype="multipart/form-data" action="<?php echo JRoute::_('index.php?option=com_j2xml'); ?>"
+	<form enctype="multipart/form-data" action="<?php echo \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml'); ?>"
 		method="post" name="adminForm" id="adminForm" class="form-horizontal">
 		<?php if (!empty($this->sidebar)) : ?>
 		<div id="j-sidebar-container" class="span2">
@@ -107,17 +107,17 @@ JFactory::getDocument()->addStyleDeclaration('
 				<?php if ($this->showMessage) : ?>
 					<?php echo $this->loadTemplate('message'); ?>
 				<?php endif; ?>
-				<?php echo JHtml::_($ui . '.startTabSet', 'myTab', array('active' => 'package')); ?>
+				<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.startTabSet', 'myTab', array('active' => 'package')); ?>
 				<?php // Show installation tabs at the start ?>
-				<?php // $firstTab =  JFactory::getApplication()->triggerEvent('onInstallerViewBeforeFirstTab', array()); ?>
+				<?php // $firstTab =  \Joomla\CMS\Factory::getApplication()->triggerEvent('onInstallerViewBeforeFirstTab', array()); ?>
 				<?php // Show installation tabs ?>
-				<?php // $tabs =  JFactory::getApplication()->triggerEvent('onInstallerAddInstallationTab', array()); ?>
+				<?php // $tabs =  \Joomla\CMS\Factory::getApplication()->triggerEvent('onInstallerAddInstallationTab', array()); ?>
 
 				<?php
 				$tabs = array();
 				$tab            = array();
 				$tab['name']    = 'package';
-				$tab['label']   = JText::_('COM_J2XML_PACKAGEIMPORTER_UPLOAD_DATA_FILE');
+				$tab['label']   = \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_UPLOAD_DATA_FILE');
 
 				// Render the input
 				ob_start();
@@ -128,30 +128,30 @@ JFactory::getDocument()->addStyleDeclaration('
 				?>
 
 				<?php foreach ($tabs as $tab) : ?>
-					<?php echo JHtml::_($ui . '.addTab', 'myTab', $tab['name'], $tab['label']); ?>
+					<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.addTab', 'myTab', $tab['name'], $tab['label']); ?>
 					<fieldset class="uploadform">
 						<?php echo $tab['content']; ?>
 					</fieldset>
-					<?php echo JHtml::_($ui . '.endTab'); ?>
+					<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.endTab'); ?>
 				<?php endforeach; ?>
 				<?php // Show installation tabs at the end ?>
-				<?php // $lastTab =  JFactory::getApplication()->triggerEvent('onInstallerViewAfterLastTab', array()); ?>
+				<?php // $lastTab =  \Joomla\CMS\Factory::getApplication()->triggerEvent('onInstallerViewAfterLastTab', array()); ?>
 				<?php // $tabs = array_merge($firstTab, $tabs, $lastTab); ?>
 				<?php if (!$tabs) : ?>
-					<?php JFactory::getApplication()->enqueueMessage(JText::_('COM_J2XML_NO_INSTALLATION_PLUGINS_FOUND'), 'warning'); ?>
+					<?php \Joomla\CMS\Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2XML_NO_INSTALLATION_PLUGINS_FOUND'), 'warning'); ?>
 				<?php endif; ?>
 
 				<?php if ($this->ftp) : ?>
-					<?php echo JHtml::_($ui . '.addTab', 'myTab', 'ftp', JText::_('COM_J2XML_MSG_DESCFTPTITLE')); ?>
+					<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.addTab', 'myTab', 'ftp', \Joomla\CMS\Language\Text::_('COM_J2XML_MSG_DESCFTPTITLE')); ?>
 					<?php echo $this->loadTemplate('ftp'); ?>
-					<?php echo JHtml::_($ui . '.endTab'); ?>
+					<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.endTab'); ?>
 				<?php endif; ?>
 
 				<input type="hidden" name="installtype" value=""/>
 				<input type="hidden" name="task" value="import.import"/>
-				<?php echo JHtml::_('form.token'); ?>
+				<?php echo \Joomla\CMS\HTML\HTMLHelper::_('form.token'); ?>
 
-				<?php echo JHtml::_($ui . '.endTabSet'); ?>
+				<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.endTabSet'); ?>
 			</div>
 			<button class="hidden" id="j2xmlImportCloseBtn" type="button" onclick="this.form.install_package.val('');"></button>
 			<button class="hidden" id="j2xmlImportBtn" type="button" onclick="console.log('install_package');this.form.install_package.val('');"></button>
@@ -160,25 +160,25 @@ JFactory::getDocument()->addStyleDeclaration('
 <div id="loading"></div>
 
 <?php
-JText::script('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED');
+\Joomla\CMS\Language\Text::script('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED');
 
 $doc = Factory::getDocument();
-$cparams = JComponentHelper::getParams('com_j2xml');
+$cparams = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 $min = $cparams->get('debug', 0) ? '' : '.min';
 
-JLog::add(new JLogEntry("loading ../media/lib_eshiol_j2xml/js/pako_inflate{$min}.js", JLog::DEBUG, 'com_j2xml'));
+\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry("loading ../media/lib_eshiol_j2xml/js/pako_inflate{$min}.js", \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 $doc->addScript("../media/lib_eshiol_j2xml/js/pako_inflate{$min}.js", array('version'=>'auto'));
 
-JLog::add(new JLogEntry("loading ../media/lib_eshiol_j2xml/js/version_compare{$min}.js", JLog::DEBUG, 'com_j2xml'));
+\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry("loading ../media/lib_eshiol_j2xml/js/version_compare{$min}.js", \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 $doc->addScript("../media/lib_eshiol_j2xml/js/version_compare{$min}.js", array('version'=>'auto'));
 
-JLog::add(new JLogEntry("loading ../media/lib_eshiol_j2xml/js/j2xml{$min}.js", JLog::DEBUG, 'com_j2xml'));
+\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry("loading ../media/lib_eshiol_j2xml/js/j2xml{$min}.js", \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 $doc->addScript("../media/lib_eshiol_j2xml/js/j2xml{$min}.js", array('version'=>'auto'));
 
-JLog::add(new JLogEntry("loading ../media/lib_eshiol_j2xml/js/j2xml{$min}.js", JLog::DEBUG, 'com_j2xml'));
+\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry("loading ../media/lib_eshiol_j2xml/js/j2xml{$min}.js", \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 $doc->addScript("../media/lib_eshiol_j2xml/js/base64{$min}.js", array('version'=>'auto'));
 
-JLog::add(new JLogEntry("loading ../media/com_j2xml/js/j2xml{$min}.js", JLog::DEBUG, 'com_j2xml'));
+\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry("loading ../media/com_j2xml/js/j2xml{$min}.js", \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 $doc->addScript("../media/com_j2xml/js/j2xml{$min}.js", array('version'=>'auto'));
 
 // Trigger the onLoadJS event.
@@ -193,7 +193,7 @@ if ($version->isCompatible('4'))
 	echo HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal',
 		array(
 			'title' => Text::_('COM_J2XML_IMPORT'),
-			'url' => JRoute::_('index.php?'. http_build_query([
+			'url' => \Joomla\CMS\Router\Route::_('index.php?'. http_build_query([
 				'option' => 'com_j2xml',
 				'view' => 'import',
 				'layout' => 'options',
@@ -214,34 +214,34 @@ if ($version->isCompatible('4'))
 }
 elseif ($version->isCompatible('3.4'))
 {
-	echo JHtml::_('bootstrap.renderModal', $selector . 'Modal',
+	echo \Joomla\CMS\HTML\HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal',
 		array(
-			'title' => JText::_('COM_J2XML_IMPORT'),
-			'url' => JRoute::_('index.php?option=com_j2xml&amp;view=import&amp;layout=options&amp;tmpl=component'),
+			'title' => \Joomla\CMS\Language\Text::_('COM_J2XML_IMPORT'),
+			'url' => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=import&amp;layout=options&amp;tmpl=component'),
 			'height' => '370px',
 			'width' => '300px',
 			'modalWidth' => '50',
 			'modalHeight' => '50',
 			'footer' => '<a class="btn" data-dismiss="modal" type="button"'
-				. ' onclick="jQuery(\'#' . $selector .'Modal iframe\').contents().find(\'#' . $selector . 'CancelBtn\').click();">' . JText::_("JTOOLBAR_CANCEL") . '</a>'
+				. ' onclick="jQuery(\'#' . $selector .'Modal iframe\').contents().find(\'#' . $selector . 'CancelBtn\').click();">' . \Joomla\CMS\Language\Text::_("JTOOLBAR_CANCEL") . '</a>'
 				. '<button class="btn btn-success" type="button"'
 				. ' onclick="eshiol.j2xml.importerModal();jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#' . $selector . 'OkBtn\').click();">'
-				. JText::_("COM_J2XML_IMPORT") . '</button>'));
+				. \Joomla\CMS\Language\Text::_("COM_J2XML_IMPORT") . '</button>'));
 }
 else
 {
-	echo JHtml::_('bootstrap.renderModal', $selector . 'Modal',
+	echo \Joomla\CMS\HTML\HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal',
 		array(
-			'title' => JText::_('COM_J2XML_IMPORT'),
-			'url' => JRoute::_('index.php?option=com_j2xml&amp;view=import&amp;layout=options&amp;tmpl=component'),
+			'title' => \Joomla\CMS\Language\Text::_('COM_J2XML_IMPORT'),
+			'url' => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=import&amp;layout=options&amp;tmpl=component'),
 			'height' => '370px',
 			'width' => '300px',
 			'modalWidth' => '40'),
 			addslashes('<div class="container-fluid"><div class="row-fluid"><div class="span12"><div class="btn-toolbar">'
 			. '<a class="btn btn-wrapper pull-right" data-dismiss="modal" type="button"'
-			. ' onclick="jQuery(\'#' . $selector .'Modal iframe\').contents().find(\'#' . $selector . 'CancelBtn\').click();">' . JText::_("JTOOLBAR_CANCEL") . '</a>'
+			. ' onclick="jQuery(\'#' . $selector .'Modal iframe\').contents().find(\'#' . $selector . 'CancelBtn\').click();">' . \Joomla\CMS\Language\Text::_("JTOOLBAR_CANCEL") . '</a>'
 			. '<button class="btn btn-success btn-wrapper pull-right" type="button"'
 			. ' onclick="eshiol.j2xml.importerModal();jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#' . $selector . 'OkBtn\').click();">'
-			. JText::_("COM_J2XML_IMPORT") . '</button>'
+			. \Joomla\CMS\Language\Text::_("COM_J2XML_IMPORT") . '</button>'
 			. '</div></div></div></div>'));
 }

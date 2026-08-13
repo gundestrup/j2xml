@@ -62,19 +62,19 @@ class XMLRPCJ2XMLServices
 	 */
 	public static function import($xml, $username = '', $password = '')
 	{
-		$lang = JFactory::getApplication()->getLanguage();
+		$lang = \Joomla\CMS\Factory::getApplication()->getLanguage();
 		$lang->load('lib_j2xml', JPATH_SITE, null, false, false) ||
 		// Fallback to the library file in the default language
 		$lang->load('lib_j2xml', JPATH_SITE, null, true);
 
-		$params = JComponentHelper::getParams('com_j2xml');
+		$params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 		if ((int) $params->get('xmlrpc', 0) == 0)
 		{
-			JLog::add(new JLogEntry(JText::_('LIB_J2XML_MSG_XMLRPC_DISABLED'), JLog::ERROR, 'com_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::_('LIB_J2XML_MSG_XMLRPC_DISABLED'), \Joomla\CMS\Log\Log::ERROR, 'com_j2xml'));
 			return new xmlrpcresp(new xmlrpcval(self::$_messageQueue, 'array'));
 		}
 
-		$app = JFactory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 		$options = array();
 		$response = $app->login(array(
 			'username' => $username,
@@ -82,12 +82,12 @@ class XMLRPCJ2XMLServices
 		), $options);
 		if (true !== $response)
 		{
-			JLog::add(new JLogEntry(JText::_('JGLOBAL_AUTH_NO_USER'), JLog::ERROR, 'com_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::_('JGLOBAL_AUTH_NO_USER'), \Joomla\CMS\Log\Log::ERROR, 'com_j2xml'));
 			return new xmlrpcresp(new xmlrpcval(self::$_messageQueue, 'array'));
 		}
 
-		$cparams = JComponentHelper::getParams('com_j2xml');
-		$params = new JRegistry();
+		$cparams = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
+		$params = new \Joomla\Registry\Registry();
 		$params->set('categories', $cparams->get('categories', 1));
 		$params->set('contacts', $cparams->get('contacts', 1));
 		$params->set('content', $cparams->get('content'));
@@ -123,21 +123,21 @@ class XMLRPCJ2XMLServices
 	 */
 	public static function importAjax($xml, $options)
 	{
-		$lang = JFactory::getApplication()->getLanguage();
+		$lang = \Joomla\CMS\Factory::getApplication()->getLanguage();
 		$lang->load('lib_j2xml', JPATH_SITE, null, false, false) ||
 		// Fallback to the library file in the default language
 		$lang->load('lib_j2xml', JPATH_SITE, null, true);
 
-		$user = JFactory::getUser();
+		$user = \Joomla\CMS\Factory::getUser();
 		if (!$user->authorise('core.admin', 'com_j2xml'))
 		{
 			if ($user->guest)
 			{
-				JFactory::getApplication()->setHeader('status', 401, true);
+				\Joomla\CMS\Factory::getApplication()->setHeader('status', 401, true);
 			}
-			JLog::add(new JLogEntry(JText::_('JGLOBAL_AUTH_ACCESS_DENIED'), JLog::ERROR, 'com_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::_('JGLOBAL_AUTH_ACCESS_DENIED'), \Joomla\CMS\Log\Log::ERROR, 'com_j2xml'));
 			// return new xmlrpcresp(new xmlrpcval(self::$_messageQueue, 'array'));
-			return new xmlrpcresp(new xmlrpcval(self::$_messageQueue, 'array'), 28, JText::_('JGLOBAL_AUTH_ACCESS_DENIED'));
+			return new xmlrpcresp(new xmlrpcval(self::$_messageQueue, 'array'), 28, \Joomla\CMS\Language\Text::_('JGLOBAL_AUTH_ACCESS_DENIED'));
 		}
 
 		$data = self::gzdecode($xml);
@@ -168,20 +168,20 @@ class XMLRPCJ2XMLServices
 			$errors = libxml_get_errors();
 			foreach ($errors as $error)
 			{
-				$msg = $error->code . ' - ' . JText::_($error->message);
+				$msg = $error->code . ' - ' . \Joomla\CMS\Language\Text::_($error->message);
 				switch ($error->level)
 				{
 					default:
 					case LIBXML_ERR_WARNING:
-						JLog::add(new JLogEntry(JText::_($msg), JLog::WARNING, 'com_j2xml'));
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::_($msg), \Joomla\CMS\Log\Log::WARNING, 'com_j2xml'));
 						return new xmlrpcresp(new xmlrpcval(self::$_messageQueue, 'array'));
 						break;
 					case LIBXML_ERR_ERROR:
-						JLog::add(new JLogEntry(JText::_($msg), JLog::ERROR, 'com_j2xml'));
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::_($msg), \Joomla\CMS\Log\Log::ERROR, 'com_j2xml'));
 						return new xmlrpcresp(new xmlrpcval(self::$_messageQueue, 'array'));
 						break;
 					case LIBXML_ERR_FATAL:
-						JLog::add(new JLogEntry(JText::_($msg), JLog::CRITICAL, 'com_j2xml'));
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::_($msg), \Joomla\CMS\Log\Log::CRITICAL, 'com_j2xml'));
 						return new xmlrpcresp(new xmlrpcval(self::$_messageQueue, 'array'));
 						break;
 				}
@@ -189,14 +189,14 @@ class XMLRPCJ2XMLServices
 			libxml_clear_errors();
 		}
 
-		$params = new JRegistry($options);
+		$params = new \Joomla\Registry\Registry($options);
 
-		JPluginHelper::importPlugin('j2xml');
-		$results = JFactory::getApplication()->triggerEvent('onContentBeforeImport', array('com_j2xml.xmlrpc', &$xml, $params));
+		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentBeforeImport', array('com_j2xml.xmlrpc', &$xml, $params));
 
 		if (!isset($xml['version']))
 		{
-			JLog::add(new JLogEntry(JText::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), JLog::ERROR, 'com_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), \Joomla\CMS\Log\Log::ERROR, 'com_j2xml'));
 			return new xmlrpcresp(new xmlrpcval(self::$_messageQueue, 'array'));
 		}
 
@@ -219,7 +219,7 @@ class XMLRPCJ2XMLServices
 		}
 		else
 		{
-			JLog::add(new JLogEntry(JText::sprintf('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED', $xmlVersion), JLog::ERROR, 'com_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED', $xmlVersion), \Joomla\CMS\Log\Log::ERROR, 'com_j2xml'));
 		}
 
 		//$app->logout();
@@ -383,7 +383,7 @@ class XMLRPCJ2XMLServices
 
 		foreach (Messages::$messages as $i => $m)
 		{
-			if ($message == JText::_($m))
+			if ($message == \Joomla\CMS\Language\Text::_($m))
 			{
 				self::$_messageQueue[] = new xmlrpcval(array(
 					"code" => new xmlrpcval($i, 'int'),
@@ -395,14 +395,14 @@ class XMLRPCJ2XMLServices
 			}
 			else
 			{
-				$pattern = '/' . str_replace(array('(', ')', '[', ']', '.'), array('\(', '\)', '\[', '\]', '\.'), JText::_($m)) . '/i';
+				$pattern = '/' . str_replace(array('(', ')', '[', ']', '.'), array('\(', '\)', '\[', '\]', '\.'), \Joomla\CMS\Language\Text::_($m)) . '/i';
 				$pattern = preg_replace('/%(?:\d+\$)?[+-]?(?:[ 0]|\'.{1})?-?\d*(?:\.\d+)?[bcdeEufFgGosxX]/', '(.+)', $pattern);
 
 				if (preg_match($pattern, $message, $matches))
 				{
 					array_shift($matches);
 
-					preg_match_all($pattern, JText::_($m), $expected);
+					preg_match_all($pattern, \Joomla\CMS\Language\Text::_($m), $expected);
 					array_shift($expected);
 
 					$j = 1;

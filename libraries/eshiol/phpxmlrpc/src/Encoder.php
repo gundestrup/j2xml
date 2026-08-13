@@ -308,7 +308,7 @@ class Encoder
                     $xmlVal = mb_convert_encoding($xmlVal, 'UTF-8', $valEncoding);
                 } else {
                     if ($valEncoding == 'ISO-8859-1') {
-                        $xmlVal = utf8_encode($xmlVal);
+                        $xmlVal = mb_convert_encoding($xmlVal, 'UTF-8', 'ISO-8859-1');
                     } else {
                         $this->getLogger()->error('XML-RPC: ' . __METHOD__ . ': invalid charset encoding of xml text: ' . $valEncoding);
                     }
@@ -372,6 +372,7 @@ class Encoder
                 // EPI api emulation
                 $v = $_xh['value'];
                 // use a known error code
+                /// @todo shouldn't we use PhpXmlRpc::$xmlrpcerr['invalid_xml']?
                 /** @var Value $vc */
                 $vc = isset($v['faultCode']) ? $v['faultCode']->scalarVal() : PhpXmlRpc::$xmlrpcerr['invalid_return'];
                 /** @var Value $vs */

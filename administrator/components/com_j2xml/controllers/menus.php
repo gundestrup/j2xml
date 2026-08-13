@@ -22,7 +22,7 @@ defined('_JEXEC') or die();
 /**
  * Menus controller class.
  */
-class J2xmlControllerMenus extends JControllerLegacy
+class J2xmlControllerMenus extends \Joomla\CMS\MVC\Controller\BaseController
 {
 
 	function __construct ($default = array())
@@ -42,7 +42,7 @@ class J2xmlControllerMenus extends JControllerLegacy
 	function export ()
 	{
 		// Check for request forgeries
-		JSession::checkToken() or jexit('Invalid Token');
+		\Joomla\CMS\Session\Session::checkToken() or jexit('Invalid Token');
 
 		$cid = $this->input->post->get('cid', array(
 				0

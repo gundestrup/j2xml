@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Test fixture: Users exported from Joomla 3.10.x format
+  Used to test issue #70 (cannot import users on J5)
+
+  XML format version: 12.5.0 (J3 era)
+-->
+<j2xml version="21.12.0">
+  <user>
+    <id>42</id>
+    <name>Test User One</name>
+    <username>testuser1</username>
+    <email>testuser1@example.com</email>
+    <password></password>
+    <block>0</block>
+    <sendEmail>1</sendEmail>
+    <registerDate>2023-01-10 08:00:00</registerDate>
+    <lastvisitDate>2023-06-15 16:30:00</lastvisitDate>
+    <activation>0</activation>
+    <params></params>
+    <group>2</group>
+  </user>
+  <user>
+    <id>43</id>
+    <name>Test User Two</name>
+    <username>testuser2</username>
+    <email>testuser2@example.com</email>
+    <password></password>
+    <block>0</block>
+    <sendEmail>0</sendEmail>
+    <registerDate>2023-02-12 10:00:00</registerDate>
+    <lastvisitDate>0000-00-00 00:00:00</lastvisitDate>
+    <activation>0</activation>
+    <params></params>
+    <group>2</group>
+    <group>3</group>
+  </user>
+  <user>
+    <id>44</id>
+    <name>Test User Three (Blocked)</name>
+    <username>testuser3</username>
+    <email>testuser3@example.com</email>
+    <password></password>
+    <block>1</block>
+    <sendEmail>0</sendEmail>
+    <registerDate>2023-03-01 12:00:00</registerDate>
+    <lastvisitDate>0000-00-00 00:00:00</lastvisitDate>
+    <activation>1</activation>
+    <params></params>
+    <group>2</group>
+  </user>
+</j2xml>

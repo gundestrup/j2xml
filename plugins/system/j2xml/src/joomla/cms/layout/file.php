@@ -18,7 +18,7 @@
 
 defined('JPATH_PLATFORM') or die;
 
-\JLog::add(new \JLogEntry(__FILE__, \JLog::DEBUG, 'plg_system_j2xml'));
+\JLog::add(new \Joomla\CMS\Log\LogEntry(__FILE__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
 
 // Make alias of original FileLayout
@@ -29,7 +29,7 @@ class JLayoutFile extends _JLayoutFile
 {
     public function getDefaultIncludePaths()
     {
-    	\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'plg_system_j2xml'));
+    	\JLog::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
     	$layoutPath = array(JPATH_PLUGINS . '/system/j2xml/layouts');
 

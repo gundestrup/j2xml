@@ -32,7 +32,7 @@ JLoader::import('eshiol.J2xml.Version');
 /**
  * Content controller class.
  */
-class J2xmlControllerJson extends JControllerLegacy
+class J2xmlControllerJson extends \Joomla\CMS\MVC\Controller\BaseController
 {
 
 	/**
@@ -54,11 +54,11 @@ class J2xmlControllerJson extends JControllerLegacy
 	 */
 	public function __construct($config = array())
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		parent::__construct($config);
 
-		$this->params = new JRegistry();
+		$this->params = new \Joomla\Registry\Registry();
 	}
 
 	/**
@@ -66,20 +66,20 @@ class J2xmlControllerJson extends JControllerLegacy
 	 */
 	function export()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		if (!JSession::checkToken('request')) {
+		if (!\Joomla\CMS\Session\Session::checkToken('request')) {
 			// Check for a valid token. If invalid, send a 403 with the error message.
-			JLog::add(new JLogEntry(JText::_('JINVALID_TOKEN'), JLog::WARNING, 'com_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::_('JINVALID_TOKEN'), \Joomla\CMS\Log\Log::WARNING, 'com_j2xml'));
 			echo new JResponseJson();
 			return;
 		}
 
-		$app    = JFactory::getApplication();
+		$app    = \Joomla\CMS\Factory::getApplication();
 		$data   = $app->input->post->getArray();
 		// Save the posted data in the session.
 		$app->setUserState('com_j2xml.send.data', $data);
-		JLog::add(new JLogEntry('setUserState(\'com_j2xml.send.data\'): ' . print_r($data, true), JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('setUserState(\'com_j2xml.send.data\'): ' . print_r($data, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$cid    = (array) $this->input->get('cid', array(0), 'array');
 
@@ -87,7 +87,7 @@ class J2xmlControllerJson extends JControllerLegacy
 		$export = strtolower(str_replace('J2xmlController', '', get_class($this)));
 		$j2xml->$export($cid, $xml, $this->params);
 
-		$app = JFactory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 		$version = explode(".", Version::$DOCVERSION);
 		$xmlVersionNumber = $version[0] . $version[1] . substr('0' . $version[2], strlen($version[2]) - 1);
 

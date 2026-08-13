@@ -29,7 +29,7 @@ jimport('eshiol.J2xmlpro.Version');
  *
  * @since  3.9
  */
-class J2xmlModelImport extends JModelForm
+class J2xmlModelImport extends \Joomla\CMS\MVC\Model\FormModel
 {
 	/**
 	 * @var object JTable object
@@ -59,9 +59,9 @@ class J2xmlModelImport extends JModelForm
 	 */
 	protected function populateState ()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$app = JFactory::getApplication('administrator');
+		$app = \Joomla\CMS\Factory::getApplication('administrator');
 
 		$this->setState('message', $app->getUserState('com_j2xml.message'));
 		$app->setUserState('com_j2xml.message', '');
@@ -78,16 +78,16 @@ class J2xmlModelImport extends JModelForm
 	 */
 	public function import()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$this->setState('action', 'import');
 
 		// Set FTP credentials, if given.
-		JClientHelper::setCredentialsFromRequest('ftp');
-		$app = JFactory::getApplication();
+		\Joomla\CMS\Client\ClientHelper::setCredentialsFromRequest('ftp');
+		$app = \Joomla\CMS\Factory::getApplication();
 
 		// Load j2xml plugins for assistance if required:
-		JPluginHelper::importPlugin('j2xml');
+		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 
 		$package = null;
 
@@ -112,31 +112,31 @@ class J2xmlModelImport extends JModelForm
 					break;
 
 				default:
-					$app->setUserState('com_j2xml.message', JText::_('COM_J2XML_NO_IMPORT_TYPE_FOUND'));
+					$app->setUserState('com_j2xml.message', \Joomla\CMS\Language\Text::_('COM_J2XML_NO_IMPORT_TYPE_FOUND'));
 
 					return false;
 					break;
 			}
 		}
 
-		JLog::add(new JLogEntry('package: ' . print_r($package, true), JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('package: ' . print_r($package, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$data = new \stdClass();
 
 		if (!($data->content = implode(gzfile($package['packagefile'])))) {
 			$data->content = file_get_contents($package['packagefile']);
 		}
-		JLog::add(new JLogEntry('data: ' . $data->content, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('data: ' . $data->content, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$jform = JFactory::getApplication()->input->post->get('jform', array(), 'array');
+		$jform = \Joomla\CMS\Factory::getApplication()->input->post->get('jform', array(), 'array');
 
-		$fparams = new JRegistry($jform);
-		JLog::add(new JLogEntry('jform: ' . print_r($fparams->toArray(), true), JLog::DEBUG, 'com_j2xml'));
+		$fparams = new \Joomla\Registry\Registry($jform);
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('jform: ' . print_r($fparams->toArray(), true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$cparams = JComponentHelper::getParams('com_j2xml');
-		JLog::add(new JLogEntry('cparams: ' . print_r($cparams->toArray(), true), JLog::DEBUG, 'com_j2xml'));
+		$cparams = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('cparams: ' . print_r($cparams->toArray(), true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$params = new JRegistry();
+		$params = new \Joomla\Registry\Registry();
 		$params->set('categories', $fparams->get('import_categories', $cparams->get('import_categories', 1)));
 		$params->set('contacts', $fparams->get('import_contacts', $cparams->get('import_contacts', 0)));
 		$params->set('content', $fparams->get('import_content', $cparams->get('import_content', 1)));
@@ -157,20 +157,20 @@ class J2xmlModelImport extends JModelForm
 		$params->set('weblinks', $fparams->get('import_weblinks', $cparams->get('import_weblinks', 0)));
 		$params->set('keep_data', $fparams->get('import_keep_data', $cparams->get('import_keep_data', 0)));
 
-		JLog::add(new JLogEntry('params: ' . print_r($params->toArray(), true), JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('params: ' . print_r($params->toArray(), true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// This event allows a custom import of the data or a customization of the data:
-		JPluginHelper::importPlugin('j2xml');
+		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 
-		$results = JFactory::getApplication()->triggerEvent('onContentPrepareData', array('com_j2xml.import', &$data, $params));
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentPrepareData', array('com_j2xml.import', &$data, $params));
 
 		if (in_array(false, $results, true))
 		{
-			JLog::add(new JLogEntry(JText::_('LIB_J2XML_MSG_PLUGIN_ERROR'), JLog::ERROR, 'com_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::_('LIB_J2XML_MSG_PLUGIN_ERROR'), \Joomla\CMS\Log\Log::ERROR, 'com_j2xml'));
 
 			if (in_array($installType, array('upload', 'url')))
 			{
-				JInstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
+				\Joomla\CMS\Installer\InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
 			}
 
 			return false;
@@ -189,38 +189,38 @@ class J2xmlModelImport extends JModelForm
 		}
 		elseif (strtoupper($xml->getName()) != 'J2XML')
 		{
-			JLog::add(new JLogEntry(JText::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), JLog::ERROR, 'com_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), \Joomla\CMS\Log\Log::ERROR, 'com_j2xml'));
 			return false;
 		}
 		elseif (!isset($xml['version']))
 		{
-			JLog::add(new JLogEntry(JText::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), JLog::ERROR, 'com_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), \Joomla\CMS\Log\Log::ERROR, 'com_j2xml'));
 			return false;
 		}
 		else
 		{
-			JLog::add(new JLogEntry('Importing...', JLog::DEBUG, 'com_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('Importing...', \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 			$xmlVersion = $xml['version'];
 			$version = explode(".", $xmlVersion);
 			$xmlVersionNumber = $version[0] . substr('0' . $version[1], strlen($version[1]) - 1) . substr('0' . $version[2], strlen($version[2]) - 1);
 
-			$results = JFactory::getApplication()->triggerEvent('onValidateData', array(&$xml, $params));
+			$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onValidateData', array(&$xml, $params));
 
 			$importer = class_exists('eshiol\J2xmlpro\Importer') ? new eshiol\J2xmlpro\Importer() : new eshiol\J2xml\Importer();
 			if ($importer->isSupported($xmlVersionNumber) || in_array(true, $results, true))
 			{
 				$params->set('version', (string) $xml['version']);
 
-				$results = JFactory::getApplication()->triggerEvent('onContentBeforeImport', array('com_j2xml.import', &$xml, $params));
+				$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentBeforeImport', array('com_j2xml.import', &$xml, $params));
 
 				$importer->import($xml, $params);
 
-				JInstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
+				\Joomla\CMS\Installer\InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
 			}
 			else
 			{
-				JLog::add(new JLogEntry(JText::sprintf('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED', $xmlVersion), JLog::ERROR, 'com_j2xml'));
+				\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED', $xmlVersion), \Joomla\CMS\Log\Log::ERROR, 'com_j2xml'));
 				return false;
 			}
 		}
@@ -228,11 +228,11 @@ class J2xmlModelImport extends JModelForm
 		// Cleanup the install files.
 		if (!is_file($package['packagefile']))
 		{
-			$config = JFactory::getConfig();
+			$config = \Joomla\CMS\Factory::getConfig();
 			$package['packagefile'] = $config->get('tmp_path') . '/' . $package['packagefile'];
 		}
 
-		JInstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
+		\Joomla\CMS\Installer\InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
 
 		// Clear the cached extension data and menu cache
 		//$this->cleanCache('com_content', 0);
@@ -248,10 +248,10 @@ class J2xmlModelImport extends JModelForm
 	 */
 	protected function _getDataFromUpload()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// Get the uploaded file information.
-		$input	= JFactory::getApplication()->input;
+		$input	= \Joomla\CMS\Factory::getApplication()->input;
 
 		// Do not change the filter type 'raw'. We need this to let files containing PHP code to upload. See JInputFiles::get.
 		$userfile = $input->files->get('install_package', null, 'raw');
@@ -259,7 +259,7 @@ class J2xmlModelImport extends JModelForm
 		// Make sure that file uploads are enabled in php.
 		if (!(bool) ini_get('file_uploads'))
 		{
-			JError::raiseWarning('', JText::_('COM_J2XML_MSG_IMPORT_WARNXMLFILE'));
+			$app->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2XML_MSG_IMPORT_WARNXMLFILE'), 'warning');
 
 			return false;
 		}
@@ -267,7 +267,7 @@ class J2xmlModelImport extends JModelForm
 		// Make sure that zlib is loaded so that the package can be unpacked.
 		if (!extension_loaded('zlib'))
 		{
-			JError::raiseWarning('', JText::_('COM_J2XML_MSG_IMPORT_WARNXMLZLIB'));
+			$app->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2XML_MSG_IMPORT_WARNXMLZLIB'), 'warning');
 
 			return false;
 		}
@@ -275,7 +275,7 @@ class J2xmlModelImport extends JModelForm
 		// If there is no uploaded file, we have a problem...
 		if (!is_array($userfile))
 		{
-			JError::raiseWarning('', JText::_('COM_J2XML_MSG_INSTALL_NO_FILE_SELECTED'));
+			$app->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2XML_MSG_INSTALL_NO_FILE_SELECTED'), 'warning');
 
 			return false;
 		}
@@ -285,7 +285,7 @@ class J2xmlModelImport extends JModelForm
 		{
 			JError::raiseWarning(
 				'',
-				JText::_('COM_J2XML_MSG_IMPORT_WARNXMLUPLOADERROR') . '<br />' . JText::_('COM_J2XML_MSG_WARNINGS_PHPUPLOADNOTSET')
+				\Joomla\CMS\Language\Text::_('COM_J2XML_MSG_IMPORT_WARNXMLUPLOADERROR') . '<br />' . \Joomla\CMS\Language\Text::_('COM_J2XML_MSG_WARNINGS_PHPUPLOADNOTSET')
 			);
 
 			return false;
@@ -296,7 +296,7 @@ class J2xmlModelImport extends JModelForm
 		{
 			JError::raiseWarning(
 				'',
-				JText::_('COM_J2XML_MSG_IMPORT_WARNXMLUPLOADERROR') . '<br />' . JText::_('COM_J2XML_MSG_WARNINGS_SMALLUPLOADSIZE')
+				\Joomla\CMS\Language\Text::_('COM_J2XML_MSG_IMPORT_WARNXMLUPLOADERROR') . '<br />' . \Joomla\CMS\Language\Text::_('COM_J2XML_MSG_WARNINGS_SMALLUPLOADSIZE')
 			);
 
 			return false;
@@ -305,22 +305,22 @@ class J2xmlModelImport extends JModelForm
 		// Check if there was a different problem uploading the file.
 		if ($userfile['error'] || $userfile['size'] < 1)
 		{
-			JError::raiseWarning('', JText::_('COM_J2XML_MSG_IMPORT_WARNXMLUPLOADERROR'));
+			$app->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2XML_MSG_IMPORT_WARNXMLUPLOADERROR'), 'warning');
 
 			return false;
 		}
 
 		// Build the appropriate paths.
-		$config   = JFactory::getConfig();
+		$config   = \Joomla\CMS\Factory::getConfig();
 		$tmp_dest = $config->get('tmp_path') . '/' . $userfile['name'];
 		$tmp_src  = $userfile['tmp_name'];
 
 		// Move uploaded file.
 		jimport('joomla.filesystem.file');
-		JFile::upload($tmp_src, $tmp_dest, false, true);
+		\Joomla\CMS\Filesystem\File::upload($tmp_src, $tmp_dest, false, true);
 
 		// Unpack the downloaded package file.
-		$package = JInstallerHelper::unpack($tmp_dest, true);
+		$package = \Joomla\CMS\Installer\InstallerHelper::unpack($tmp_dest, true);
 
 		return $package;
 	}
@@ -334,18 +334,18 @@ class J2xmlModelImport extends JModelForm
 	 */
 	protected function _getDataFromFolder()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$input = JFactory::getApplication()->input;
+		$input = \Joomla\CMS\Factory::getApplication()->input;
 
 		// Get the path to the package to install.
 		$p_dir = $input->getString('install_directory');
-		$p_dir = JPath::clean($p_dir);
+		$p_dir = \Joomla\CMS\Filesystem\Path::clean($p_dir);
 
 		// Did you give us a valid directory?
 		if (!is_dir($p_dir))
 		{
-			JError::raiseWarning('', JText::_('COM_J2XML_MSG_INSTALL_PLEASE_ENTER_A_PACKAGE_DIRECTORY'));
+			$app->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2XML_MSG_INSTALL_PLEASE_ENTER_A_PACKAGE_DIRECTORY'), 'warning');
 
 			return false;
 		}
@@ -366,9 +366,9 @@ class J2xmlModelImport extends JModelForm
 	 */
 	protected function _getDataFromUrl()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$input = JFactory::getApplication()->input;
+		$input = \Joomla\CMS\Factory::getApplication()->input;
 
 		// Get the URL of the data to install.
 		$url = $input->getString('install_url');
@@ -376,7 +376,7 @@ class J2xmlModelImport extends JModelForm
 		// Did you give us a URL?
 		if (!$url)
 		{
-			JError::raiseWarning('', JText::_('COM_J2XML_MSG_INSTALL_ENTER_A_URL'));
+			$app->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2XML_MSG_INSTALL_ENTER_A_URL'), 'warning');
 
 			return false;
 		}
@@ -400,21 +400,21 @@ class J2xmlModelImport extends JModelForm
 */
 
 		// Download the package at the URL given.
-		$p_file = JInstallerHelper::downloadPackage($url);
+		$p_file = \Joomla\CMS\Installer\InstallerHelper::downloadPackage($url);
 
 		// Was the package downloaded?
 		if (!$p_file)
 		{
-			JError::raiseWarning('', JText::_('COM_J2XML_MSG_INSTALL_INVALID_URL'));
+			$app->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2XML_MSG_INSTALL_INVALID_URL'), 'warning');
 
 			return false;
 		}
 
-		$config   = JFactory::getConfig();
+		$config   = \Joomla\CMS\Factory::getConfig();
 		$tmp_dest = $config->get('tmp_path');
 
 		// Unpack the downloaded package file.
-		$package = JInstallerHelper::unpack($tmp_dest . '/' . $p_file, true);
+		$package = \Joomla\CMS\Installer\InstallerHelper::unpack($tmp_dest . '/' . $p_file, true);
 
 		return $package;
 	}
@@ -433,7 +433,7 @@ class J2xmlModelImport extends JModelForm
 	 */
 	public function getForm($data = array(), $loadData = true)
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		try
 		{
@@ -478,20 +478,20 @@ class J2xmlModelImport extends JModelForm
 	 */
 	protected function loadFormData()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// Check the session for previously entered form data.
-		$data   = JFactory::getApplication()->getUserState('com_j2xml.import.data', array());
-		JLog::add(new JLogEntry('getUserState(\'com_j2xml.import.data\'): ' . print_r($data, true), JLog::DEBUG, 'com_j2xml'));
+		$data   = \Joomla\CMS\Factory::getApplication()->getUserState('com_j2xml.import.data', array());
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('getUserState(\'com_j2xml.import.data\'): ' . print_r($data, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 		$jform  = array();
 		foreach($data as $k => $v)
 		{
 			$jform['import_' . $k] = $v;
 		}
 
-		$params = JComponentHelper::getParams('com_j2xml');
+		$params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 		$data   = array_merge($params->toArray(), $jform);
-		JLog::add(new JLogEntry('data: ' . print_r($data, true), JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('data: ' . print_r($data, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$this->preprocessData($this->_context, $data);
 

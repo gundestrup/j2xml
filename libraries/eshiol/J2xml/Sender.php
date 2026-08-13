@@ -100,9 +100,9 @@ class Sender
 	 */
 	static function send ($xml, $options, $sid)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$app = \JFactory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 		$version = explode(".", Version::$DOCVERSION);
 		$xmlVersionNumber = $version[0] . $version[1] . substr('0' . $version[2], strlen($version[2]) - 1);
 
@@ -117,7 +117,7 @@ class Sender
 			$data = gzencode($data, 9);
 		}
 
-		$db = \JFactory::getDBO();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$query = 'SELECT `title`, `remote_url`, `username`, `password` ' . 'FROM `#__j2xml_websites` WHERE `state`= 1 AND `id` = ' . $sid;
 		$db->setQuery($query);
 		if (!($server = $db->loadAssoc()))
@@ -166,7 +166,7 @@ class Sender
 			$res = self::_xmlrpc_j2xml_send($server['remote_url'], $data, $server['username'], $server['password'], $options['debug']);
 			if ($res->faultcode())
 			{
-				$app->enqueueMessage($server['title'] . ': ' . \JText::_($res->faultString()), 'error');
+				$app->enqueueMessage($server['title'] . ': ' . \Joomla\CMS\Language\Text::_($res->faultString()), 'error');
 			}
 			else
 			{
@@ -190,8 +190,8 @@ class Sender
 						foreach ($matches->scalarval() as $string) {
 							$strings[] = $string->scalarval();
 						}
-						//$app->enqueueMessage($server['title'] . ': ' . \JText::sprintf(Messages::$messages[$code], $string), self::$codes[$code]);
-						$app->enqueueMessage($server['title'] . ': ' . vsprintf(\JText::_(Messages::$messages[$code]), $strings), self::$codes[$code]);
+						//$app->enqueueMessage($server['title'] . ': ' . \Joomla\CMS\Language\Text::sprintf(Messages::$messages[$code], $string), self::$codes[$code]);
+						$app->enqueueMessage($server['title'] . ': ' . vsprintf(\Joomla\CMS\Language\Text::_(Messages::$messages[$code]), $strings), self::$codes[$code]);
 					}
 					else
 					{
@@ -232,7 +232,7 @@ class Sender
 
 					if ($response && xmlrpc_is_fault($response))
 					{
-						$app->enqueueMessage($server['title'] . ': ' . \JText::_($response['faultString']), 'error');
+						$app->enqueueMessage($server['title'] . ': ' . \Joomla\CMS\Language\Text::_($response['faultString']), 'error');
 					}
 					elseif (is_array($response))
 					{
@@ -244,8 +244,8 @@ class Sender
 							}
 							elseif (isset($msg['strings']))
 							{
-								// $app->enqueueMessage($server['title'] . ': ' . \JText::sprintf(Messages::$messages[$msg['code']], $msg['string']), self::$codes[$msg['code']]);
-								$app->enqueueMessage($server['title'] . ': ' . vsprintf(\JText::_(Messages::$messages[$msg['code']]), $msg['strings']), self::$codes[$msg['code']]);
+								// $app->enqueueMessage($server['title'] . ': ' . \Joomla\CMS\Language\Text::sprintf(Messages::$messages[$msg['code']], $msg['string']), self::$codes[$msg['code']]);
+								$app->enqueueMessage($server['title'] . ': ' . vsprintf(\Joomla\CMS\Language\Text::_(Messages::$messages[$msg['code']]), $msg['strings']), self::$codes[$msg['code']]);
 							}
 							else
 							{
@@ -272,7 +272,7 @@ class Sender
 	 */
 	private static function _xmlrpc_j2xml_send ($remote_url, $xml, $username, $password, $debug = 0)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$debug = 0;
 		$protocol = '';
@@ -281,7 +281,7 @@ class Sender
 		$client->return_type = 'xmlrpcvals';
 		$client->request_charset_encoding = 'UTF-8';
 		$client->user_agent = Version::$PRODUCT . ' ' . Version::getFullVersion();
-		if (\JFactory::getApplication()->get('gzip') && !ini_get('zlib.output_compression') && ini_get('output_handler') !== 'ob_gzhandler')
+		if (\Joomla\CMS\Factory::getApplication()->get('gzip') && !ini_get('zlib.output_compression') && ini_get('output_handler') !== 'ob_gzhandler')
 		{
 			// default values
 			$client->accepted_compression = array('gzip', 'deflate');
@@ -340,7 +340,7 @@ if (!function_exists('http_parse_headers'))
 
 	function http_parse_headers ($raw_headers)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$headers = array();
 		$key = '';

@@ -27,7 +27,7 @@ JLoader::register('eshiol\\J2xml\\Helper\\Joomla', __DIR__ . '/src/J2xml/Helper/
 /**
  *
  */
-class plgSystemJ2xml extends JPlugin
+class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 {
 
 	/**
@@ -57,31 +57,31 @@ class plgSystemJ2xml extends JPlugin
 	{
 		parent::__construct($subject, $config);
 
-		$cparams = JComponentHelper::getParams('com_j2xml');
+		$cparams = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 		if ($this->params->get('debug', $cparams->get('debug', false)) || defined('JDEBUG') && JDEBUG)
 		{
-			JLog::addLogger(
+			\Joomla\CMS\Log\Log::addLogger(
 				array('text_file' => $this->params->get('log', 'eshiol.log.php'), 'extension' => 'plg_system_j2xml_file'),
-				JLog::ALL,
+				\Joomla\CMS\Log\Log::ALL,
 				array('plg_system_j2xml'));
 		}
 		if (PHP_SAPI == 'cli')
 		{
-			JLog::addLogger(
+			\Joomla\CMS\Log\Log::addLogger(
 				array('logger' => 'echo', 'extension' => 'plg_system_j2xml'),
-				JLog::ALL & ~ JLog::DEBUG,
+				\Joomla\CMS\Log\Log::ALL & ~ \Joomla\CMS\Log\Log::DEBUG,
 				array('plg_system_j2xml'));
 		}
 		else
 		{
-			JLog::addLogger(
+			\Joomla\CMS\Log\Log::addLogger(
 				array('logger' => (null !== $this->params->get('logger')) ? $this->params->get('logger') : 'messagequeue', 'extension' => 'plg_system_j2xml'),
-				JLog::ALL & ~ JLog::DEBUG,
+				\Joomla\CMS\Log\Log::ALL & ~ \Joomla\CMS\Log\Log::DEBUG,
 				array('plg_system_j2xml'));
 		}
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'plg_system_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
-		$version = new JVersion();
+		$version = new \Joomla\CMS\Version();
 
 		if (!$version->isCompatible('4'))
 		{
@@ -118,16 +118,16 @@ class plgSystemJ2xml extends JPlugin
 		}
 
 		// Only render if J2XML is installed and enabled
-		$db = JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$query = $db->getQuery(true)
 			->select($db->quoteName('enabled'))
 			->from($db->quoteName('#__extensions'))
 			->where($db->quoteName('name') . ' = ' . $db->quote('com_j2xml'));
-		JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_system_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 		$is_enabled = $db->setQuery($query)->loadResult();
 		if (!$is_enabled)
 		{
-			JLog::add(new JLogEntry(JText::sprintf('PLG_SYSTEM_J2XML_MSG_REQUIREMENTS_COM', JText::_('PLG_SYSTEM_J2XML')), JLog::WARNING, 'plg_system_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('PLG_SYSTEM_J2XML_MSG_REQUIREMENTS_COM', \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML')), \Joomla\CMS\Log\Log::WARNING, 'plg_system_j2xml'));
 		}
 	}
 
@@ -138,7 +138,7 @@ class plgSystemJ2xml extends JPlugin
 	 */
 	public function onAfterDispatch()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'plg_system_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
 		if ($this->app->input->get('format') == 'xmlrpc')
 		{
@@ -146,13 +146,13 @@ class plgSystemJ2xml extends JPlugin
 		}
 
 		// Only render for HTML output.
-		if (JFactory::getDocument()->getType() !== 'html')
+		if (\Joomla\CMS\Factory::getDocument()->getType() !== 'html')
 		{
 			return;
 		}
 
 		// Only render in backend
-		$version = new JVersion();
+		$version = new \Joomla\CMS\Version();
 
 		if ($version->isCompatible('3.7'))
 		{
@@ -170,12 +170,12 @@ class plgSystemJ2xml extends JPlugin
 		}
 
 		// Only render if J2XML is installed and enabled
-		$db = JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$query = $db->getQuery(true)
 			->select($db->quoteName('enabled'))
 			->from('#__extensions')
 			->where($db->quoteName('name') . ' = ' . $db->quote('com_j2xml'));
-		JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_system_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
 		$is_enabled = $db->setQuery($query)->loadResult();
 		if (!$is_enabled)
@@ -219,18 +219,18 @@ class plgSystemJ2xml extends JPlugin
 		}
 
 		// Only render if J2XML view exists and J2XML Library is loaded
-        if (!JFile::exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/' . $contentType . '/view.raw.php'))
+        if (!\Joomla\CMS\Filesystem\File::exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/' . $contentType . '/view.raw.php'))
 		{
 			return true;
 		}
 
-		if (JFile::exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/' . $contentType . '.php'))
+		if (\Joomla\CMS\Filesystem\File::exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/' . $contentType . '.php'))
 		{
 			if (class_exists('eshiol\\J2xml\\Exporter') && method_exists('eshiol\\J2xml\\Exporter', $contentType))
 			{
-				$bar = JToolbar::getInstance('toolbar');
+				$bar = \Joomla\CMS\Toolbar\Toolbar::getInstance('toolbar');
 
-				$version = new JVersion();
+				$version = new \Joomla\CMS\Version();
 				if ($version->isCompatible('4'))
 				{
 					$buttonClass = 'button-download btn btn-sm';
@@ -265,11 +265,11 @@ class plgSystemJ2xml extends JPlugin
 					array(
 						'selector' => $selector,
 						'icon'	   => $iconExport,
-						'text'	   => JText::_('JTOOLBAR_EXPORT'),
-						'title'	   => JText::_('PLG_SYSTEM_J2XML_EXPORT_' . strtoupper($contentType)),
+						'text'	   => \Joomla\CMS\Language\Text::_('JTOOLBAR_EXPORT'),
+						'title'	   => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_EXPORT_' . strtoupper($contentType)),
 						'class'	   => $buttonClass,
-						'doTask'   => JRoute::_('index.php?option=com_j2xml&amp;view=export&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
-						'ok'	   => JText::_('JTOOLBAR_EXPORT'),
+						'doTask'   => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=export&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
+						'ok'	   => \Joomla\CMS\Language\Text::_('JTOOLBAR_EXPORT'),
 						'onclick'  => 'var cids=new Array();jQuery(\'input:checkbox[name=\\\'cid\[\]\\\']:checked\').each( function(){cids.push(jQuery(this).val());});jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#jform_cid\').val(cids);'
 				));
 
@@ -289,11 +289,11 @@ class plgSystemJ2xml extends JPlugin
 					->from($db->quoteName('#__extensions'))
 					->where($db->quoteName('type') . ' = ' . $db->quote('library'))
 					->where($db->quoteName('element') . ' = ' . $db->quote($lib_xmlrpc));
-				JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_system_j2xml'));
+				\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
-				if ($db->setQuery($query)->loadResult() && JLibraryHelper::isEnabled($lib_xmlrpc))
+				if ($db->setQuery($query)->loadResult() && \Joomla\CMS\Helper\LibraryHelper::isEnabled($lib_xmlrpc))
 				{
-					JText::script('LIB_J2XML_ERROR_UNKNOWN');
+					\Joomla\CMS\Language\Text::script('LIB_J2XML_ERROR_UNKNOWN');
 
 					$layout->addIncludePath(JPATH_PLUGINS . '/system/j2xml/layout');
 					$selector = 'j2xmlSend';
@@ -301,11 +301,11 @@ class plgSystemJ2xml extends JPlugin
 						array(
 							'selector'       => $selector,
 							'icon'	         => $iconSend,
-							'text'	         => JText::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
-							'title'	         => JText::_('PLG_SYSTEM_J2XML_SEND_' . strtoupper($contentType)),
+							'text'	         => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
+							'title'	         => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_SEND_' . strtoupper($contentType)),
 							'class'	         => $buttonClass,
-							'doTask'         => JRoute::_('index.php?option=com_j2xml&amp;view=send&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
-							'ok'	         => JText::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
+							'doTask'         => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=send&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
+							'ok'	         => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
 							'onclick'        => 'var cids=new Array();jQuery(\'input:checkbox[name=\\\'cid\[\]\\\']:checked\').each( function(){cids.push(jQuery(this).val());});jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#jform_cid\').val(cids);',
 							'formValidation' => true
 						));
@@ -315,8 +315,8 @@ class plgSystemJ2xml extends JPlugin
 		}
 
 		// Trigger the onAfterDispatch event.
-		// JPluginHelper::importPlugin('j2xml');
-		// JFactory::getApplication()->triggerEvent('onLoadJS');
+		// \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
+		// \Joomla\CMS\Factory::getApplication()->triggerEvent('onLoadJS');
 
 		return true;
 	}
@@ -330,7 +330,7 @@ class plgSystemJ2xml extends JPlugin
 	 */
 	public function onBeforeCompileHead()
 	{
-		// $version = new JVersion();
+		// $version = new \Joomla\CMS\Version();
 		$version = new Joomla\CMS\Version();
 
 		if ($version->isCompatible( '4' ))

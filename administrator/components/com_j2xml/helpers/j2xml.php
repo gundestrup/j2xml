@@ -35,7 +35,7 @@ class J2xmlHelper
 	 */
 	public static function getActions ()
 	{
-		$user = JFactory::getUser();
+		$user = \Joomla\CMS\Factory::getUser();
 		$result = new JObject();
 
 		$assetName = 'com_content';
@@ -70,9 +70,9 @@ class J2xmlHelper
 
 	public static function copyright ()
 	{
-		if ($xml = JFactory::getXML(JPATH_COMPONENT_ADMINISTRATOR . '/j2xml.xml'))
+		if ($xml = \Joomla\CMS\Factory::getXML(JPATH_COMPONENT_ADMINISTRATOR . '/j2xml.xml'))
 		{
-			return '<div class="clearfix"> </div>' . '<div style="text-align:center;font-size:xx-small">' . JText::_($xml->name) . ' ' . $xml->version .
+			return '<div class="clearfix"> </div>' . '<div style="text-align:center;font-size:xx-small">' . \Joomla\CMS\Language\Text::_($xml->name) . ' ' . $xml->version .
 					 ' ' . str_replace('(C)', '&copy;', $xml->copyright) . '</div>';
 		}
 	}
@@ -85,8 +85,8 @@ class J2xmlHelper
 	 */
 	public static function addSubmenu ($vName = 'cpanel')
 	{
-		JHtmlSidebar::addEntry(JText::_('COM_J2XML_SUBMENU_CPANEL'), 'index.php?option=com_j2xml&view=cpanel', $vName == 'cpanel');
-		JHtmlSidebar::addEntry(JText::_('COM_J2XML_SUBMENU_WEBSITES'), 'index.php?option=com_j2xml&view=websites', $vName == 'websites');
+		JHtmlSidebar::addEntry(\Joomla\CMS\Language\Text::_('COM_J2XML_SUBMENU_CPANEL'), 'index.php?option=com_j2xml&view=cpanel', $vName == 'cpanel');
+		JHtmlSidebar::addEntry(\Joomla\CMS\Language\Text::_('COM_J2XML_SUBMENU_WEBSITES'), 'index.php?option=com_j2xml&view=websites', $vName == 'websites');
 	}
 
 	/**

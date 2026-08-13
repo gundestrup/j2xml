@@ -38,7 +38,7 @@ class J2xmlViewImport extends J2xmlViewDefault
 	 */
 	public function display($tpl = null)
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// Initialiase variables.
 		$this->form  = $this->get('Form');
@@ -50,7 +50,7 @@ class J2xmlViewImport extends J2xmlViewDefault
 		$this->paths = &$paths;
 		$this->state = &$state;
 
-		JPluginHelper::importPlugin('installer');
+		\Joomla\CMS\Plugin\PluginHelper::importPlugin('installer');
 
 		parent::display($tpl);
 	}
@@ -62,19 +62,19 @@ class J2xmlViewImport extends J2xmlViewDefault
 	 */
 	protected function addToolbar ()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		JToolBarHelper::title(JText::_('COM_J2XML_TOOLBAR_J2XML'), 'upload import');
+		\Joomla\CMS\Toolbar\ToolbarHelper::title(\Joomla\CMS\Language\Text::_('COM_J2XML_TOOLBAR_J2XML'), 'upload import');
 
-		if (JFactory::getUser()->authorise('core.admin'))
+		if (\Joomla\CMS\Factory::getUser()->authorise('core.admin'))
 		{
-			JToolBarHelper::preferences('com_j2xml');
+			\Joomla\CMS\Toolbar\ToolbarHelper::preferences('com_j2xml');
 		}
 
-		$doc = JFactory::getDocument();
+		$doc = \Joomla\CMS\Factory::getDocument();
 		$doc->addStyleDeclaration('#toolbar-credit{float:right;}');
 
-		$toolbar = JToolBar::getInstance('toolbar');
-		$toolbar->appendButton('Popup', 'credit', 'COM_J2XML_DONATE', 'https://www.eshiol.it/' . Jtext::_('COM_J2XML_DONATE_1')  . '?tmpl=component', 550, 350);
+		$toolbar = \Joomla\CMS\Toolbar\Toolbar::getInstance('toolbar');
+		$toolbar->appendButton('Popup', 'credit', 'COM_J2XML_DONATE', 'https://www.eshiol.it/' . \Joomla\CMS\Language\Text::_('COM_J2XML_DONATE_1')  . '?tmpl=component', 550, 350);
 	}
 }

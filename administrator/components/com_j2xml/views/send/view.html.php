@@ -23,7 +23,7 @@ defined('_JEXEC') or die();
  *
  * @since 3.9.0
  */
-class J2xmlViewSend extends JViewLegacy
+class J2xmlViewSend extends \Joomla\CMS\MVC\View\HtmlView
 {
 
 	/**
@@ -43,7 +43,7 @@ class J2xmlViewSend extends JViewLegacy
 	 */
 	public function display($tpl = null)
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// Initialiase variables.
 		$this->form  = $this->get('Form');

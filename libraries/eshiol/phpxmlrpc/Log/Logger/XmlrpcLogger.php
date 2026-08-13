@@ -21,9 +21,7 @@ namespace Joomla\CMS\Log\Logger;
 // no direct access
 defined('_JEXEC') or die('Restricted access.');
 
-jimport('joomla.log.logger');
-
-\JLoader::registerAlias('JLogLoggerXmlrpc', '\\Joomla\\CMS\\Log\\Logger\\XmlrpcLogger');
+\JLoader::registerAlias('JLogLoggerXmlrpc', '\Joomla\CMS\\Log\\Logger\\XmlrpcLogger');
 
 /**
  * Joomla XMLRPC logger class.
@@ -32,7 +30,7 @@ jimport('joomla.log.logger');
  *
  * @since 4.3.1
  */
-class XmlrpcLogger extends \JLogLogger
+class XmlrpcLogger extends \Joomla\CMS\Log\Logger
 {
 	/**
 	 * Constructor.
@@ -59,25 +57,25 @@ class XmlrpcLogger extends \JLogLogger
 	 *
 	 * @return void
 	 */
-	public function addEntry (\JLogEntry $entry)
+	public function addEntry (\Joomla\CMS\Log\LogEntry $entry)
 	{
 		$service = $this->options['service'];
 
 		switch ($entry->priority)
 		{
-			case \JLog::EMERGENCY:
-			case \JLog::ALERT:
-			case \JLog::CRITICAL:
-			case \JLog::ERROR:
+			case \Joomla\CMS\Log\Log::EMERGENCY:
+			case \Joomla\CMS\Log\Log::ALERT:
+			case \Joomla\CMS\Log\Log::CRITICAL:
+			case \Joomla\CMS\Log\Log::ERROR:
 				$service::enqueueMessage($entry->message, 'error');
 				break;
-			case \JLog::WARNING:
+			case \Joomla\CMS\Log\Log::WARNING:
 				$service::enqueueMessage($entry->message, 'warning');
 				break;
-			case \JLog::NOTICE:
+			case \Joomla\CMS\Log\Log::NOTICE:
 				$service::enqueueMessage($entry->message, 'notice');
 				break;
-			case \JLog::INFO:
+			case \Joomla\CMS\Log\Log::INFO:
 				$service::enqueueMessage($entry->message, 'message');
 				break;
 			default:

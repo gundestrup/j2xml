@@ -27,17 +27,17 @@ require_once JPATH_SITE . '/components/com_j2xml/helpers/xmlrpc.php';
  *
  * @since 2.5
  */
-class J2xmlControllerServices extends JControllerLegacy
+class J2xmlControllerServices extends \Joomla\CMS\MVC\Controller\BaseController
 {
 
 	public function import()
 	{
 		global $xmlrpcString, $xmlrpcBase64, $xmlrpc_internalencoding;
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$params = JComponentHelper::getParams('com_j2xml');
+		$params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 
-		$jversion = new JVersion();
+		$jversion = new \Joomla\CMS\Version();
 		if ($jversion->isCompatible('3.9'))
 		{
 			$lib_xmlrpc = 'eshiol/phpxmlrpc';
@@ -45,9 +45,9 @@ class J2xmlControllerServices extends JControllerLegacy
 			$lib_xmlrpc = 'phpxmlrpc';
 		}
 
-		if (!JLibraryHelper::isEnabled($lib_xmlrpc) || !$params->get('xmlrpc'))
+		if (!\Joomla\CMS\Helper\LibraryHelper::isEnabled($lib_xmlrpc) || !$params->get('xmlrpc'))
 		{
-			echo '<?xml version="1.0"?><methodResponse><fault><value><struct><member><name>faultCode</name><value><int>32</int></value></member><member><name>faultString</name><value><string>' . JText::_('LIB_J2XML_MSG_XMLRPC_DISABLED') . '</string></value></member></struct></value></fault></methodResponse>';
+			echo '<?xml version="1.0"?><methodResponse><fault><value><struct><member><name>faultCode</name><value><int>32</int></value></member><member><name>faultString</name><value><string>' . \Joomla\CMS\Language\Text::_('LIB_J2XML_MSG_XMLRPC_DISABLED') . '</string></value></member></struct></value></fault></methodResponse>';
 			exit();
 		}
 

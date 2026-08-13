@@ -16,7 +16,7 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or die();
+defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 /**
  *
@@ -46,7 +46,7 @@ class Menu extends \eshiol\J2XML\Table\Table
 	 */
 	function toXML ($mapKeysToText = false)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
 		if ($this->type == 'component')
 		{
@@ -63,7 +63,7 @@ class Menu extends \eshiol\J2XML\Table\Table
 							 $this->_db->qn('a.alias') . ')' . ' FROM ' . $this->_db->qn('#__content') . ' a' . ' INNER JOIN ' .
 							 $this->_db->qn('#__categories') . ' c' . ' ON ' . $this->_db->qn('a.catid') . ' = ' . $this->_db->qn('c.id') . ' WHERE ' .
 							 $this->_db->qn('a.id') . ' = ' . (int) $args['id'];
-					 \JLog::add(new \JLogEntry('article_id: ' . $this->_aliases['article_id'], \JLog::DEBUG, 'lib_j2xml'));
+					 \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('article_id: ' . $this->_aliases['article_id'], \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 				}
 			}
 		}
@@ -83,11 +83,11 @@ class Menu extends \eshiol\J2XML\Table\Table
 	 */
 	public static function export ($id, &$xml, $options)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'lib_j2xml'));
-		\JLog::add(new \JLogEntry('id: ' . $id, \JLog::DEBUG, 'lib_j2xml'));
-		\JLog::add(new \JLogEntry('options: ' . print_r($options, true), \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('id: ' . $id, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('options: ' . print_r($options, true), \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$item = new Menu($db);
 		if (!$item->load($id))
 		{
@@ -134,7 +134,7 @@ class Menu extends \eshiol\J2XML\Table\Table
 			->where($db->quoteName('menutype') . ' = ' . $db->quote($item->menutype))
 			->where($db->quoteName('parent_id') . ' = ' . $id)
 			->order($db->quoteName('lft'));
-		\JLog::add(new \JLogEntry($query, \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 		$ids_menu = $db->setQuery($query)->loadColumn();
 
 		foreach ($ids_menu as $id_menu)
@@ -153,9 +153,9 @@ class Menu extends \eshiol\J2XML\Table\Table
 	 */
 	public static function import ($xml, &$params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$import_menus = $params->get('import_menus', '1');
 
 		foreach ($xml->xpath("//j2xml/menu[not(title = '')]") as $record)
@@ -169,7 +169,7 @@ class Menu extends \eshiol\J2XML\Table\Table
 			)))
 				->from($db->quoteName('#__menu'))
 				->where($db->quoteName('path') . ' = ' . $db->quote($data['path']));
-			\JLog::add(new \JLogEntry($query, \JLog::DEBUG, 'lib_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 			$db->setQuery($query);
 			$menu = $db->loadObject();
 
@@ -195,13 +195,13 @@ class Menu extends \eshiol\J2XML\Table\Table
 						->from($db->quoteName('#__extensions'))
 						->where($db->quoteName('type') . ' = ' . $db->quote('component'))
 						->where($db->quoteName('element') . ' = ' . $db->quote($data['component_id']));
-					\JLog::add(new \JLogEntry($query, \JLog::DEBUG, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 					$component = $db->setQuery($query)->loadResult();
 
 					if (!$component)
 					{
-						$error = \JText::sprintf('LIB_J2XML_ERROR_COMPONENT_NOT_FOUND', $data['component_id']);
-						\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \JLog::WARNING, 'lib_j2xml'));
+						$error = \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_ERROR_COMPONENT_NOT_FOUND', $data['component_id']);
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
 						continue;
 					}
 				}
@@ -226,8 +226,8 @@ class Menu extends \eshiol\J2XML\Table\Table
 								{
 									if (empty($data['article_id']))
 									{
-										$error = \JText::sprintf('LIB_J2XML_MSG_ARTICLE_NOT_FOUND', 0);
-										\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \JLog::ERROR, 'lib_j2xml'));
+										$error = \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_ARTICLE_NOT_FOUND', 0);
+										\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 										continue;
 
 									}
@@ -235,8 +235,8 @@ class Menu extends \eshiol\J2XML\Table\Table
 									$args['id'] = self::getArticleId($data['article_id']);
 									if ($args['id'] == 0)
 									{
-										$error = \JText::sprintf('LIB_J2XML_MSG_ARTICLE_NOT_FOUND', $data['article_id']);
-										\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \JLog::ERROR, 'lib_j2xml'));
+										$error = \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_ARTICLE_NOT_FOUND', $data['article_id']);
+										\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 										continue;
 									}
 									$data['link'] = 'index.php?' . http_build_query($args);
@@ -249,19 +249,19 @@ class Menu extends \eshiol\J2XML\Table\Table
 									->from($db->quoteName('#__extensions'))
 									->where($db->quoteName('type') . ' = ' . $db->quote('component'))
 									->where($db->quoteName('element') . ' = ' . $db->quote($args['option']));
-								\JLog::add(new \JLogEntry($query, \JLog::DEBUG, 'lib_j2xml'));
+								\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 								$component = $db->setQuery($query)->loadResult();
 								if (!$component)
 								{
-									$error = \JText::sprintf('LIB_J2XML_ERROR_COMPONENT_NOT_FOUND', $args['option']);
-									\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \JLog::WARNING, 'lib_j2xml'));
+									$error = \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_ERROR_COMPONENT_NOT_FOUND', $args['option']);
+									\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
 									continue;
 								}
 							}
 						}
 						else
 						{
-							\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], \JText::_('LIB_J2XML_ERROR_UNKNOWN')), \JLog::ERROR, 'lib_j2xml'));
+							\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], \Joomla\CMS\Language\Text::_('LIB_J2XML_ERROR_UNKNOWN')), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 							continue;
 						}
 					}
@@ -271,12 +271,12 @@ class Menu extends \eshiol\J2XML\Table\Table
 				$table->bind($data);
 				if ($table->store())
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_MENU_IMPORTED', $table->title), \JLog::INFO, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 					// Trigger the onContentAfterSave event.
 				}
 				else
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $table->getError()), \JLog::ERROR, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 				}
 
 				$table = null;
@@ -293,7 +293,7 @@ class Menu extends \eshiol\J2XML\Table\Table
 	 */
 	public static function prepareData ($record, &$data, $params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
 		parent::prepareData($record, $data, $params);
 
@@ -309,7 +309,7 @@ class Menu extends \eshiol\J2XML\Table\Table
 		}
 		$data['level'] = substr_count($path , '/') + 1;
 
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		if ($version->isCompatible('4'))
 		{
 			if (!isset($data['img']))

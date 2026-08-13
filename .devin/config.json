@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Exec(git)",
+      "Exec(git status)",
+      "Exec(git diff)",
+      "Exec(git log)",
+      "Exec(git branch)",
+      "Exec(php -l)",
+      "Exec(php cli/j2xml.php)"
+    ],
+    "deny": [
+      "Exec(sudo)",
+      "Exec(rm -rf)",
+      "Exec(git push)",
+      "Exec(git push --force)",
+      "Exec(git rebase -i)",
+      "Exec(git reset --hard)"
+    ]
+  },
+  "read_config_from": {
+    "agents_standard": true,
+    "cursor": true,
+    "windsurf": true,
+    "claude": true
+  }
+}

@@ -16,7 +16,7 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or die();
+defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Category;
 use eshiol\J2xml\Table\Image;
@@ -49,7 +49,7 @@ class Contact extends Table
 	 */
 	public function __construct (\JDatabaseDriver $db)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		parent::__construct('#__contact_details', 'id', $db);
 
@@ -64,7 +64,7 @@ class Contact extends Table
 	 */
 	function toXML ($mapKeysToText = false)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// $this->_aliases['user_id']='SELECT username FROM #__users WHERE id =
 		// '.(int)$this->user_id;
@@ -73,7 +73,7 @@ class Contact extends Table
 			->from($this->_db->quoteName('#__users'))
 			->where($this->_db->quoteName('id') . ' = ' . (int) $this->user_id);
 
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		if ($version->isCompatible('3.1'))
 		{
 			// $this->_aliases['tag']='SELECT t.path FROM #__tags t,
@@ -120,14 +120,14 @@ class Contact extends Table
 	 */
 	public static function export ($id, &$xml, $options)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if ($xml->xpath("//j2xml/contact/id[text() = '" . $id . "']"))
 		{
 			return;
 		}
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$item = new Contact($db);
 		if (!$item->load($id))
 		{
@@ -162,10 +162,10 @@ class Contact extends Table
 
 		if (isset($options['tags']) && $options['tags'])
 		{
-			$version = new \JVersion();
+			$version = new \Joomla\CMS\Version();
 			if($version->isCompatible('3.1'))
 			{
-				$htags = new \JHelperTags();
+				$htags = new \Joomla\CMS\Helper\TagsHelper();
 				$itemtags = $htags->getItemTags('com_contact.contact', $id);
 				foreach ($itemtags as $itemtag)
 				{
@@ -190,10 +190,10 @@ class Contact extends Table
 				$db->quoteName('asso1.id') . ' = ' . (int) $id,
 				$db->quoteName('asso1.context') . ' = ' . $db->quote('com_contact.item'),
 				$db->quoteName('asso2.id') . ' <> ' . (int) $id));
-		\JLog::add(new \JLogEntry($query, \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
 		$ids_contact = $db->setQuery($query)->loadColumn();
-		\JLog::add(new \JLogEntry(print_r($ids_contact, true), \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(print_r($ids_contact, true), \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 		foreach ($ids_contact as $id_contact)
 		{
 			Contact::export($id_contact, $xml, $options);
@@ -218,7 +218,7 @@ class Contact extends Table
 	 */
 	public static function import ($xml, &$params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$import_contacts = $params->get('contacts', 0);
 		if ($import_contacts == 0)
@@ -226,7 +226,7 @@ class Contact extends Table
 			return;
 		}
 
-		$db     = \JFactory::getDbo();
+		$db     = \Joomla\CMS\Factory::getDbo();
 		$keepId = $params->get('keep_user_id', '0');
 
 		$import_categories = $params->get('categories', 0);
@@ -240,7 +240,7 @@ class Contact extends Table
 		foreach ($xml->xpath("//j2xml/contact[not(alias = '')]") as $record)
 		{
 			self::prepareData($record, $data, $params);
-			\JLog::add(new \JLogEntry(print_r($data, true), \JLog::DEBUG, 'com_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(print_r($data, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 			$contactId = $data['id'];
 			unset($data['id']);
@@ -269,8 +269,8 @@ class Contact extends Table
 				}
 				else
 				{ // backward compatibility
-					\JTable::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_contacts/tables');
-					$table = \JTable::getInstance('Contact', 'ContactTable');
+					\Joomla\CMS\Table\Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_contacts/tables');
+					$table = \Joomla\CMS\Table\Table::getInstance('Contact', 'ContactTable');
 				}
 
 				if ($data['id'])
@@ -291,11 +291,11 @@ class Contact extends Table
 				{
 					self::setAssociations($table->id, $table->language, $data['associations'], 'com_contact.item');
 
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_CONTACT_IMPORTED', $table->name), \JLog::INFO, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_CONTACT_IMPORTED', $table->name), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 				}
 				else
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_CONTACT_NOT_IMPORTED', $data['name'], $table->getError()), \JLog::ERROR, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_CONTACT_NOT_IMPORTED', $data['name'], $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 				}
 
 				$table = null;
@@ -312,10 +312,10 @@ class Contact extends Table
 	 */
 	public static function prepareData ($record, &$data, $params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db = \JFactory::getDBO();
-		$version = new \JVersion();
+		$db = \Joomla\CMS\Factory::getDbo();
+		$version = new \Joomla\CMS\Version();
 
 		$params->set('extension', 'com_contact');
 		parent::prepareData($record, $data, $params);

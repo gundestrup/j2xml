@@ -16,13 +16,14 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or die();
+defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Contact;
 use eshiol\J2xml\Table\Field;
 use eshiol\J2xml\Table\Table;
 use eshiol\J2xml\Table\Usernote;
 use eshiol\J2xml\Table\Viewlevel;
+use Joomla\CMS\Factory;
 \JLoader::import('eshiol.J2xml.Table.Contact');
 \JLoader::import('eshiol.J2xml.Table.Field');
 \JLoader::import('eshiol.J2xml.Table.Table');
@@ -47,7 +48,7 @@ class User extends Table
 	 */
 	public function __construct (\JDatabaseDriver $db)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		parent::__construct('#__users', 'id', $db);
 	}
@@ -59,9 +60,9 @@ class User extends Table
 	 */
 	function toXML ($mapKeysToText = false)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		$serverType = $version->isCompatible('3.5') ? $this->_db->getServerType() : 'mysql';
 
 		if ($serverType === 'postgresql')
@@ -184,7 +185,7 @@ class User extends Table
 	 */
 	public static function import ($xml, &$params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$import_users = $params->get('users', 1);
 		$import_superusers = $params->get('superusers', 0);
@@ -194,17 +195,17 @@ class User extends Table
 		$keepId = $params->get('keep_user_id', '0');
 		$keep_user_attribs = $params->get('keep_user_attribs', '1');
 
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		if ($version->isCompatible('3.2'))
 		{
-			\JFactory::getApplication()->getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
+			\Joomla\CMS\Factory::getApplication()->getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
 		}
 		else
 		{
-			\JFactory::getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
+			\Joomla\CMS\Factory::getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
 		}
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 
 		$autoincrement = 0;
 		$maxid = $db->setQuery($db->getQuery(true)
@@ -212,10 +213,10 @@ class User extends Table
 			->from($db->quoteName('#__users')))
 			->loadResult();
 
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		if ($version->isCompatible('4'))
 		{
-			$userModel = "\Joomla\Component\Users\Administrator\Model\UserModel";
+			$mvcFactory = Factory::getApplication()->bootComponent('com_users')->getMVCFactory();
 		}
 		else
 		{
@@ -230,7 +231,12 @@ class User extends Table
 
 			if (isset($data['group']))
 			{
-				$data['groups'][] = parent::getUsergroupId($data['group']);
+				// group can be a single value or an array (multiple <group> elements)
+				$groups = (array) $data['group'];
+				foreach ($groups as $g)
+				{
+					$data['groups'][] = parent::getUsergroupId($g);
+				}
 				unset($data['group']);
 			}
 			elseif (isset($data['grouplist']))
@@ -245,14 +251,14 @@ class User extends Table
 
 			if (!$import_superusers && isset($data['groups']) && in_array(8, $data['groups']))
 			{
-				\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_USER_SKIPPED', $data['name']), \JLog::NOTICE, 'lib_j2xml'));
+				\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_SKIPPED', $data['name']), \Joomla\CMS\Log\Log::NOTICE, 'lib_j2xml'));
 				continue;
 			}
 
 			if (isset($data['password']))
 			{
 				$data['password_crypted'] = $data['password'];
-				$data['password2'] = $data['password'] = \JText::_('LIB_J2XML_PASSWORD_NOT_AVAILABLE');
+				$data['password2'] = $data['password'] = \Joomla\CMS\Language\Text::_('LIB_J2XML_PASSWORD_NOT_AVAILABLE');
 			}
 			elseif (isset($data['password_clear']))
 			{
@@ -260,7 +266,7 @@ class User extends Table
 			}
 			else
 			{
-				$data['password'] = $data['password2'] = \JUserHelper::genRandomPassword();
+				$data['password'] = $data['password2'] = \Joomla\CMS\User\UserHelper::genRandomPassword();
 			}
 
 			$userId = $data['id'];
@@ -275,7 +281,14 @@ class User extends Table
 
 			if (!$data['id'] || ($import_users == 2))
 			{
-				$user = new $userModel();
+				if ($version->isCompatible('4'))
+				{
+					$user = $mvcFactory->createModel('User', 'Administrator', ['ignore_request' => true]);
+				}
+				else
+				{
+					$user = new $userModel();
+				}
 				$result = $user->save($data);
 
 				$id = $db->setQuery(
@@ -291,13 +304,13 @@ class User extends Table
 
 					if ($error = $user->getError())
 					{
-						\JLog::add(
-								new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_USER_IMPORTED_WITH_ERRORS', $data['name']), \JLog::WARNING, 'lib_j2xml'));
-						\JLog::add(new \JLogEntry($error, \JLog::WARNING, 'lib_j2xml'));
+						\Joomla\CMS\Log\Log::add(
+								new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_IMPORTED_WITH_ERRORS', $data['name']), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($error, \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
 					}
 					else
 					{
-						\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_USER_IMPORTED', $data['name']), \JLog::INFO, 'lib_j2xml'));
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_IMPORTED', $data['name']), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 					}
 
 					if (isset($data['password_crypted']))
@@ -367,19 +380,19 @@ class User extends Table
 					}
 					catch (\JException $e)
 					{
-						\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_USER_NO_PROFILE', $data['name']), \JLog::WARNING, 'lib_j2xml'));
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NO_PROFILE', $data['name']), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
 					}
 				}
 				else
 				{
 					if ($error = $user->getError())
 					{
-						\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_USER_NOT_IMPORTED', $data['name'], $error), \JLog::ERROR, 'lib_j2xml'));
-						\JLog::add(new \JLogEntry($error, \JLog::WARNING, 'lib_j2xml'));
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NOT_IMPORTED', $data['name'], $error), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($error, \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
 					}
 					else
 					{
-						\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_USER_NOT_IMPORTED', $data['name'], \JText::_('LIB_J2XML_MSG_UNKNOWN_ERROR')), \JLog::ERROR, 'lib_j2xml'));
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NOT_IMPORTED', $data['name'], \Joomla\CMS\Language\Text::_('LIB_J2XML_MSG_UNKNOWN_ERROR')), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 					}
 
 				}
@@ -413,7 +426,7 @@ class User extends Table
 	 */
 	public static function prepareData ($record, &$data, $params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$params->set('extension', 'com_users');
 		parent::prepareData($record, $data, $params);
@@ -452,6 +465,17 @@ class User extends Table
 		{
 			$data['activation'] = '';
 		}
+
+		// Ensure params is an array (Joomla 5 User::bind() calls Registry::loadArray)
+		if (!isset($data['params']) || $data['params'] === null || $data['params'] === '')
+		{
+			$data['params'] = [];
+		}
+		elseif (is_string($data['params']))
+		{
+			$decoded = json_decode($data['params'], true);
+			$data['params'] = is_array($decoded) ? $decoded : [];
+		}
 	}
 
 	/**
@@ -471,14 +495,14 @@ class User extends Table
 	 */
 	public static function export ($id, &$xml, $options)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if ($xml->xpath("//j2xml/user/id[text() = '" . $id . "']"))
 		{
 			return;
 		}
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 
 		$item = new User($db);
 		if (!$item->load($id))
@@ -499,7 +523,7 @@ class User extends Table
 		$fragment->appendXML($item->toXML());
 		$doc->documentElement->appendChild($fragment);
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 
 		/*$query = $db->getQuery(true)
 			->select($db->quoteName('l.id'))
@@ -544,7 +568,7 @@ class User extends Table
 			}
 		}
 
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		if (isset($options['fields']) && $options['fields'] && $version->isCompatible('3.7'))
 		{
 			if ($version->isCompatible('4'))

@@ -16,7 +16,7 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or die();
+defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Version;
 use Joomla\CMS\Component\ComponentHelper;
@@ -34,7 +34,7 @@ if (!class_exists('JDatabaseDriver'))
  * Table
  *
  */
-class Table extends \JTable
+class Table extends \Joomla\CMS\Table\Table
 {
 
 	/**
@@ -84,7 +84,7 @@ class Table extends \JTable
 	 */
 	function __construct ($table, $key, &$db)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		parent::__construct($table, $key, $db);
 
@@ -121,7 +121,7 @@ class Table extends \JTable
 	 */
 	public function load ($keys = null, $reset = true)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if ($ret = parent::load($keys, $reset))
 		{
@@ -166,7 +166,7 @@ class Table extends \JTable
 				// FROM #__viewlevels f RIGHT JOIN '.$this->_tbl.' a ON f.id =
 				// a.access WHERE a.id = '. (int)$this->id;
 				$query = $this->_db->getQuery(true);
-				$version = new \JVersion();
+				$version = new \Joomla\CMS\Version();
 				$serverType = $version->isCompatible('3.5') ? $this->_db->getServerType() : 'mysql';
 
 				if ($serverType === 'postgresql')
@@ -202,7 +202,7 @@ class Table extends \JTable
 	 */
 	protected function _serialize ($tag = true)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// Initialise variables.
 		$xml = array();
@@ -276,7 +276,7 @@ class Table extends \JTable
 
 	protected function _setValue ($k, $v)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$kOpen = $k;
 		/**
@@ -353,7 +353,7 @@ class Table extends \JTable
 	 */
 	function toXML ($mapKeysToText = false)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		return $this->_serialize();
 	}
@@ -374,12 +374,12 @@ class Table extends \JTable
 	 */
 	public static function prepareData ($record, &$data, $params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$version = new \JVersion();
-		$nullDate = ($version->isCompatible('4') ? null : \JFactory::getDbo()->getNullDate());
+		$version = new \Joomla\CMS\Version();
+		$nullDate = ($version->isCompatible('4') ? null : \Joomla\CMS\Factory::getDbo()->getNullDate());
 
-		$userid = \JFactory::getUser()->id;
+		$userid = \Joomla\CMS\Factory::getUser()->id;
 
 		$data = self::xml2array($record, version_compare($params->get('version', Version::$DOCVERSION), '19.2.0', 'ne'));
 
@@ -492,7 +492,7 @@ class Table extends \JTable
 
 		if (isset($data['params']))
 		{
-			$registry = new \JRegistry($data['params']);
+			$registry = new \Joomla\Registry\Registry($data['params']);
 			$data['params'] = $registry->toArray();
 		}
 	}
@@ -509,7 +509,7 @@ class Table extends \JTable
 	 */
 	public static function getArticleId ($article, $defaultArticleId = 0)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if (is_numeric($article))
 		{
@@ -517,7 +517,7 @@ class Table extends \JTable
 		}
 		else
 		{
-			$db = \JFactory::getDBO();
+			$db = \Joomla\CMS\Factory::getDbo();
 			$i = strrpos($article, '/');
 			$query = $db->getQuery(true)
 				->select($db->quoteName('c.id'))
@@ -548,16 +548,16 @@ class Table extends \JTable
 	 */
 	public static function getUserId ($username, $defaultUserId = null)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db = \JFactory::getDBO();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$query = $db->getQuery(true)
 			->select($db->quoteName('id'))
 			->from($db->quoteName('#__users'))
 			->where($db->quoteName('username') . ' = ' . $db->quote($username));
 		$userId = $db->setQuery($query)->loadResult();
 
-		$userId = $userId ?: ($defaultUserId ?: \JFactory::getUser()->id);
+		$userId = $userId ?: ($defaultUserId ?: \Joomla\CMS\Factory::getUser()->id);
 
 		return $userId;
 	}
@@ -573,15 +573,15 @@ class Table extends \JTable
 	 */
 	public static function getUsergroupId ($usergroup, $import = true)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if (empty($usergroup))
 		{
-			$usergroupId = \JComponentHelper::getParams('com_users')->get('new_usertype');
+			$usergroupId = \Joomla\CMS\Component\ComponentHelper::getParams('com_users')->get('new_usertype');
 		}
 		elseif (!is_numeric($usergroup))
 		{
-			$db = \JFactory::getDBO();
+			$db = \Joomla\CMS\Factory::getDbo();
 			$query = $db->getQuery(true)
 				->select($db->quoteName('id'))
 				->from($db->quoteName('#__j2xml_usergroups', 'g'))
@@ -608,13 +608,13 @@ class Table extends \JTable
 					$usergroupId = $db->setQuery($query)->loadResult();
 					if (!($usergroupId = $db->setQuery($query)->loadResult()))
 					{
-						$u = \JTable::getInstance('Usergroup');
+						$u = \Joomla\CMS\Table\Table::getInstance('Usergroup');
 						$u->save(array(
 							'title' => $groups[$j],
 							'parent_id' => $parentId
 						));
 						$usergroupId = $u->id;
-						\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_USERGROUP_IMPORTED', $groups[$j]), \JLog::INFO, 'lib_j2xml'));
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERGROUP_IMPORTED', $groups[$j]), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 					}
 					else
 					{
@@ -637,7 +637,7 @@ class Table extends \JTable
 
 	public static function getAccessId ($access)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if (is_numeric($access))
 		{
@@ -645,7 +645,7 @@ class Table extends \JTable
 		}
 		else
 		{
-			$db = \JFactory::getDBO();
+			$db = \Joomla\CMS\Factory::getDbo();
 			$query = $db->getQuery(true)
 				->select($db->quoteName('id'))
 				->from($db->quoteName('#__viewlevels'))
@@ -674,9 +674,9 @@ class Table extends \JTable
 	 */
 	public static function getCategoryId ($category, $extension, $defaultCategoryId = 0)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db = \JFactory::getDBO();
+		$db = \Joomla\CMS\Factory::getDbo();
 		if (!is_numeric($category))
 		{
 			$query = $db->getQuery(true)
@@ -732,9 +732,9 @@ class Table extends \JTable
 	 */
 	public static function getTagId ($tag)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 
 		try
 		{
@@ -779,16 +779,16 @@ class Table extends \JTable
 	 */
 	protected static function fixDate ($date)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		if (empty($date) || ($date == '0000-00-00 00:00:00') || ($date == '1970-01-01 00:00:00'))
 		{
-			$date = ($version->isCompatible('4') ? null : \JFactory::getDbo()->getNullDate());
+			$date = ($version->isCompatible('4') ? null : \Joomla\CMS\Factory::getDbo()->getNullDate());
 		}
 		else
 		{
-			$d = new \JDate($date);
+			$d = new \Joomla\CMS\Date\Date($date);
 			$date = $d->toSQL(false);
 		}
 
@@ -805,7 +805,7 @@ class Table extends \JTable
 	 */
 	private static function xml2array ($xmlObject, $htmlEntityDecode = false, $out = null)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if (is_object($xmlObject))
 		{
@@ -926,11 +926,11 @@ class Table extends \JTable
 	 */
 	public function bind ($array, $ignore = '')
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if (isset($array['params']) && is_array($array['params']))
 		{
-			$registry = new \JRegistry($array['params']);
+			$registry = new \Joomla\Registry\Registry($array['params']);
 			$array['params'] = (string) $registry;
 		}
 
@@ -956,7 +956,7 @@ class Table extends \JTable
 	 */
 	public static function getMenuId ($menu, $defaultMenuId = 0)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if (is_numeric($menu))
 		{
@@ -964,7 +964,7 @@ class Table extends \JTable
 		}
 		else
 		{
-			$db = \JFactory::getDBO();
+			$db = \Joomla\CMS\Factory::getDbo();
 			$query = $db->getQuery(true);
 			$path = $query->concatenate(array($db->quoteName('menutype'), $db->quoteName('path')), '/');
 			$query->select($db->quoteName('id'))
@@ -990,31 +990,31 @@ class Table extends \JTable
 	 */
 	protected static function setAssociations($id, $language, $associations, $context)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
-		\JLog::add(new \JLogEntry($id, \JLog::DEBUG, 'com_j2xml'));
-		\JLog::add(new \JLogEntry($language, \JLog::DEBUG, 'com_j2xml'));
-		\JLog::add(new \JLogEntry(print_r($associations, true), \JLog::DEBUG, 'com_j2xml'));
-		\JLog::add(new \JLogEntry($context, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($id, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($language, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(print_r($associations, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($context, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if (empty($associations))
 		{
 			return;
 		}
 
-		$db      = \JFactory::getDbo();
-		$version = new \JVersion();
+		$db      = \Joomla\CMS\Factory::getDbo();
+		$version = new \Joomla\CMS\Version();
 
 		if ($version->isCompatible('3.2'))
 		{
-			$isEnabled = \JLanguageAssociations::isEnabled();
+			$isEnabled = \Joomla\CMS\Language\Associations::isEnabled();
 		}
 		else
 		{
-			if (\JLanguageMultilang::isEnabled())
+			if (\Joomla\CMS\Language\Multilang::isEnabled())
 			{
-				$params = new \JRegistry(\JPluginHelper::getPlugin('system', 'languagefilter')->params);
+				$params = new \Joomla\Registry\Registry(\JPluginHelper::getPlugin('system', 'languagefilter')->params);
 
-				$isEnabled  = (boolean) $params->get('item_associations', true);
+				$isEnabled  = (bool) $params->get('item_associations', true);
 			}
 			else
 			{
@@ -1031,7 +1031,7 @@ class Table extends \JTable
 			}
 			else
 			{
-				\JArrayHelper::toInteger($associations);
+				\Joomla\Utilities\ArrayHelper::toInteger($associations);
 			}
 
 			// Unset any invalid associations
@@ -1047,7 +1047,7 @@ class Table extends \JTable
 			if ($associations && $language === '*')
 			{
 				$app->enqueueMessage(
-					\JText::_(strtoupper(strtok($associationsContext, '.')) . '_ERROR_ALL_LANGUAGE_ASSOCIATED'),
+					\Joomla\CMS\Language\Text::_(strtoupper(strtok($associationsContext, '.')) . '_ERROR_ALL_LANGUAGE_ASSOCIATED'),
 					'warning'
 					);
 			}
@@ -1116,8 +1116,8 @@ class Table extends \JTable
 	 */
 	public static function getContactId ($contact, $defaultContactId = 0)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
-		\JLog::add(new \JLogEntry($contact, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($contact, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if (is_numeric($contact))
 		{
@@ -1125,7 +1125,7 @@ class Table extends \JTable
 		}
 		else
 		{
-			$db = \JFactory::getDBO();
+			$db = \Joomla\CMS\Factory::getDbo();
 			$i = strrpos($contact, '/');
 			$query = $db->getQuery(true)
 				->select($db->quoteName('c.id'))
@@ -1134,7 +1134,7 @@ class Table extends \JTable
 				->where($db->quoteName('cc.extension') . ' = ' . $db->quote('com_contact'))
 				->where($db->quoteName('c.alias') . ' = ' . $db->quote(substr($contact, $i + 1)))
 				->where($db->quoteName('cc.path') . ' = ' . $db->quote(substr($contact, 0, $i)));
-			\JLog::add(new \JLogEntry($query, \JLog::DEBUG, 'com_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 			$contactId = $db->setQuery($query)->loadResult();
 			if (!$contactId)
 			{
@@ -1159,7 +1159,7 @@ class Table extends \JTable
 	 */
 	public static function getWeblinkId ($weblink, $defaultWeblinkId = 0)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if (is_numeric($weblink))
 		{
@@ -1167,7 +1167,7 @@ class Table extends \JTable
 		}
 		else
 		{
-			$db = \JFactory::getDBO();
+			$db = \Joomla\CMS\Factory::getDbo();
 			$i = strrpos($weblink, '/');
 			$query = $db->getQuery(true)
 				->select($db->quoteName('c.id'))

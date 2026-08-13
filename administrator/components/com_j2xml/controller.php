@@ -25,7 +25,7 @@ JLoader::import('joomla.application.component.controller');
  *
  * @since 1.5.3
  */
-class J2xmlController extends JControllerLegacy
+class J2xmlController extends \Joomla\CMS\MVC\Controller\BaseController
 {
 
 	/**
@@ -41,10 +41,10 @@ class J2xmlController extends JControllerLegacy
 	 */
 	public function display($cachable = false, $urlparams = false)
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// Get the document object.
-		$document = JFactory::getDocument();
+		$document = \Joomla\CMS\Factory::getDocument();
 
 		// Set the default view name and format from the Request.
 		$vName = $this->input->get('view', 'import');
@@ -54,7 +54,7 @@ class J2xmlController extends JControllerLegacy
 		// Get and render the view.
 		if ($view = $this->getView($vName, $vFormat))
 		{
-			$ftp = JClientHelper::setCredentialsFromRequest('ftp');
+			$ftp = \Joomla\CMS\Client\ClientHelper::setCredentialsFromRequest('ftp');
 			$view->ftp = &$ftp;
 
 			// Get the model for the view.

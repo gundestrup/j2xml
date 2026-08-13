@@ -24,7 +24,7 @@ jimport('joomla.application.component.controllerform');
 /**
  * Website controller class.
  */
-class J2xmlControllerWebsite extends JControllerForm
+class J2xmlControllerWebsite extends \Joomla\CMS\MVC\Controller\FormController
 {
 
 	/**

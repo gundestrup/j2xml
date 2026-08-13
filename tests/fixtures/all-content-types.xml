@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Comprehensive test fixture: all J2XML content types
+  Used for testing import of all content types (users, articles, categories,
+  contacts, modules, menus, tags, fields, viewlevels, fieldgroups, menutypes)
+
+  XML format version: 21.12.0 (current)
+-->
+<j2xml version="21.12.0">
+  <!-- View levels -->
+  <viewlevel>
+    <id>5</id>
+    <title>Test View Level</title>
+    <ordering>0</ordering>
+    <rules>[5]</rules>
+  </viewlevel>
+
+  <!-- Categories -->
+  <category>
+    <id>10</id>
+    <title>Test Category Articles</title>
+    <alias>test-category-articles</alias>
+    <description><![CDATA[<p>Test category for articles</p>]]></description>
+    <published>1</published>
+    <access>1</access>
+    <parent_id>1</parent_id>
+    <level>2</level>
+    <path>uncategorised/test-category-articles</path>
+    <language>*</language>
+    <extension>com_content</extension>
+    <params>{}</params>
+  </category>
+  <category>
+    <id>11</id>
+    <title>Test Category Contacts</title>
+    <alias>test-category-contacts</alias>
+    <description><![CDATA[<p>Test category for contacts</p>]]></description>
+    <published>1</published>
+    <access>1</access>
+    <parent_id>1</parent_id>
+    <level>2</level>
+    <path>uncategorised/test-category-contacts</path>
+    <language>*</language>
+    <extension>com_contact</extension>
+    <params>{}</params>
+  </category>
+
+  <!-- Tags -->
+  <tag>
+    <id>10</id>
+    <title>Test Tag One</title>
+    <alias>test-tag-one</alias>
+    <description><![CDATA[<p>First test tag</p>]]></description>
+    <published>1</published>
+    <access>1</access>
+    <parent_id>0</parent_id>
+    <level>1</level>
+    <path>test-tag-one</path>
+    <language>*</language>
+  </tag>
+  <tag>
+    <id>11</id>
+    <title>Test Tag Two</title>
+    <alias>test-tag-two</alias>
+    <description><![CDATA[<p>Second test tag</p>]]></description>
+    <published>1</published>
+    <access>1</access>
+    <parent_id>0</parent_id>
+    <level>1</level>
+    <path>test-tag-two</path>
+    <language>*</language>
+  </tag>
+
+  <!-- Users -->
+  <user>
+    <id>50</id>
+    <name>Fixture User One</name>
+    <username>fixtureuser1</username>
+    <email>fixtureuser1@example.com</email>
+    <password></password>
+    <block>0</block>
+    <sendEmail>0</sendEmail>
+    <registerDate>2024-01-10 08:00:00</registerDate>
+    <lastvisitDate>0000-00-00 00:00:00</lastvisitDate>
+    <activation>0</activation>
+    <params></params>
+    <group>2</group>
+  </user>
+  <user>
+    <id>51</id>
+    <name>Fixture User Two</name>
+    <username>fixtureuser2</username>
+    <email>fixtureuser2@example.com</email>
+    <password></password>
+    <block>0</block>
+    <sendEmail>0</sendEmail>
+    <registerDate>2024-02-15 10:00:00</registerDate>
+    <lastvisitDate>0000-00-00 00:00:00</lastvisitDate>
+    <activation>0</activation>
+    <params></params>
+    <group>2</group>
+    <group>3</group>
+  </user>
+
+  <!-- Articles (Content) -->
+  <content>
+    <id>100</id>
+    <title>Fixture Article One</title>
+    <alias>fixture-article-one</alias>
+    <introtext><![CDATA[<p>This is fixture article one intro text.</p>]]></introtext>
+    <fulltext><![CDATA[<p>This is fixture article one full text.</p>]]></fulltext>
+    <state>1</state>
+    <catid>10</catid>
+    <created>2024-01-20 10:00:00</created>
+    <created_by>50</created_by>
+    <created_by_alias>Fixture Author</created_by_alias>
+    <modified>2024-01-20 10:00:00</modified>
+    <modified_by>50</modified_by>
+    <metakey>fixture, test, one</metakey>
+    <metadesc>Fixture article one for testing.</metadesc>
+    <language>*</language>
+    <featured>0</featured>
+    <hits>0</hits>
+    <publish_up>2024-01-20 10:00:00</publish_up>
+    <publish_down>0000-00-00 00:00:00</publish_down>
+    <access>1</access>
+  </content>
+  <content>
+    <id>101</id>
+    <title>Fixture Article Two</title>
+    <alias>fixture-article-two</alias>
+    <introtext><![CDATA[<p>Second fixture article with special chars: café naïve &amp; &lt; &gt; "quotes"</p>]]></introtext>
+    <fulltext><![CDATA[<p>Full text with unicode: 日本語 €100</p>]]></fulltext>
+    <state>1</state>
+    <catid>10</catid>
+    <created>2024-02-01 14:00:00</created>
+    <created_by>51</created_by>
+    <modified>2024-02-01 14:00:00</modified>
+    <modified_by>51</modified_by>
+    <metakey></metakey>
+    <metadesc>Second fixture article.</metadesc>
+    <language>*</language>
+    <featured>1</featured>
+    <hits>0</hits>
+    <publish_up>2024-02-01 14:00:00</publish_up>
+    <publish_down>0000-00-00 00:00:00</publish_down>
+    <access>1</access>
+  </content>
+
+  <!-- Contacts -->
+  <contact>
+    <id>20</id>
+    <name>Fixture Contact One</name>
+    <alias>fixture-contact-one</alias>
+    <user_id>50</user_id>
+    <catid>11</catid>
+    <published>1</published>
+    <access>1</access>
+    <created>2024-01-25 10:00:00</created>
+    <created_by>50</created_by>
+    <modified>2024-01-25 10:00:00</modified>
+    <modified_by>50</modified_by>
+    <language>*</language>
+    <metadesc></metadesc>
+    <metakey></metakey>
+    <params>{}</params>
+    <metadata>{}</metadata>
+  </contact>
+
+  <!-- Menu Types -->
+  <menutype>
+    <id>10</id>
+    <menutype>testmenu</menutype>
+    <title>Test Menu</title>
+    <description>Test menu for J2XML testing</description>
+  </menutype>
+
+  <!-- Menu Items -->
+  <menu>
+    <id>100</id>
+    <menutype>testmenu</menutype>
+    <title>Test Menu Item One</title>
+    <alias>test-menu-item-one</alias>
+    <path>test-menu-item-one</path>
+    <link>index.php?option=com_content&amp;view=article&amp;id=100</link>
+    <type>component</type>
+    <published>1</published>
+    <parent_id>0</parent_id>
+    <level>1</level>
+    <component_id>com_content</component_id>
+    <access>1</access>
+    <language>*</language>
+    <params>{}</params>
+  </menu>
+
+  <!-- Modules -->
+  <module>
+    <id>100</id>
+    <title>Test Custom Module</title>
+    <module>mod_custom</module>
+    <position>position-7</position>
+    <content><![CDATA[<p>This is a test custom module.</p>]]></content>
+    <ordering>1</ordering>
+    <published>1</published>
+    <access>1</access>
+    <language>*</language>
+    <params>{}</params>
+    <menus>all</menus>
+  </module>
+
+  <!-- Field Groups -->
+  <fieldgroup>
+    <id>10</id>
+    <context>com_content.article</context>
+    <title>Test Field Group</title>
+    <description>Test field group for articles</description>
+    <state>1</state>
+    <created>2024-01-15 10:00:00</created>
+    <created_by>50</created_by>
+    <modified>2024-01-15 10:00:00</modified>
+    <modified_by>50</modified_by>
+    <params>{}</params>
+  </fieldgroup>
+
+  <!-- Fields -->
+  <field>
+    <id>10</id>
+    <context>com_content.article</context>
+    <name>test-field-text</name>
+    <title>Test Text Field</title>
+    <label>Test Text Field</label>
+    <default_value></default_value>
+    <type>text</type>
+    <fieldparams>{}</fieldparams>
+    <description>A test text field</description>
+    <state>1</state>
+    <required>0</required>
+    <only_use_in_subform>0</only_use_in_subform>
+    <created>2024-01-15 10:00:00</created>
+    <created_user_id>50</created_user_id>
+    <modified>2024-01-15 10:00:00</modified>
+    <modified_by>50</modified_by>
+    <group>Test Field Group</group>
+  </field>
+</j2xml>

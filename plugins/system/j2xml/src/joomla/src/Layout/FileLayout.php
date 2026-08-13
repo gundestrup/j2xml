@@ -28,7 +28,7 @@ class FileLayout extends _FileLayout
 {
     public function getDefaultIncludePaths()
     {
-    	\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'plg_system_j2xml'));
+    	\JLog::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
     	$layoutPath = array(JPATH_PLUGINS . '/system/j2xml/layouts');
 

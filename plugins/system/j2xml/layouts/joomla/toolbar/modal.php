@@ -19,9 +19,9 @@
 // no direct access
 defined('_JEXEC') or die('Restricted access.');
 
-\JLog::add(new \JLogEntry(__FILE__, \JLog::DEBUG, 'plg_system_j2xml'));
+\JLog::add(new \Joomla\CMS\Log\LogEntry(__FILE__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
-JHtml::_('behavior.core');
+\Joomla\CMS\HTML\HTMLHelper::_('behavior.core');
 
 /**
  * Generic toolbar button layout to open a modal
@@ -39,10 +39,10 @@ $icon	 = isset($displayData['icon']) ? $displayData['icon'] : 'out-3';
 $title	= $displayData['title'];
 $text	 = isset($displayData['text']) ? $displayData['text'] : '';
 $onclick  = isset($displayData['onclick']) ? $displayData['onclick'] : '';
-$cancel   = isset($displayData['cancel']) ? $displayData['cancel'] : JText::_('JCANCEL');
-$ok	   = isset($displayData['ok']) ? $displayData['ok'] : JText::_('JOK');
+$cancel   = isset($displayData['cancel']) ? $displayData['cancel'] : \Joomla\CMS\Language\Text::_('JCANCEL');
+$ok	   = isset($displayData['ok']) ? $displayData['ok'] : \Joomla\CMS\Language\Text::_('JOK');
 
-JText::script('JLIB_HTML_PLEASE_MAKE_A_SELECTION_FROM_THE_LIST');
+\Joomla\CMS\Language\Text::script('JLIB_HTML_PLEASE_MAKE_A_SELECTION_FROM_THE_LIST');
 $message = "alert(Joomla.JText._('JLIB_HTML_PLEASE_MAKE_A_SELECTION_FROM_THE_LIST'));";
 ?>
 <button type="button" class="<?php echo $class; ?>" data-toggle="modal" onclick="if (document.adminForm.boxchecked.value==0){<?php echo $message; ?>}else{jQuery('#<?php echo $selector; ?>Modal').modal('show');return true;}">
@@ -52,10 +52,10 @@ $message = "alert(Joomla.JText._('JLIB_HTML_PLEASE_MAKE_A_SELECTION_FROM_THE_LIS
 
 <!-- Render the modal -->
 <?php
-$version = new \JVersion();
+$version = new \Joomla\CMS\Version();
 if ($version->isCompatible('3.4'))
 {
-	echo JHtml::_('bootstrap.renderModal', $selector . 'Modal', array(
+	echo \Joomla\CMS\HTML\HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal', array(
 		'url'         => $displayData['doTask'],
 		'title'	      => $title,
 		'modalWidth'  => '40',
@@ -68,7 +68,7 @@ if ($version->isCompatible('3.4'))
 }
 else
 {
-	echo JHtml::_(
+	echo \Joomla\CMS\HTML\HTMLHelper::_(
 		'bootstrap.renderModal',
 		$selector . 'Modal',
 		array(

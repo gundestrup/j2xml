@@ -43,11 +43,11 @@ class J2xmlViewUsernotes extends J2xmlView
 	 */
 	public function __construct($config = array())
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		parent::__construct($config);
 
-		$jform = JFactory::getApplication()->input->post->get('jform', array(), 'array');
+		$jform = \Joomla\CMS\Factory::getApplication()->input->post->get('jform', array(), 'array');
 
 		$this->params->loadArray($jform);
 	}

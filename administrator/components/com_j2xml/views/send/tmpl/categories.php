@@ -20,39 +20,39 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
 
-$version = new JVersion();
+$version = new \Joomla\CMS\Version();
 
 $ui = $version->isCompatible('4') ? 'uitab' : 'bootstrap';
 
 if ($version->isCompatible('3.4'))
 {
-	JHtml::_('behavior.formvalidator');
+	\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidator');
 }
 else
 {
-	JHtml::_('behavior.formvalidation');
+	\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidation');
 }
 
-JHtml::_('behavior.keepalive');
-JHtml::_('jquery.framework', true);
+\Joomla\CMS\HTML\HTMLHelper::_('behavior.keepalive');
+\Joomla\CMS\HTML\HTMLHelper::_('jquery.framework', true);
 
 if ($version->isCompatible( '4' ))
 {
-	JFactory::getDocument()->getWebAssetManager()
+	\Joomla\CMS\Factory::getDocument()->getWebAssetManager()
 		->useScript( 'webcomponent.toolbar-button' );
 	$this->document->addScriptOptions('progressBarContainerClass', 'progress');
 	$this->document->addScriptOptions('progressBarClass', 'progress-bar progress-bar-striped progress-bar-animated bg-success');
 }
 else
 {
-	JHtml::_('behavior.framework');
-	JHtml::_($ui . '.tooltip', '.hasTooltip', array(
+	\Joomla\CMS\HTML\HTMLHelper::_('behavior.framework');
+	\Joomla\CMS\HTML\HTMLHelper::_($ui . '.tooltip', '.hasTooltip', array(
 		'placement' => 'bottom'
 	));
-	JHtml::_('formbehavior.chosen', 'select');
+	\Joomla\CMS\HTML\HTMLHelper::_('formbehavior.chosen', 'select');
 
-	JHtml::_('behavior.tabstate');
-	JFactory::getDocument()->addScriptDeclaration(<<<EOL
+	\Joomla\CMS\HTML\HTMLHelper::_('behavior.tabstate');
+	\Joomla\CMS\Factory::getDocument()->addScriptDeclaration(<<<EOL
 		// Select first tab
 		jQuery(document).ready(function() {
 			jQuery( '#j2xmlCategoriesTabs a:first' ).tab( 'show' );
@@ -67,33 +67,33 @@ EOL
 	);
 }
 
-$params = JComponentHelper::getParams('com_j2xml');
+$params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 $min = ($params->get('debug', 0) ? '' : '.min');
-$doc = JFactory::getDocument();
+$doc = \Joomla\CMS\Factory::getDocument();
 $doc->addScript("../media/lib_eshiol_phpxmlrpc/js/jquery.xmlrpc{$min}.js", array('version'=>'auto'));
 $doc->addScript("../media/lib_eshiol_j2xml/js/j2xml{$min}.js", array('version'=>'auto'));
 
-JText::script('COM_J2XML_SEND_ERROR');
-JText::script('COM_J2XML_SEND_ERROR_REMOTEURL_IS_REQUIRED');
-JText::script('LIB_J2XML_SENDING');
-JText::script('LIB_J2XML_MSG_XMLRPC_DISABLED');
-JText::script('LIB_J2XML_ERROR_UNKNOWN');
-JText::script('LIB_J2XML_ERROR_STATUS0');
+\Joomla\CMS\Language\Text::script('COM_J2XML_SEND_ERROR');
+\Joomla\CMS\Language\Text::script('COM_J2XML_SEND_ERROR_REMOTEURL_IS_REQUIRED');
+\Joomla\CMS\Language\Text::script('LIB_J2XML_SENDING');
+\Joomla\CMS\Language\Text::script('LIB_J2XML_MSG_XMLRPC_DISABLED');
+\Joomla\CMS\Language\Text::script('LIB_J2XML_ERROR_UNKNOWN');
+\Joomla\CMS\Language\Text::script('LIB_J2XML_ERROR_STATUS0');
 ?>
 
-<form action="<?php echo JRoute::_('index.php?option=com_j2xml'); ?>"
+<form action="<?php echo \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml'); ?>"
 	id="adminForm" method="post" name="adminForm"
 	class="form-horizontal form-validate">
 
 	<?php $fieldsets = $this->form->getFieldsets(); ?>
 
-	<?php echo JHtml::_($ui . '.startTabSet', 'j2xmlCategories', array('active' => 'export')); ?>
+	<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.startTabSet', 'j2xmlCategories', array('active' => 'export')); ?>
 
 	<?php foreach ($fieldsets as $name => $fieldSet) : ?>
 		<?php if ($name == 'details') continue; ?>
 
 		<?php $label = empty($fieldSet->label) ? 'COM_J2XML_' . $name . '_FIELDSET_LABEL' : $fieldSet->label; ?>
-		<?php echo JHtml::_($ui . '.addTab', 'j2xmlCategories', $name, Text::_($label)); ?>
+		<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.addTab', 'j2xmlCategories', $name, Text::_($label)); ?>
 
 		<?php foreach ($this->form->getFieldset($name) as $field) : ?>
 			<?php
@@ -101,9 +101,9 @@ JText::script('LIB_J2XML_ERROR_STATUS0');
 				$groupClass = $field->type === 'Spacer' ? ' field-spacer' : '';
 			?>
 			<?php if ($field->showon) : ?>
-				<?php JHtml::_('jquery.framework'); ?>
-				<?php JHtml::_('script', 'jui/cms.js', array('version' => 'auto', 'relative' => true)); ?>
-				<?php $dataShowOn = ' data-showon=\'' . json_encode(JFormHelper::parseShowOnConditions($field->showon, $field->formControl, $field->group)) . '\''; ?>
+				<?php \Joomla\CMS\HTML\HTMLHelper::_('jquery.framework'); ?>
+				<?php \Joomla\CMS\HTML\HTMLHelper::_('script', 'jui/cms.js', array('version' => 'auto', 'relative' => true)); ?>
+				<?php $dataShowOn = ' data-showon=\'' . json_encode(\Joomla\CMS\Form\FormHelper::parseShowOnConditions($field->showon, $field->formControl, $field->group)) . '\''; ?>
 			<?php endif; ?>
 			<?php if ($field->hidden) : ?>
 				<?php echo $field->input; ?>
@@ -121,9 +121,9 @@ JText::script('LIB_J2XML_ERROR_STATUS0');
 			<?php endif; ?>
 		<?php endforeach; ?>
 
-		<?php echo JHtml::_($ui . '.endTab'); ?>
+		<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.endTab'); ?>
 	<?php endforeach; ?>
-	<?php echo JHtml::_($ui . '.endTabSet'); ?>
+	<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.endTabSet'); ?>
 
 	<button class="hidden" id="j2xmlSendOkBtn" type="button"
 		onclick="
@@ -134,7 +134,7 @@ JText::script('LIB_J2XML_ERROR_STATUS0');
 				window.top.setTimeout('window.parent.jQuery(\'#j2xmlSendModal\').modal(\'hide\')', 700);
 
 				eshiol.j2xml.send({
-					export_url: 'index.php?option=com_j2xml&task=categories.export&format=json&<?php echo JSession::getFormToken(); ?>=1',
+					export_url: 'index.php?option=com_j2xml&task=categories.export&format=json&<?php echo \Joomla\CMS\Session\Session::getFormToken(); ?>=1',
 					remote_url: jQuery('#jform_remote_url').val().replace(/\/?$/, '/') + 'index.php?option=com_j2xml&task=services.import&format=xmlrpc',
 					compression: jQuery('#jform_compression').val(),
 					password: jQuery('input:radio[name=\'jform\[password\]\']:checked').first().val(),

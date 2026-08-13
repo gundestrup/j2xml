@@ -45,7 +45,7 @@ class Server
     /**
      * @var string
      * Defines how functions in $dmap will be invoked: either using an xml-rpc Request object or plain php values.
-     * Valid strings are 'xmlrpcvals', 'phpvals' or 'epivals' (only for use by polyfill-xmlrpc).
+     * Valid strings are 'xmlrpcvals', 'phpvals' or 'epivals' (the latter only for use by polyfill-xmlrpc).
      *
      * @todo create class constants for these
      */
@@ -163,7 +163,7 @@ class Server
      *                             - docstring (optional)
      *                             - signature (array, optional)
      *                             - signature_docs (array, optional)
-     *                             - parameters_type (string, optional)
+     *                             - parameters_type (string, optional). Valid values: 'phpvals', 'xmlrpcvals'
      *                             - exception_handling (int, optional)
      * @param boolean $serviceNow set to false in order to prevent the server from running upon construction
      */
@@ -390,57 +390,13 @@ class Server
                 static::$_xmlrpcs_occurred_errors . "+++END+++");
         }
 
-        $header = $resp->xml_header($respCharset);
-        if ($this->debug > 0) {
-            $header .= $this->serializeDebug($respCharset);
-        }
-
-        // Do not create response serialization if it has already happened. Helps to build json magic
-        /// @todo what if the payload was created targeting a different charset than $respCharset?
-        ///       Also, if we do not call serialize(), the request will not set its content-type to have the charset declared
-        $payload = $resp->getPayload();
-        if (empty($payload)) {
-            $payload = $resp->serialize($respCharset);
-        }
-        $payload = $header . $payload;
+        $payload = $this->generatePayload($resp, $respCharset);
 
         if ($returnPayload) {
             return $payload;
         }
 
-        // if we get a warning/error that has output some text before here, then we cannot
-        // add a new header. We cannot say we are sending xml, either...
-        if (!headers_sent()) {
-            header('Content-Type: ' . $resp->getContentType());
-            // we do not know if client actually told us an accepted charset, but if it did we have to tell it what we did
-            header("Vary: Accept-Charset");
-
-            // http compression of output: only if we can do it, and we want to do it, and client asked us to,
-            // and php ini settings do not force it already
-            $phpNoSelfCompress = !ini_get('zlib.output_compression') && (ini_get('output_handler') != 'ob_gzhandler');
-            if ($this->compress_response && $respEncoding != '' && $phpNoSelfCompress) {
-                if (strpos($respEncoding, 'gzip') !== false && function_exists('gzencode')) {
-                    $payload = gzencode($payload);
-                    header("Content-Encoding: gzip");
-                    header("Vary: Accept-Encoding");
-                } elseif (strpos($respEncoding, 'deflate') !== false && function_exists('gzcompress')) {
-                    $payload = gzcompress($payload);
-                    header("Content-Encoding: deflate");
-                    header("Vary: Accept-Encoding");
-                }
-            }
-
-            // Do not output content-length header if php is compressing output for us: it will mess up measurements.
-            // Note that Apache/mod_php will add (and even alter!) the Content-Length header on its own, but only for
-            // responses up to 8000 bytes
-            if ($phpNoSelfCompress) {
-                header('Content-Length: ' . (int)strlen($payload));
-            }
-        } else {
-            $this->getLogger()->error('XML-RPC: ' . __METHOD__ . ': http headers already sent before response is fully generated. Check for php warning or error messages');
-        }
-
-        print $payload;
+        $this->printPayload($payload, $resp->getContentType(), $respEncoding);
 
         // return response, in case subclasses want it
         return $resp;
@@ -461,7 +417,7 @@ class Server
      * @param int $exceptionHandling @see $this->exception_handling
      * @return void
      *
-     * @todo raise a warning if the user tries to register a 'system.' method
+     * @todo raise a warning if the user tries to register a 'system.' method - but allow users to do that
      */
     public function addToMap($methodName, $function, $sig = null, $doc = false, $sigDoc = false, $parametersType = false,
         $exceptionHandling = false)
@@ -654,7 +610,8 @@ class Server
 
         // 'guestimate' request encoding
         /// @todo check if mbstring is enabled and automagic input conversion is on: it might mingle with this check???
-        $reqEncoding = XMLParser::guessEncoding(isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : '',
+        $parser = $this->getParser();
+        $reqEncoding = $parser->guessEncoding(isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : '',
             $data);
 
         return null;
@@ -670,7 +627,7 @@ class Server
      * @return Response
      * @throws \Exception in case the executed method does throw an exception (and depending on server configuration)
      *
-     * @todo either rename this function or move the 'execute' part out of it...
+     * @todo either rename this function or, probably better, move the 'execute' part out of it...
      */
     public function parseRequest($data, $reqEncoding = '')
     {
@@ -690,7 +647,7 @@ class Server
                     $data = mb_convert_encoding($data, 'UTF-8', $reqEncoding);
                 } else {
                     if ($reqEncoding == 'ISO-8859-1') {
-                        $data = utf8_encode($data);
+                        $data = mb_convert_encoding($data, 'UTF-8', 'ISO-8859-1');
                     } else {
                         $this->getLogger()->error('XML-RPC: ' . __METHOD__ . ': unsupported charset encoding of received request: ' . $reqEncoding);
                     }
@@ -709,6 +666,9 @@ class Server
 
         $xmlRpcParser = $this->getParser();
         try {
+            // NB: during parsing, the actual type of php values built will be automatically switched from
+            // $this->functions_parameters_type to the one defined in the method signature, if defined there. This
+            // happens via the parser making a call to $this->methodNameCallback as soon as it finds the desired method
             $_xh = $xmlRpcParser->parse($data, $this->functions_parameters_type, XMLParser::ACCEPT_REQUEST, $options);
             // BC
             if (!is_array($_xh)) {
@@ -720,10 +680,11 @@ class Server
 
         if ($_xh['isf'] == 3) {
             // (BC) we return XML error as a faultCode
+            // unless we are in "interop faults" mode
             preg_match('/^XML error ([0-9]+)/', $_xh['isf_reason'], $matches);
             return new static::$responseClass(
                 0,
-                PhpXmlRpc::$xmlrpcerrxml + (int)$matches[1],
+                (PhpXmlRpc::isUsingInteropFaults() ? PhpXmlRpc::$xmlrpcerr['invalid_xml'] : PhpXmlRpc::$xmlrpcerrxml + (int)$matches[1]),
                 $_xh['isf_reason']);
         } elseif ($_xh['isf']) {
             /// @todo separate better the various cases, as we have done in Request::parseResponse: invalid xml-rpc vs.
@@ -846,11 +807,11 @@ class Server
             $exception_handling = $this->exception_handling;
         }
 
-        // If debug level is 3, we should catch all errors generated during processing of user function, and log them
-        // as part of response
-        if ($this->debug > 2) {
-            self::$_xmlrpcs_prev_ehandler = set_error_handler(array('\PhpXmlRpc\Server', '_xmlrpcs_errorHandler'));
-        }
+        // We always catch all errors generated during processing of user function, and log them as part of response;
+        // if debug level is 3 or above, we also serialize them in the response as comments
+        self::$_xmlrpcs_prev_ehandler = set_error_handler(array('\PhpXmlRpc\Server', '_xmlrpcs_errorHandler'));
+
+        /// @todo what about using output-buffering as well, in case user code echoes anything to screen?
 
         try {
             // Allow mixed-convention servers
@@ -884,7 +845,7 @@ class Server
                         $r = call_user_func_array($func, array($methodName, $params, $this->user_data));
                         // mimic EPI behaviour: if we get an array that looks like an error, make it an error response
                         if (is_array($r) && array_key_exists('faultCode', $r) && array_key_exists('faultString', $r)) {
-                            $r = new static::$responseClass(0, (integer)$r['faultCode'], (string)$r['faultString']);
+                            $r = new static::$responseClass(0, (int)$r['faultCode'], (string)$r['faultString']);
                         } else {
                             // functions using EPI api should NOT return resp objects, so make sure we encode the
                             // return type correctly
@@ -909,12 +870,11 @@ class Server
             // proper error-response
             switch ($exception_handling) {
                 case 2:
-                    if ($this->debug > 2) {
-                        if (self::$_xmlrpcs_prev_ehandler) {
-                            set_error_handler(self::$_xmlrpcs_prev_ehandler);
-                        } else {
-                            restore_error_handler();
-                        }
+                    if (self::$_xmlrpcs_prev_ehandler) {
+                        set_error_handler(self::$_xmlrpcs_prev_ehandler);
+                        self::$_xmlrpcs_prev_ehandler = null;
+                    } else {
+                        restore_error_handler();
                     }
                     throw $e;
                 case 1:
@@ -932,12 +892,11 @@ class Server
             // proper error-response
             switch ($exception_handling) {
                 case 2:
-                    if ($this->debug > 2) {
-                        if (self::$_xmlrpcs_prev_ehandler) {
-                            set_error_handler(self::$_xmlrpcs_prev_ehandler);
-                        } else {
-                            restore_error_handler();
-                        }
+                    if (self::$_xmlrpcs_prev_ehandler) {
+                        set_error_handler(self::$_xmlrpcs_prev_ehandler);
+                        self::$_xmlrpcs_prev_ehandler = null;
+                    } else {
+                        restore_error_handler();
                     }
                     throw $e;
                 case 1:
@@ -952,17 +911,84 @@ class Server
             }
         }
 
-        if ($this->debug > 2) {
-            // note: restore the error handler we found before calling the user func, even if it has been changed
-            // inside the func itself
-            if (self::$_xmlrpcs_prev_ehandler) {
-                set_error_handler(self::$_xmlrpcs_prev_ehandler);
-            } else {
-                restore_error_handler();
-            }
+        // note: restore the error handler we found before calling the user func, even if it has been changed
+        // inside the func itself
+        if (self::$_xmlrpcs_prev_ehandler) {
+            set_error_handler(self::$_xmlrpcs_prev_ehandler);
+            self::$_xmlrpcs_prev_ehandler = null;
+        } else {
+            restore_error_handler();
         }
 
         return $r;
+    }
+
+    /**
+     * @param Response $resp
+     * @param string $respCharset
+     * @return string
+     */
+    protected function generatePayload($resp, $respCharset)
+    {
+        $header = $resp->xml_header($respCharset);
+        if ($this->debug > 0) {
+            $header .= $this->serializeDebug($respCharset);
+        }
+
+        // Do not create response serialization if it has already happened. Helps to build json magic
+        /// @todo what if the payload was created targeting a different charset than $respCharset?
+        ///       Also, if we do not call serialize(), the request will not set its content-type to have the charset declared
+        $payload = $resp->getPayload();
+        if (empty($payload)) {
+            $payload = $resp->serialize($respCharset);
+        }
+
+        return $header . $payload;
+    }
+
+    /**
+     * @param string $payload
+     * @param string $respContentType
+     * @param string $respEncoding
+     * @return void
+     */
+    protected function printPayload($payload, $respContentType, $respEncoding)
+    {
+        // if we get a warning/error that has output some text before here, then we cannot
+        // add a new header. We cannot say we are sending xml, either...
+        if (!headers_sent()) {
+            header('Content-Type: ' . $respContentType);
+            // we do not know if client actually told us an accepted charset, but if it did we have to tell it what we did
+            header("Vary: Accept-Charset");
+
+            // http compression of output: only if we can do it, and we want to do it, and client asked us to,
+            // and php ini settings do not force it already
+            $phpNoSelfCompress = !ini_get('zlib.output_compression') && (ini_get('output_handler') != 'ob_gzhandler');
+            if ($this->compress_response && $respEncoding != '' && $phpNoSelfCompress) {
+                if (strpos($respEncoding, 'gzip') !== false && function_exists('gzencode')) {
+                    $payload = gzencode($payload);
+                    header("Content-Encoding: gzip");
+                    header("Vary: Accept-Encoding");
+                } elseif (strpos($respEncoding, 'deflate') !== false && function_exists('gzcompress')) {
+                    $payload = gzcompress($payload);
+                    header("Content-Encoding: deflate");
+                    header("Vary: Accept-Encoding");
+                }
+            }
+
+            // Do not output content-length header if php is compressing output for us: it will mess up measurements.
+            // Note that Apache/mod_php will add (and even alter!) the Content-Length header on its own, but only for
+            // responses up to 8000 bytes
+            if ($phpNoSelfCompress) {
+                header('Content-Length: ' . (int)strlen($payload));
+            }
+        } else {
+            /// @todo allow the user to easily subclass this in a way which allows the resp. headers to be already sent
+            ///       by now without flagging it as an error. Possibly check for presence of Content-Type header
+            $this->getLogger()->error('XML-RPC: ' . __METHOD__ . ': http headers already sent before response is fully generated. Check for php warning or error messages');
+        }
+
+        print $payload;
     }
 
     /**
@@ -973,7 +999,7 @@ class Server
      * @internal
      * @param $methodName
      * @param XMLParser $xmlParser
-     * @param resource $parser
+     * @param null|resource $parser
      * @return void
      * @throws NoSuchMethodException
      *
@@ -981,7 +1007,7 @@ class Server
      *       dirtying a lot the logic, as we would have back to both parseRequest() and execute() methods the info
      *       about the matched method handler, in order to avoid doing the work twice...
      */
-    public function methodNameCallback($methodName, $xmlParser, $parser)
+    public function methodNameCallback($methodName, $xmlParser, $parser = null)
     {
         $sysCall = $this->isSyscall($methodName);
         $dmap = $sysCall ? $this->getSystemDispatchMap() : $this->dmap;
@@ -997,15 +1023,15 @@ class Server
             /// @todo this should be done by a method of the XMLParser
             switch ($dmap[$methodName]['parameters_type']) {
                 case XMLParser::RETURN_PHP:
-                    xml_set_element_handler($parser, 'xmlrpc_se', 'xmlrpc_ee_fast');
+                    xml_set_element_handler($parser, array($xmlParser, 'xmlrpc_se'), array($xmlParser, 'xmlrpc_ee_fast'));
                     break;
                 case XMLParser::RETURN_EPIVALS:
-                    xml_set_element_handler($parser, 'xmlrpc_se', 'xmlrpc_ee_epi');
+                    xml_set_element_handler($parser, array($xmlParser, 'xmlrpc_se'), array($xmlParser, 'xmlrpc_ee_epi'));
                     break;
                 /// @todo log a warning on unsupported return type
                 case XMLParser::RETURN_XMLRPCVALS:
                 default:
-                    xml_set_element_handler($parser, 'xmlrpc_se', 'xmlrpc_ee');
+                    xml_set_element_handler($parser, array($xmlParser, 'xmlrpc_se'), array($xmlParser, 'xmlrpc_ee'));
             }
         }
     }
@@ -1101,7 +1127,8 @@ class Server
         $outAr = array(
             // xml-rpc spec: always supported
             'xmlrpc' => array(
-                'specUrl' => 'http://www.xmlrpc.com/spec', // NB: the spec sits now at http://xmlrpc.com/spec.md
+                // NB: the spec sits now at https://xmlrpc.com/spec.md
+                'specUrl' => 'http://www.xmlrpc.com/spec',
                 'specVersion' => 1
             ),
             // if we support system.xxx functions, we always support multicall, too...
@@ -1131,6 +1158,7 @@ class Server
         // support for "standard" error codes
         if (PhpXmlRpc::$xmlrpcerr['unknown_method'] === Interop::$xmlrpcerr['unknown_method']) {
             $outAr['faults_interop'] = array(
+                // Note that, as of 2025/10, the following URL does not respond anymore
                 'specUrl' => 'http://xmlrpc-epi.sourceforge.net/specs/rfc.fault_codes.php',
                 'specVersion' => 20010516
             );
@@ -1305,6 +1333,7 @@ class Server
 
         $req = new Request($methName->scalarVal());
         foreach ($params as $i => $param) {
+            /// @todo allow support for named parameters, if this is a jsonrpc 2.0 call
             if (!$req->addParam($param)) {
                 $i++; // for error message, we count params from 1
                 return static::_xmlrpcs_multicall_error(new static::$responseClass(0,
@@ -1415,8 +1444,12 @@ class Server
             return;
         }
 
-        //if ($errCode != E_NOTICE && $errCode != E_WARNING && $errCode != E_USER_NOTICE && $errCode != E_USER_WARNING)
-        if ($errCode != E_STRICT) {
+        // From PHP 8.4 the E_STRICT constant has been deprecated and will emit deprecation notices.
+        // PHP core and core extensions since PHP 8.0 and later do not emit E_STRICT notices at all.
+        // On PHP 7 series before PHP 7.4, some functions conditionally emit E_STRICT notices.
+        if (PHP_VERSION_ID >= 70400) {
+            static::error_occurred($errString);
+        } elseif ($errCode != E_STRICT) {
             static::error_occurred($errString);
         }
 

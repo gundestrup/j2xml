@@ -16,7 +16,7 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or die();
+defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Table;
 \JLoader::import('eshiol.J2xml.Table.Table');
@@ -39,7 +39,7 @@ class Viewlevel extends Table
 	 */
 	public function __construct (\JDatabaseDriver $db)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		parent::__construct('#__viewlevels', 'id', $db);
 	}
@@ -51,13 +51,13 @@ class Viewlevel extends Table
 	 */
 	function toXML ($mapKeysToText = false)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$this->_excluded = array_merge($this->_excluded, array(
 				'rules'
 		));
 
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		$serverType = $version->isCompatible('3.5') ? $this->_db->getServerType() : 'mysql';
 
 		if ($serverType === 'postgresql')
@@ -117,7 +117,7 @@ class Viewlevel extends Table
 	 */
 	public static function import ($xml, &$params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$import_viewlevels = $params->get('viewlevels', 1);
 		if ($import_viewlevels == 0)
@@ -125,7 +125,7 @@ class Viewlevel extends Table
 			return;
 		}
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		foreach ($xml->xpath("//j2xml/viewlevel[not(title = '')]") as $record)
 		{
 			self::prepareData($record, $data, $params);
@@ -194,13 +194,13 @@ class Viewlevel extends Table
 							}
 							else // import usergroup
 							{
-								$u = new \Joomla\CMS\Table\Usergroup($db); // \JTable::getInstance('Usergroup');
+								$u = new \Joomla\CMS\Table\Usergroup($db); // \Joomla\CMS\Table\Table::getInstance('Usergroup');
 								$u->save(array(
 										'title' => $groups[$j],
 										'parent_id' => $id
 								));
 								$id = $u->id;
-								\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_USERGROUP_IMPORTED', $groups[$j]), \JLog::INFO, 'lib_j2xml'));
+								\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERGROUP_IMPORTED', $groups[$j]), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 							}
 						}
 						$rules_id[$i] = $id;
@@ -210,11 +210,11 @@ class Viewlevel extends Table
 
 				if ($table->save($data))
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_VIEWLEVEL_IMPORTED', $table->title), \JLog::INFO, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_VIEWLEVEL_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 				}
 				else
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_VIEWLEVEL_NOT_IMPORTED', $data['title'], $table->getError()), \JLog::ERROR, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_VIEWLEVEL_NOT_IMPORTED', $data['title'], $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 				}
 
 				$table = null;
@@ -239,14 +239,14 @@ class Viewlevel extends Table
 	 */
 	public static function export ($id, &$xml, $options)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if ($xml->xpath("//j2xml/viewlevel/id[text() = '" . $id . "']"))
 		{
 			return;
 		}
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$item = new Viewlevel($db);
 		if (!$item->load($id))
 		{

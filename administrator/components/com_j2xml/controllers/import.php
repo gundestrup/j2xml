@@ -23,7 +23,7 @@ defined('_JEXEC') or die();
  *
  * @since  3.9
  */
-class J2xmlControllerImport extends JControllerLegacy
+class J2xmlControllerImport extends \Joomla\CMS\MVC\Controller\BaseController
 {
 	/**
 	 * Import data.
@@ -34,17 +34,17 @@ class J2xmlControllerImport extends JControllerLegacy
 	 */
 	public function import()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// Check for request forgeries.
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		if ($version->isCompatible('3.7'))
 		{
 			$this->checkToken();
 		}
 		else
 		{
-			JSession::checkToken() or jexit(JText::_('JINVALID_TOKEN'));
+			\Joomla\CMS\Session\Session::checkToken() or jexit(\Joomla\CMS\Language\Text::_('JINVALID_TOKEN'));
 		}
 
 		/** @var J2xmlModelImport $model */
@@ -53,7 +53,7 @@ class J2xmlControllerImport extends JControllerLegacy
 		// @todo Reset the users acl here as well to kill off any missing bits.
 		$result = $model->import();
 
-		$app = JFactory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 		$redirect_url = $app->getUserState('com_j2xml.redirect_url');
 
 		if (!$redirect_url)
@@ -62,14 +62,14 @@ class J2xmlControllerImport extends JControllerLegacy
 		}
 
 		// Don't redirect to an external URL.
-		if (!JUri::isInternal($redirect_url))
+		if (!\Joomla\CMS\Uri\Uri::isInternal($redirect_url))
 		{
 			$redirect_url = '';
 		}
 
 		if (empty($redirect_url))
 		{
-			$redirect_url = JRoute::_('index.php?option=com_j2xml&view=import', false);
+			$redirect_url = \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&view=import', false);
 		}
 		else
 		{
@@ -92,9 +92,9 @@ class J2xmlControllerImport extends JControllerLegacy
 	 */
 	public function ajax_upload()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$app = JFactory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 		$message = $app->getUserState('com_j2xml.message');
 
 		$jform  = $app->input->post->get('jform', array(), 'array');
@@ -108,7 +108,7 @@ class J2xmlControllerImport extends JControllerLegacy
 		}
 		// Save the posted data in the session.
 		$app->setUserState('com_j2xml.import.data', $data);
-		JLog::add(new JLogEntry('setUserState(\'com_j2xml.import.data\'): ' . print_r($data, true), JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('setUserState(\'com_j2xml.import.data\'): ' . print_r($data, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// Do import
 		// hide error messages

@@ -108,7 +108,7 @@ class Com_J2xmlInstallerScript
 
 					if (version_compare($this->fromVersion, '3.9.3', '<'))
 					{
-						Factory::getApplication()->enqueueMessage(JText::_('COM_J2XML_NOTINSTALLED'));
+						Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2XML_NOTINSTALLED'));
 
 						return false;
 					}
@@ -164,15 +164,15 @@ class Com_J2xmlInstallerScript
 		jimport('joomla.filesystem.file');
 		foreach ($files as $file)
 		{
-		    if (JFile::exists(JPATH_ROOT . $file))
+		    if (\Joomla\CMS\Filesystem\File::exists(JPATH_ROOT . $file))
 			{
-				if (JFile::delete(JPATH_ROOT . $file))
+				if (\Joomla\CMS\Filesystem\File::delete(JPATH_ROOT . $file))
 				{
-					Factory::getApplication()->enqueueMessage(JText::sprintf('COM_J2XML_FILE_DELETED', $file));
+					Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('COM_J2XML_FILE_DELETED', $file));
 				}
 				else
 				{
-					Factory::getApplication()->enqueueMessage(JText::sprintf('FILES_JOOMLA_ERROR_FILE_FOLDER', $file));
+					Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('FILES_JOOMLA_ERROR_FILE_FOLDER', $file));
 				}
 			}
 		}
@@ -180,15 +180,15 @@ class Com_J2xmlInstallerScript
 		jimport('joomla.filesystem.folder');
 		foreach ($folders as $folder)
 		{
-		    if (JFolder::exists(JPATH_ROOT . $folder))
+		    if (\Joomla\CMS\Filesystem\Folder::exists(JPATH_ROOT . $folder))
 			{
-				if (JFolder::delete(JPATH_ROOT . $folder))
+				if (\Joomla\CMS\Filesystem\Folder::delete(JPATH_ROOT . $folder))
 				{
-					Factory::getApplication()->enqueueMessage(JText::sprintf('COM_J2XML_FOLDER_DELETED', $folder));
+					Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('COM_J2XML_FOLDER_DELETED', $folder));
 				}
 				else
 			    {
-			        Factory::getApplication()->enqueueMessage(JText::sprintf('FILES_JOOMLA_ERROR_FILE_FOLDER', $folder));
+			        Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('FILES_JOOMLA_ERROR_FILE_FOLDER', $folder));
 				}
 		    }
 		}

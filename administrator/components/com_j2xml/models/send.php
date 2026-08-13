@@ -23,7 +23,7 @@ defined('_JEXEC') or die();
  *
  * @since 3.9.0
  */
-class J2xmlModelSend extends JModelForm
+class J2xmlModelSend extends \Joomla\CMS\MVC\Model\FormModel
 {
 
 	/**
@@ -44,9 +44,9 @@ class J2xmlModelSend extends JModelForm
 	 */
 	public function __construct($config = array())
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$layout = JFactory::getApplication()->input->get('layout', 'default');
+		$layout = \Joomla\CMS\Factory::getApplication()->input->get('layout', 'default');
 		if ($layout != 'default')
 		{
 			$this->_context .= '.' . $layout;
@@ -69,7 +69,7 @@ class J2xmlModelSend extends JModelForm
 	 */
 	public function getForm($data = array(), $loadData = true)
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		try
 		{
@@ -78,7 +78,7 @@ class J2xmlModelSend extends JModelForm
 				'load_data' => false
 			));
 
-			$layout = JFactory::getApplication()->input->get('layout', 'default');
+			$layout = \Joomla\CMS\Factory::getApplication()->input->get('layout', 'default');
 			if ($layout != 'default')
 			{
 				$form->loadFile('send_' . $layout);
@@ -133,20 +133,20 @@ class J2xmlModelSend extends JModelForm
 	 */
 	protected function loadFormData()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// Check the session for previously entered form data.
-		$data   = JFactory::getApplication()->getUserState('com_j2xml.send.data', array());
-		JLog::add(new JLogEntry('getUserState(\'com_j2xml.send.data\'): ' . print_r($data, true), JLog::DEBUG, 'com_j2xml'));
+		$data   = \Joomla\CMS\Factory::getApplication()->getUserState('com_j2xml.send.data', array());
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('getUserState(\'com_j2xml.send.data\'): ' . print_r($data, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 		$jform  = array();
 		foreach($data as $k => $v)
 		{
 			$jform['send_' . $k] = $v;
 		}
 
-		$params = JComponentHelper::getParams('com_j2xml');
+		$params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 		$data   = array_merge($params->toArray(), $jform);
-		JLog::add(new JLogEntry('data: ' . print_r($data, true), JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('data: ' . print_r($data, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$this->preprocessData($this->_context, $data);
 

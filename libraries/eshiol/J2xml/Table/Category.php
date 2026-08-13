@@ -16,7 +16,7 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or die();
+defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Image;
 use eshiol\J2xml\Table\Table;
@@ -47,7 +47,7 @@ class Category extends Table
 	 */
 	public function __construct (\JDatabaseDriver $db)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		parent::__construct('#__categories', 'id', $db);
 	}
@@ -59,9 +59,9 @@ class Category extends Table
 	 */
 	function toXML ($mapKeysToText = false)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		if ($version->isCompatible('3.1'))
 		{
 			// $this->_aliases['tag'] = 'SELECT t.path FROM #__tags t,
@@ -113,7 +113,7 @@ class Category extends Table
 	 */
 	public static function import ($xml, &$params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$import_categories = $params->get('categories', 0);
 		if ($import_categories == 0)
@@ -123,17 +123,17 @@ class Category extends Table
 		if (!$extension)
 			return;
 
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		if ($version->isCompatible('3.2'))
 		{
-			\JFactory::getApplication()->getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
+			\Joomla\CMS\Factory::getApplication()->getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
 		}
 		else
 		{
-			\JFactory::getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
+			\Joomla\CMS\Factory::getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
 		}
-		$db = \JFactory::getDbo();
-		$version = new \JVersion();
+		$db = \Joomla\CMS\Factory::getDbo();
+		$version = new \Joomla\CMS\Version();
 
 		$keep_id = $params->get('keep_id', 0);
 		if ($keep_id)
@@ -166,7 +166,7 @@ class Category extends Table
 
 			if ($data['parent_id'] === false)
 			{
-				\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_CATEGORY_NOT_IMPORTED', $data['title'], \JText::_('JLIB_DATABASE_ERROR_INVALID_PARENT_ID')), \JLog::ERROR, 'lib_j2xml'));
+				\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_CATEGORY_NOT_IMPORTED', $data['title'], \Joomla\CMS\Language\Text::_('JLIB_DATABASE_ERROR_INVALID_PARENT_ID')), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 			}
 			else
 			{
@@ -186,10 +186,10 @@ class Category extends Table
 				$db->setQuery($query);
 				$category = $db->loadObject();
 
-				$table = new \JTableCategory($db);
+				$table = new \Joomla\CMS\Table\Category($db);
 				if (!$category || ($import_categories == 2))
 				{
-					// $table = JTable::getInstance('category');
+					// $table = \Joomla\CMS\Table\Table::getInstance('category');
 
 					if (!$category && ($keep_id == 1))
 					{
@@ -254,7 +254,7 @@ class Category extends Table
 					}
 
 					// Trigger the onContentBeforeSave event.
-					// $results = \JFactory::getApplication()->triggerEvent('onContentBeforeSave',
+					// $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentBeforeSave',
 					// array($this->_option.'.category', &$table, $isNew));
 					// if (!in_array(false, $results, true))
 
@@ -293,24 +293,24 @@ class Category extends Table
 
 						if ($keep_id && ($id > 0) && ($id != $table->id))
 						{
-							\JLog::add(
-									new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_CATEGORY_ID_PRESENT', $table->title, $id, $table->id), \JLog::WARNING,
+							\Joomla\CMS\Log\Log::add(
+									new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_CATEGORY_ID_PRESENT', $table->title, $id, $table->id), \Joomla\CMS\Log\Log::WARNING,
 											'lib_j2xml'));
 						}
 						elseif (empty($data['original_id']))
 						{
-							\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_CATEGORY_IMPORTED', $table->title), \JLog::INFO, 'lib_j2xml'));
+							\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_CATEGORY_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 						}
 						else
 						{
-							\JLog::add(
-									new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_CATEGORY_ID_PRESENT', $table->title, $data['original_id'], $table->id), \JLog::WARNING,
+							\Joomla\CMS\Log\Log::add(
+									new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_CATEGORY_ID_PRESENT', $table->title, $data['original_id'], $table->id), \Joomla\CMS\Log\Log::WARNING,
 											'lib_j2xml'));
 						}
 					}
 					else
 					{
-						\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_CATEGORY_NOT_IMPORTED', $data['title'], $table->getError()), \JLog::ERROR, 'lib_j2xml'));
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_CATEGORY_NOT_IMPORTED', $data['title'], $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 					}
 					$table = null;
 				}
@@ -350,14 +350,14 @@ class Category extends Table
 	 */
 	public static function export ($id, &$xml, $options)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if ($xml->xpath("//j2xml/category/id[text() = '" . $id . "']"))
 		{
 			return;
 		}
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$item = new Category($db);
 		if (!$item->load($id))
 		{
@@ -444,10 +444,10 @@ class Category extends Table
 
 		if (isset($options['tags']) && $options['tags'])
 		{
-			$version = new \JVersion();
+			$version = new \Joomla\CMS\Version();
 			if ($version->isCompatible('3.1'))
 			{
-				$htags = new \JHelperTags();
+				$htags = new \Joomla\CMS\Helper\TagsHelper();
 				$itemtags = $htags->getItemTags($item->extension . '.category', $id);
 				foreach ($itemtags as $itemtag)
 				{
@@ -466,9 +466,9 @@ class Category extends Table
 	 */
 	public static function prepareData ($record, &$data, $params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db = \JFactory::getDBO();
+		$db = \Joomla\CMS\Factory::getDbo();
 
 		$params->set('extension', 'com_categories');
 		parent::prepareData($record, $data, $params);

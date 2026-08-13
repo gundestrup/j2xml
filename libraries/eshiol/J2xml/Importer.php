@@ -52,8 +52,8 @@ use eshiol\J2xml\Version;
 \JLoader::import('eshiol.J2xml.Table.Weblink');
 \JLoader::import('eshiol.J2xml.Version');
 
-\JTable::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_weblinks/tables');
-\JTable::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_contact/tables');
+\Joomla\CMS\Table\Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_weblinks/tables');
+\Joomla\CMS\Table\Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_contact/tables');
 
 // \JLoader::import('joomla.filesystem.folder');
 \JLoader::import('joomla.filesystem.file');
@@ -81,31 +81,31 @@ class Importer
 
 	function __construct ()
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db         = \JFactory::getDbo();
-		$version    = new \JVersion();
+		$db         = \Joomla\CMS\Factory::getDbo();
+		$version    = new \Joomla\CMS\Version();
 		$serverType = $version->isCompatible('3.5') ? $db->getServerType() : 'mysql';
 
 		// Merge the default translation with the current translation
 		if ($version->isCompatible('3.2'))
 		{
-			$jlang = \JFactory::getApplication()->getLanguage();
+			$jlang = \Joomla\CMS\Factory::getApplication()->getLanguage();
 		}
 		else
 		{
-			$jlang = \JFactory::getLanguage();
+			$jlang = \Joomla\CMS\Factory::getLanguage();
 		}
 		$jlang->load('lib_j2xml', JPATH_SITE, 'en-GB', true);
 		$jlang->load('lib_j2xml', JPATH_SITE, $jlang->getDefault(), true);
 		$jlang->load('lib_j2xml', JPATH_SITE, null, true);
 
-		$this->_user     = \JFactory::getUser();
+		$this->_user     = \Joomla\CMS\Factory::getUser();
 		$this->_nullDate = $db->getNullDate();
 		$this->_user_id  = $this->_user->get('id');
-		$this->_now      = \JFactory::getDate()->format("%Y-%m-%d-%H-%M-%S");
-		$this->_option   = (PHP_SAPI != 'cli') ? \JFactory::getApplication()->input->getCmd('option') : 'cli_' .
-				 strtolower(get_class(\JApplicationCli::getInstance()));
+		$this->_now      = \Joomla\CMS\Factory::getDate()->format("%Y-%m-%d-%H-%M-%S");
+		$this->_option   = (PHP_SAPI != 'cli') ? \Joomla\CMS\Factory::getApplication()->input->getCmd('option') : 'cli_' .
+				 strtolower(get_class(\Joomla\CMS\Application\CliApplication::getInstance()));
 
 		try {
 			$query = "CREATE TABLE IF NOT EXISTS " . $db->quoteName("#__j2xml_usergroups");
@@ -180,7 +180,7 @@ class Importer
 	 */
 	function import ($xml, $params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$import_viewlevels = $params->get('viewlevels');
 		if ($import_viewlevels)
@@ -188,7 +188,7 @@ class Importer
 			Viewlevel::import($xml, $params);
 		}
 
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		if ($version->isCompatible('3.7'))
 		{
 			$import_fields = $params->get('fields', 0);
@@ -259,9 +259,9 @@ class Importer
 
 		if ($params->get('fire', 1))
 		{
-			\JPluginHelper::importPlugin('j2xml');
+			\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 			// Trigger the onAfterImport event.
-			$results = \JFactory::getApplication()->triggerEvent('onContentAfterImport', array(
+			$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentAfterImport', array(
 				'com_j2xml.import',
 				&$xml,
 				$params

@@ -26,7 +26,7 @@ class PlgSystemJ2xmlInstallerScript
 	public function install ($parent)
 	{
 		// Enable plugin
-		$db = JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$query = $db->getQuery(true)
 			->update('#__extensions')
 			->set($db->quoteName('enabled') . ' = 1')

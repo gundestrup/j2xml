@@ -20,15 +20,15 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
 
-$version = new JVersion();
+$version = new \Joomla\CMS\Version();
 
 if ($version->isCompatible('3.4'))
 {
-	JHtml::_('behavior.formvalidator');
+	\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidator');
 }
 else
 {
-	JHtml::_('behavior.formvalidation');
+	\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidation');
 }
 
 if ($version->isCompatible('4'))
@@ -39,13 +39,13 @@ else
 {
 	$ui = 'bootstrap';
 
-	JHtml::_($ui . '.tooltip', '.hasTooltip', array(
+	\Joomla\CMS\HTML\HTMLHelper::_($ui . '.tooltip', '.hasTooltip', array(
 		'placement' => 'bottom'
 	));
-	JHtml::_('formbehavior.chosen', 'select');
+	\Joomla\CMS\HTML\HTMLHelper::_('formbehavior.chosen', 'select');
 
-	JHtml::_('behavior.tabstate');
-	JFactory::getDocument()->addScriptDeclaration(<<<EOL
+	\Joomla\CMS\HTML\HTMLHelper::_('behavior.tabstate');
+	\Joomla\CMS\Factory::getDocument()->addScriptDeclaration(<<<EOL
 		// Select first tab
 		jQuery(document).ready(function() {
 			jQuery( '#j2xmlWeblinksTabs a:first' ).tab( 'show' );
@@ -56,19 +56,19 @@ EOL
 ?>
 
 <form
-	action="<?php echo JRoute::_('index.php?option=com_j2xml&task=weblinks.display&format=raw'); ?>"
+	action="<?php echo \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&task=weblinks.display&format=raw'); ?>"
 	id="adminForm" method="post" name="adminForm" autocomplete="off"
 	class="form-horizontal">
 
 	<?php $fieldsets = $this->form->getFieldsets(); ?>
 
-	<?php echo JHtml::_($ui . '.startTabSet', 'j2xmlWeblinks', array('active' => 'export')); ?>
+	<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.startTabSet', 'j2xmlWeblinks', array('active' => 'export')); ?>
 
 	<?php foreach ($fieldsets as $name => $fieldSet) : ?>
 		<?php if ($name == 'details') continue; ?>
 
 		<?php $label = empty($fieldSet->label) ? 'COM_J2XML_' . $name . '_FIELDSET_LABEL' : $fieldSet->label; ?>
-		<?php echo JHtml::_($ui . '.addTab', 'j2xmlWeblinks', $name, Text::_($label)); ?>
+		<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.addTab', 'j2xmlWeblinks', $name, Text::_($label)); ?>
 
 		<?php foreach ($this->form->getFieldset($name) as $field) : ?>
 			<?php
@@ -76,9 +76,9 @@ EOL
 				$groupClass = $field->type === 'Spacer' ? ' field-spacer' : '';
 			?>
 			<?php if ($field->showon) : ?>
-				<?php JHtml::_('jquery.framework'); ?>
-				<?php JHtml::_('script', 'jui/cms.js', array('version' => 'auto', 'relative' => true)); ?>
-				<?php $dataShowOn = ' data-showon=\'' . json_encode(JFormHelper::parseShowOnConditions($field->showon, $field->formControl, $field->group)) . '\''; ?>
+				<?php \Joomla\CMS\HTML\HTMLHelper::_('jquery.framework'); ?>
+				<?php \Joomla\CMS\HTML\HTMLHelper::_('script', 'jui/cms.js', array('version' => 'auto', 'relative' => true)); ?>
+				<?php $dataShowOn = ' data-showon=\'' . json_encode(\Joomla\CMS\Form\FormHelper::parseShowOnConditions($field->showon, $field->formControl, $field->group)) . '\''; ?>
 			<?php endif; ?>
 			<?php if ($field->hidden) : ?>
 				<?php echo $field->input; ?>
@@ -96,9 +96,9 @@ EOL
 			<?php endif; ?>
 		<?php endforeach; ?>
 
-		<?php echo JHtml::_($ui . '.endTab'); ?>
+		<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.endTab'); ?>
 	<?php endforeach; ?>
-	<?php echo JHtml::_($ui . '.endTabSet'); ?>
+	<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.endTabSet'); ?>
 
 	<button class="hidden" id="j2xmlExportOkBtn" type="button"
 		onclick="this.form.submit();window.top.setTimeout('window.parent.jQuery(\'#j2xmlExportModal\').modal(\'hide\')', 700);">

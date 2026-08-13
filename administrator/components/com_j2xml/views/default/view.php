@@ -23,7 +23,7 @@ defined('_JEXEC') or die();
  *
  * @since  3.9
  */
-class J2xmlViewDefault extends JViewLegacy
+class J2xmlViewDefault extends \Joomla\CMS\MVC\View\HtmlView
 {
 	/**
 	 * Constructor.
@@ -34,9 +34,9 @@ class J2xmlViewDefault extends JViewLegacy
 	 */
 	public function __construct($config = null)
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$app = JFactory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 		parent::__construct($config);
 		$this->_addPath('template', $this->_basePath . '/views/default/tmpl');
 		$this->_addPath('template', JPATH_THEMES . '/' . $app->getTemplate() . '/html/com_j2xml/default');
@@ -53,7 +53,7 @@ class J2xmlViewDefault extends JViewLegacy
 	 */
 	public function display($tpl = null)
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// Get data from the model.
 		$state = $this->get('State');
@@ -83,15 +83,15 @@ class J2xmlViewDefault extends JViewLegacy
 	 */
 	protected function addToolbar()
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$canDo = JHelperContent::getActions('com_j2xml');
-		JToolbarHelper::title(JText::_('COM_J2XML_HEADER_' . $this->getName()), 'upload import');
+		$canDo = \Joomla\CMS\Helper\ContentHelper::getActions('com_j2xml');
+		\Joomla\CMS\Toolbar\ToolbarHelper::title(\Joomla\CMS\Language\Text::_('COM_J2XML_HEADER_' . $this->getName()), 'upload import');
 
 		if ($canDo->get('core.admin') || $canDo->get('core.options'))
 		{
-			JToolbarHelper::preferences('com_j2xml');
-			JToolbarHelper::divider();
+			\Joomla\CMS\Toolbar\ToolbarHelper::preferences('com_j2xml');
+			\Joomla\CMS\Toolbar\ToolbarHelper::divider();
 		}
 	}
 }

@@ -16,7 +16,7 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or die();
+defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 /**
  *
@@ -46,7 +46,7 @@ class Module extends \eshiol\J2XML\Table\Table
 	 */
 	function toXML ($mapKeysToText = false)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 		$this->_aliases['menus'] = "SELECT DISTINCT IF(SIGN(mm.menuid) > 0, 'include', 'exclude') FROM `#__modules_menu` mm INNER JOIN `#__menu` m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " .
 			 (int) $this->id . " UNION SELECT 'all' FROM `#__modules_menu` mm WHERE mm.moduleid = " . (int) $this->id . " AND mm.menuid = 0";
 		$this->_aliases['menu'] = "SELECT CONCAT(m.menutype, '/', m.path) FROM `#__modules_menu` mm INNER JOIN `#__menu` m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " .
@@ -62,11 +62,11 @@ class Module extends \eshiol\J2XML\Table\Table
 	 */
 	public static function export ($id, &$xml, $options)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'lib_j2xml'));
-		\JLog::add(new \JLogEntry('id: ' . $id, \JLog::DEBUG, 'lib_j2xml'));
-		\JLog::add(new \JLogEntry('options: ' . print_r($options, true), \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('id: ' . $id, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('options: ' . print_r($options, true), \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$item = new Module($db);
 		if (!$item->load($id))
 		{
@@ -91,16 +91,16 @@ class Module extends \eshiol\J2XML\Table\Table
 	 */
 	public static function import ($xml, &$params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$import_modules = $params->get('modules', '2');
 
 		foreach ($xml->xpath("//j2xml/module[not(title = '')]") as $record)
 		{
 			self::prepareData($record, $data, $params);
 
-			$db = \JFactory::getDbo();
+			$db = \Joomla\CMS\Factory::getDbo();
 
 			/* import module */
 			$query = $db->getQuery(true)
@@ -109,7 +109,7 @@ class Module extends \eshiol\J2XML\Table\Table
 				->from($db->qn('#__modules'))
 				->where($db->qn('module') . ' = ' . $db->q($data['module']))
 				->where($db->qn('title') . ' = ' . $db->q($data['title']));
-			\JLog::add(new \JLogEntry($query, \JLog::DEBUG, 'lib_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 			$module = $db->setQuery($query)->loadObject();
 
 			if (!$module || ($import_modules == 2))
@@ -125,7 +125,7 @@ class Module extends \eshiol\J2XML\Table\Table
 					$data['id'] = $module->id;
 					$table->load($data['id']);
 				}
-				\JLog::add(new \JLogEntry('bind: ' . print_r($data, true), \JLog::DEBUG, 'lib_j2xml'));
+				\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('bind: ' . print_r($data, true), \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
 				// Trigger the onContentBeforeSave event.
 				$table->bind($data);
@@ -163,20 +163,20 @@ class Module extends \eshiol\J2XML\Table\Table
 						}
 						try
 						{
-							\JLog::add(new \JLogEntry($query, \JLog::DEBUG, 'lib_j2xml'));
+							\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 							$db->setQuery($query)->execute();
 						}
 						catch(\Exception $ex)
 						{
-							\JLog::add(new \JLogEntry($query, \JLog::ERROR, 'lib_j2xml'));
+							\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 						}
 					}
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_MODULE_IMPORTED', $table->title), \JLog::INFO, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MODULE_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 					// Trigger the onContentAfterSave event.
 				}
 				else
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_MODULE_NOT_IMPORTED', $data['title'], $table->getError()), \JLog::ERROR, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MODULE_NOT_IMPORTED', $data['title'], $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 				}
 				$table = null;
 			}

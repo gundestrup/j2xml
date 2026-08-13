@@ -247,7 +247,7 @@ class Request
             } catch (HttpException $e) {
                 // failed processing of HTTP response headers
                 // save into response obj the full payload received, for debugging
-                return new Response(0, $e->getCode(), $e->getMessage(), '', array('raw_data' => $data, 'status_code', $e->statusCode()));
+                return new Response(0, $e->getCode(), $e->getMessage(), '', array('raw_data' => $data, 'status_code' => $e->statusCode()));
             } catch(\Exception $e) {
                 return new Response(0, $e->getCode(), $e->getMessage(), '', array('raw_data' => $data));
             }
@@ -307,7 +307,7 @@ class Request
                     $data = mb_convert_encoding($data, 'UTF-8', $respEncoding);
                 } else {
                     if ($respEncoding == 'ISO-8859-1') {
-                        $data = utf8_encode($data);
+                        $data = mb_convert_encoding($data, 'UTF-8', 'ISO-8859-1');
                     } else {
                         $this->getLogger()->error('XML-RPC: ' . __METHOD__ . ': unsupported charset encoding of received response: ' . $respEncoding);
                     }
@@ -334,9 +334,9 @@ class Request
 
             // BC break: in the past for some cases we used the error message: 'XML error at line 1, check URL'
 
-            // Q: should we give back an error with variable error number, as we do server-side? But if we do, will
-            //    we be able to tell apart the two cases? In theory, we never emit invalid xml on our end, but
-            //    there could be proxies meddling with the request, or network data corruption...
+            // @todo should we give back an error with variable error number, as we do server-side? But if we do, will
+            //       we be able to tell apart the two cases? In theory, we never emit invalid xml on our end, but
+            //       there could be proxies meddling with the request, or network data corruption...
 
             $r = new Response(0, PhpXmlRpc::$xmlrpcerr['invalid_xml'],
                 PhpXmlRpc::$xmlrpcstr['invalid_xml'] . ' ' . $_xh['isf_reason'], '', $httpResponse);
@@ -356,8 +356,9 @@ class Request
             //}
         }
         // third error check: parsing of the response has somehow gone boink.
-        /// @todo shall we omit this check, since we trust the parsing code?
-        elseif ($_xh['isf'] > 3 || $returnType == XMLParser::RETURN_XMLRPCVALS && !is_object($_xh['value'])) {
+        /// @todo shall we omit the 2nd part of this check, since we trust the parsing code?
+        ///       Either that, or check the fault results too...
+        elseif ($_xh['isf'] > 3 || ($returnType == XMLParser::RETURN_XMLRPCVALS && !$_xh['isf'] && !is_object($_xh['value']))) {
             // something odd has happened and it's time to generate a client side error indicating something odd went on
             $r = new Response(0, PhpXmlRpc::$xmlrpcerr['xml_parsing_error'], PhpXmlRpc::$xmlrpcstr['xml_parsing_error'],
                 '', $httpResponse

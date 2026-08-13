@@ -70,7 +70,7 @@ require_once JPATH_CONFIGURATION.'/configuration.php';
 $config = new JConfig();
 
 // Load Library language
-$lang = JFactory::getLanguage();
+$lang = \Joomla\CMS\Factory::getLanguage();
 
 // Try the j2xmlimporter file in the current language (without allowing the loading of the file in the default language)
 $lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, false, false)
@@ -101,7 +101,7 @@ class J2xmlCli extends JApplicationCli
 	public function doExecute()
 	{
 		// Merge the default translation with the current translation
-		$lang = JFactory::getLanguage();
+		$lang = \Joomla\CMS\Factory::getLanguage();
 		$lang->load('lib_j2xml', JPATH_SITE, null, false, false)
 			|| $lang->load('lib_j2xml', JPATH_ADMINISTRATOR, null, false, false)
 			// Fallback to the lib_j2xml file in the default language
@@ -122,8 +122,8 @@ class J2xmlCli extends JApplicationCli
 			exit(1);
 		}
 
-		JLog::addLogger(array('text_file' => 'j2xml.php', 'extension' => 'com_j2xml'), JLog::ALL, array('lib_j2xml','cli_j2xml'));
-		JLog::addLogger(array('logger' => 'echo', 'extension' => 'com_j2xml'), JLog::ALL & ~JLog::DEBUG, array('lib_j2xml','cli_j2xml'));
+		\Joomla\CMS\Log\Log::addLogger(array('text_file' => 'j2xml.php', 'extension' => 'com_j2xml'), \Joomla\CMS\Log\Log::ALL, array('lib_j2xml','cli_j2xml'));
+		\Joomla\CMS\Log\Log::addLogger(array('logger' => 'echo', 'extension' => 'com_j2xml'), \Joomla\CMS\Log\Log::ALL & ~\Joomla\CMS\Log\Log::DEBUG, array('lib_j2xml','cli_j2xml'));
 
 		if (!($data = implode(gzfile($filename))))
 		{
@@ -170,24 +170,24 @@ class J2xmlCli extends JApplicationCli
 
 		if (!$xml)
 		{
-			$this->out(JText::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
+			$this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
 			exit(0);
 		}
 
 		$dispatcher = \JEventDispatcher::getInstance();
-		JPluginHelper::importPlugin('j2xml');
+		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		$results = $dispatcher->trigger('onBeforeImport', array('cli_j2xml.import', &$xml));
 		if (!$xml)
 		{
-			$this->out(JText::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
+			$this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
 		}
 		elseif (strtoupper($xml->getName()) != 'J2XML')
 		{
-			$this->out(JText::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
+			$this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
 		}
 		elseif(!isset($xml['version']))
 		{
-			$this->out(JText::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
+			$this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
 		}
 		else
 		{
@@ -203,9 +203,9 @@ class J2xmlCli extends JApplicationCli
 			{
 				set_time_limit(120);
 				// set_time_limit(120);
-				$params = JComponentHelper::getParams('com_j2xml');
+				$params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 
-				$iparams = new \JRegistry();
+				$iparams = new \Joomla\Registry\Registry();
 				$iparams->set('version', (string) $xml['version']);
 				$iparams->set('categories', $params->get('import_categories', 1));
 				$iparams->set('contacts', $params->get('import_contacts', 1));
@@ -236,7 +236,7 @@ class J2xmlCli extends JApplicationCli
 			}
 			else
 			{
-				$this->out(JText::sprintf('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED', $xmlVersion),'error');
+				$this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED', $xmlVersion),'error');
 			}
 		}
 	}

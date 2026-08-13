@@ -20,21 +20,21 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Component\ComponentHelper;
 
-JHtml::_('bootstrap.tooltip');
+\Joomla\CMS\HTML\HTMLHelper::_('bootstrap.tooltip');
 
-$version = new JVersion();
+$version = new \Joomla\CMS\Version();
 if ($version->isCompatible('3.8'))
 {
-	JHtml::_('jquery.token');
+	\Joomla\CMS\HTML\HTMLHelper::_('jquery.token');
 }
 
-JText::script('COM_J2XML_IMPORTING');
-JText::script('COM_J2XML_PACKAGEIMPORTER_UPLOAD_ERROR_UNKNOWN');
-JText::script('COM_J2XML_PACKAGEIMPORTER_UPLOAD_ERROR_EMPTY');
-JText::script('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN');
-JText::script('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED');
+\Joomla\CMS\Language\Text::script('COM_J2XML_IMPORTING');
+\Joomla\CMS\Language\Text::script('COM_J2XML_PACKAGEIMPORTER_UPLOAD_ERROR_UNKNOWN');
+\Joomla\CMS\Language\Text::script('COM_J2XML_PACKAGEIMPORTER_UPLOAD_ERROR_EMPTY');
+\Joomla\CMS\Language\Text::script('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN');
+\Joomla\CMS\Language\Text::script('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED');
 
-JFactory::getDocument()->addScriptDeclaration('
+\Joomla\CMS\Factory::getDocument()->addScriptDeclaration('
 	Joomla.submitbuttonpackage = function()
 	{
 		var form = document.getElementById("adminForm");
@@ -42,7 +42,7 @@ JFactory::getDocument()->addScriptDeclaration('
 		// do field validation
 		if (form.install_package.value == "")
 		{
-			alert("' . JText::_('COM_J2XML_PACKAGEIMPORTER_NO_PACKAGE', true) . '");
+			alert("' . \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_NO_PACKAGE', true) . '");
 		}
 		else
 		{
@@ -54,10 +54,10 @@ JFactory::getDocument()->addScriptDeclaration('
 ');
 
 // Drag and Drop installation scripts
-$token    = JSession::getFormToken();
-$return   = JFactory::getApplication()->input->getBase64('return');
+$token    = \Joomla\CMS\Session\Session::getFormToken();
+$return   = \Joomla\CMS\Factory::getApplication()->input->getBase64('return');
 
-$document = JFactory::getDocument();
+$document = \Joomla\CMS\Factory::getDocument();
 $params   = ComponentHelper::getParams('com_j2xml');
 $document->addScriptOptions('J2XML', array('HaltOnError' => (bool) $params->get('haltonerror', 1)));
 
@@ -364,10 +364,10 @@ $document->addStyleDeclaration(
 CSS
 );
 
-$version = new \JVersion();
+$version = new \Joomla\CMS\Version();
 if ($version->isCompatible('3.7'))
 {
-	$maxSize = JFilesystemHelper::fileUploadMaxSize();
+	$maxSize = \Joomla\CMS\Filesystem\FilesystemHelper::fileUploadMaxSize();
 }
 if ($version->isCompatible('4'))
 {
@@ -376,7 +376,7 @@ if ($version->isCompatible('4'))
 	$document->addScriptOptions('progressBarErrorClass', 'progress-bar progress-bar-striped progress-bar-animated bg-error');
 }
 ?>
-<legend><?php echo JText::_('COM_J2XML_PACKAGEIMPORTER_UPLOAD_IMPORT_DATA'); ?></legend>
+<legend><?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_UPLOAD_IMPORT_DATA'); ?></legend>
 
 <div id="uploader-wrapper">
 	<div id="dragarea" data-state="pending">
@@ -396,7 +396,7 @@ if ($version->isCompatible('4'))
 				</div>
 				<p class="lead">
 					<span class="uploading-text">
-						<?php echo JText::_('COM_J2XML_PACKAGEIMPORTER_UPLOADING'); ?>
+						<?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_UPLOADING'); ?>
 					</span>
 					<span class="uploading-number">0</span><span class="uploading-symbol">%</span>
 				</p>
@@ -407,23 +407,23 @@ if ($version->isCompatible('4'))
 				</div>
 				<p class="lead">
 					<span class="installing-text">
-						<?php echo JText::_('COM_J2XML_PACKAGEIMPORTER_IMPORTING'); ?>
+						<?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_IMPORTING'); ?>
 					</span>
 				</p>
 			</div>
 			<div class="upload-actions">
 				<p class="lead">
-					<?php echo JText::_('COM_J2XML_PACKAGEIMPORTER_DRAG_FILE_HERE'); ?>
+					<?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_DRAG_FILE_HERE'); ?>
 				</p>
 				<p>
 					<button id="select-file-button" type="button" class="btn btn-success">
 						<span class="icon-copy" aria-hidden="true"></span>
-						<?php echo JText::_('COM_J2XML_PACKAGEIMPORTER_SELECT_FILE'); ?>
+						<?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_SELECT_FILE'); ?>
 					</button>
 				</p>
 				<?php if ($version->isCompatible('3.7')) : ?>
 					<p>
-						<?php echo JText::sprintf('JGLOBAL_MAXIMUM_UPLOAD_SIZE_LIMIT', $maxSize); ?>
+						<?php echo \Joomla\CMS\Language\Text::sprintf('JGLOBAL_MAXIMUM_UPLOAD_SIZE_LIMIT', $maxSize); ?>
 					</p>
 				<?php endif; ?>
 			</div>
@@ -433,16 +433,16 @@ if ($version->isCompatible('4'))
 
 <div id="legacy-uploader" style="display: none;">
 	<div class="control-group">
-		<label for="install_package" class="control-label"><?php echo JText::_('COM_J2XML_PACKAGEIMPORTER_DATA_FILE'); ?></label>
+		<label for="install_package" class="control-label"><?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_DATA_FILE'); ?></label>
 		<div class="controls">
 			<input class="input_box" id="install_package" name="install_package" type="file" size="57" /><br>
-			<?php echo JText::sprintf('JGLOBAL_MAXIMUM_UPLOAD_SIZE_LIMIT', $maxSize); ?>
+			<?php echo \Joomla\CMS\Language\Text::sprintf('JGLOBAL_MAXIMUM_UPLOAD_SIZE_LIMIT', $maxSize); ?>
 		</div>
 	</div>
 	<div class="form-actions">
 <!-- <button class="btn btn-primary" type="button" id="installbutton_package" onclick="Joomla.submitbuttonpackage()"> -->
 		<button class="btn btn-primary" type="button" id="installbutton_package">
-			<?php echo JText::_('COM_J2XML_PACKAGEIMPORTER_UPLOAD_AND_INSTALL'); ?>
+			<?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_UPLOAD_AND_INSTALL'); ?>
 		</button>
 	</div>
 

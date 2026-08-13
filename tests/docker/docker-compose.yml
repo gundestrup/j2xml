@@ -1,0 +1,100 @@
+# Docker Compose for J2XML integration testing
+#
+# Two Joomla instances:
+#   joomla5  — Joomla 5.4.7 + PHP 8.3 + MySQL 8.0  (tests issues #72, #71, #70)
+#   joomla6  — Joomla 6.1.2 + PHP 8.4 + MySQL 8.0  (tests PHP 8.4 fixes)
+#
+# Usage:
+#   docker compose -f tests/docker/docker-compose.yml up -d
+#   # Wait ~30s for Joomla to auto-install, then:
+#   docker compose -f tests/docker/docker-compose.yml run --rm test-runner
+#   docker compose -f tests/docker/docker-compose.yml down -v
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: j2xml-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: joomla5
+      MYSQL_USER: joomla
+      MYSQL_PASSWORD: joomlapass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  joomla5:
+    image: joomla:5.4.7-php8.3-apache
+    container_name: j2xml-joomla5
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      JOOMLA_DB_HOST: mysql:3306
+      JOOMLA_DB_USER: joomla
+      JOOMLA_DB_PASSWORD: joomlapass
+      JOOMLA_DB_NAME: joomla5
+      JOOMLA_SITE_NAME: "J2XML Test J5"
+      JOOMLA_ADMIN_USER: Admin
+      JOOMLA_ADMIN_USERNAME: admin
+      JOOMLA_ADMIN_PASSWORD: AdminAdmin123!
+      JOOMLA_ADMIN_EMAIL: admin@example.com
+    ports:
+      - "8085:80"
+    volumes:
+      - ../../:/j2xml-src:ro
+
+  joomla6:
+    image: joomla:6.1.2-php8.4-apache
+    container_name: j2xml-joomla6
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      JOOMLA_DB_HOST: mysql:3306
+      JOOMLA_DB_USER: joomla
+      JOOMLA_DB_PASSWORD: joomlapass
+      JOOMLA_DB_NAME: joomla6
+      JOOMLA_SITE_NAME: "J2XML Test J6"
+      JOOMLA_ADMIN_USER: Admin
+      JOOMLA_ADMIN_USERNAME: admin
+      JOOMLA_ADMIN_PASSWORD: AdminAdmin123!
+      JOOMLA_ADMIN_EMAIL: admin@example.com
+    ports:
+      - "8086:80"
+    volumes:
+      - ../../:/j2xml-src:ro
+
+  test-runner:
+    image: joomla:6.1.2-php8.4-apache
+    container_name: j2xml-test-runner
+    depends_on:
+      joomla5:
+        condition: service_started
+      joomla6:
+        condition: service_started
+    volumes:
+      - ../../:/j2xml-src:ro
+      - ../scripts:/tests:ro
+      - ../fixtures:/fixtures:ro
+    working_dir: /tests
+    entrypoint: ["bash", "/tests/run-all-tests.sh"]
+    environment:
+      JOOMLA5_URL: "http://joomla5"
+      JOOMLA6_URL: "http://joomla6"
+      JOOMLA5_DB_HOST: "mysql"
+      JOOMLA6_DB_HOST: "mysql"
+      DB_USER: "joomla"
+      DB_PASS: "joomlapass"
+      JOOMLA5_DB: "joomla5"
+      JOOMLA6_DB: "joomla6"
+
+volumes:
+  mysql-data:

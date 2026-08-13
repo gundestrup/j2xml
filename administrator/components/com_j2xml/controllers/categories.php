@@ -23,7 +23,7 @@ defined('_JEXEC') or die();
  *
  * @since 1.5.3
  */
-class J2xmlControllerCategories extends JControllerLegacy
+class J2xmlControllerCategories extends \Joomla\CMS\MVC\Controller\BaseController
 {
 
 	/**
@@ -56,7 +56,7 @@ class J2xmlControllerCategories extends JControllerLegacy
 	 */
 	public function getModel($name = 'Export', $prefix = 'J2xmlModel', $config = array())
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		return parent::getModel($name, $prefix, array(
 			'ignore_request' => true
@@ -78,9 +78,9 @@ class J2xmlControllerCategories extends JControllerLegacy
 	 */
 	function display($cachable = false, $urlparams = false)
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$app = JFactory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 		$jform  = $app->input->post->get('jform', array(), 'array');
 		$data = array();
 		foreach($jform as $k => $v)
@@ -92,7 +92,7 @@ class J2xmlControllerCategories extends JControllerLegacy
 		}
 		// Save the posted data in the session.
 		$app->setUserState('com_j2xml.export.data', $data);
-		JLog::add(new JLogEntry('setUserState(\'com_j2xml.export.data\'): ' . print_r($data, true), JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('setUserState(\'com_j2xml.export.data\'): ' . print_r($data, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$this->input->set('view', 'categories');
 		parent::display();

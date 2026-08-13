@@ -20,31 +20,31 @@ defined('_JEXEC') or die();
 
 //JLoader::registerNamespace('eshiol\\j2xml', JPATH_LIBRARIES);
 
-$params = JComponentHelper::getParams('com_j2xml');
+$params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 if ($params->get('debug', 0))
 {
 	ini_set('display_errors', 'On');
-	error_reporting(E_ALL | E_STRICT);
+	error_reporting(E_ALL);
 }
 
 JLoader::import('joomla.log.log');
 if ($params->get('debug') || defined('JDEBUG') && JDEBUG)
 {
-	JLog::addLogger(
+	\Joomla\CMS\Log\Log::addLogger(
 		array('text_file' => $params->get('log', 'eshiol.log.php'),	'extension' => 'com_j2xml_file'),
-		JLog::DEBUG | JLog::ERROR,
+		\Joomla\CMS\Log\Log::DEBUG | \Joomla\CMS\Log\Log::ERROR,
 		array('lib_j2xml', 'com_j2xml'));
 }
-JLog::addLogger(
+\Joomla\CMS\Log\Log::addLogger(
 	array('logger' => 'messagequeue', 'extension' => 'com_j2xml'),
-	JLog::ALL & ~JLog::DEBUG,
+	\Joomla\CMS\Log\Log::ALL & ~\Joomla\CMS\Log\Log::DEBUG,
 	array('lib_j2xml', 'com_j2xml'));
 
-$version = new JVersion();
-JFactory::getDocument()->addScriptOptions('J2XML', array('Joomla' => ($version->isCompatible('4') ? 4 : 3) ));
+$version = new \Joomla\CMS\Version();
+\Joomla\CMS\Factory::getDocument()->addScriptOptions('J2XML', array('Joomla' => ($version->isCompatible('4') ? 4 : 3) ));
 
 // Merge the default translation with the current translation
-$lang = JFactory::getApplication()->getLanguage();
+$lang = \Joomla\CMS\Factory::getApplication()->getLanguage();
 // Back-end translation
 $lang->load('com_j2xml', JPATH_ADMINISTRATOR, 'en-GB', true);
 $lang->load('com_j2xml', JPATH_ADMINISTRATOR, $lang->getDefault(), true);
@@ -54,7 +54,7 @@ $lang->load('lib_j2xml', JPATH_SITE, null, false, false) || $lang->load('lib_j2x
 // Fallback to the lib_j2xml file in the default language
 $lang->load('lib_j2xml', JPATH_SITE, null, true) || $lang->load('lib_j2xml', JPATH_ADMINISTRATOR, null, true);
 
-$jinput = JFactory::getApplication()->input;
+$jinput = \Joomla\CMS\Factory::getApplication()->input;
 $controllerClass = 'J2xmlController';
 $task = $jinput->getCmd('task', '');
 
@@ -100,9 +100,9 @@ else
 	throw new \Exception('Invalid Controller Class ' . $controllerClass);
 }
 
-// $config = JFactory::getConfig();
+// $config = \Joomla\CMS\Factory::getConfig();
 
-JLog::add(new JLogEntry("{$controllerClass}::execute({$task})", JLog::DEBUG, 'com_j2xml'));
+\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry("{$controllerClass}::execute({$task})", \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 // Perform the Request task
 $controller->execute($task);
@@ -111,14 +111,14 @@ $controller->execute($task);
 $controller->redirect();
 
 /*
-JHtml::_('behavior.tabstate');
+\Joomla\CMS\HTML\HTMLHelper::_('behavior.tabstate');
 
-if (!JFactory::getUser()->authorise('core.manage', 'com_j2xml'))
+if (!\Joomla\CMS\Factory::getUser()->authorise('core.manage', 'com_j2xml'))
 {
-	throw new JAccessExceptionNotallowed(JText::_('JERROR_ALERTNOAUTHOR'), 403);
+	throw new JAccessExceptionNotallowed(\Joomla\CMS\Language\Text::_('JERROR_ALERTNOAUTHOR'), 403);
 }
 
-$controller = JControllerLegacy::getInstance('J2xml');
-$controller->execute(JFactory::getApplication()->input->get('task'));
+$controller = \Joomla\CMS\MVC\Controller\BaseController::getInstance('J2xml');
+$controller->execute(\Joomla\CMS\Factory::getApplication()->input->get('task'));
 $controller->redirect();
 */

@@ -16,7 +16,7 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or die();
+defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 \JLoader::import('joomla.filesystem.file');
 \JLoader::import('joomla.filesystem.folder');
@@ -47,7 +47,7 @@ class Image
 	 */
 	public static function import ($xml, &$params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$import_images = $params->get('images', 0);
 		if ($import_images == 0)
@@ -59,30 +59,30 @@ class Image
 		{
 			$src = JPATH_SITE . '/' . urldecode(html_entity_decode($image['src'], ENT_QUOTES, 'UTF-8'));
 			$data = $image;
-			if (!\JFile::exists($src) || ($import_images == 2))
+			if (!\Joomla\CMS\Filesystem\File::exists($src) || ($import_images == 2))
 			{
 				// many thx to Stefanos Tzigiannis
 				$folder = dirname($src);
-				if (!\JFolder::exists($folder))
+				if (!\Joomla\CMS\Filesystem\Folder::exists($folder))
 				{
-					if (\JFolder::create($folder))
+					if (\Joomla\CMS\Filesystem\Folder::create($folder))
 					{
-						\JLog::add(
-								new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_FOLDER_WAS_SUCCESSFULLY_CREATED', $folder), \JLog::INFO, 'lib_j2xml'));
+						\Joomla\CMS\Log\Log::add(
+								new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FOLDER_WAS_SUCCESSFULLY_CREATED', $folder), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 					}
 					else
 					{
-						\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_ERROR_CREATING_FOLDER', $folder), \JLog::ERROR, 'lib_j2xml'));
+						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_ERROR_CREATING_FOLDER', $folder), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 						break;
 					}
 				}
-				if (\JFile::write($src, base64_decode($data)))
+				if (\Joomla\CMS\Filesystem\File::write($src, base64_decode($data)))
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_IMAGE_IMPORTED', $image['src']), \JLog::INFO, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_IMAGE_IMPORTED', $image['src']), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 				}
 				else
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_IMAGE_NOT_IMPORTED', $image['src'], \JText::_('LIB_J2XML_MSG_UNKNOWN_ERROR')), \JLog::ERROR, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_IMAGE_NOT_IMPORTED', $image['src'], \Joomla\CMS\Language\Text::_('LIB_J2XML_MSG_UNKNOWN_ERROR')), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 				}
 			}
 		}
@@ -105,8 +105,8 @@ class Image
 	 */
 	public static function export ($image, &$xml, $options)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
-		\JLog::add(new \JLogEntry($image, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($image, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// Joomla 4
 		$image = strtok($image, '#');
@@ -117,7 +117,7 @@ class Image
 		}
 
 		$file_path = JPATH_SITE . '/' . urldecode($image);
-		if (\JFile::exists($file_path))
+		if (\Joomla\CMS\Filesystem\File::exists($file_path))
 		{
 			$img = $xml->addChild('img', base64_encode(file_get_contents($file_path)));
 			$img->addAttribute('src', htmlentities($image, ENT_QUOTES, "UTF-8"));

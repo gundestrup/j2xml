@@ -29,7 +29,7 @@ JLoader::import('eshiol.J2xml.Version');
  *
  * @since 3.2.137
  */
-class J2xmlView extends JViewLegacy
+class J2xmlView extends \Joomla\CMS\MVC\View\HtmlView
 {
 
 	/**
@@ -61,16 +61,16 @@ class J2xmlView extends JViewLegacy
 	 */
 	public function __construct($config = array())
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		parent::__construct($config);
 
-		$jform = JFactory::getApplication()->input->post->get('jform', array(), 'array');
+		$jform = \Joomla\CMS\Factory::getApplication()->input->post->get('jform', array(), 'array');
 
 		$this->ids = explode(",", $jform['cid']);
 		unset($jform['cid']);
 
-		$this->params = new JRegistry();
+		$this->params = new \Joomla\Registry\Registry();
 		$this->params->loadArray($jform);
 	}
 
@@ -86,9 +86,9 @@ class J2xmlView extends JViewLegacy
 	 */
 	function display($tpl = null)
 	{
-		JLog::add(new JLogEntry(__METHOD__, JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$params = new JRegistry();
+		$params = new \Joomla\Registry\Registry();
 		foreach ($this->params->toArray() as $k => $v)
 		{
 			$params->set(substr($k, 0, 7) == 'export_' ? substr($k, 7) : $k, $v);
@@ -98,7 +98,7 @@ class J2xmlView extends JViewLegacy
 		$get_xml = strtolower(str_replace('J2xmlView', '', get_class($this)));
 		$j2xml->$get_xml($this->ids, $xml, $params);
 
-		$out = 'j2xml' . str_replace('.', '', Version::$DOCVERSION) . JFactory::getDate()->format("YmdHis");
+		$out = 'j2xml' . str_replace('.', '', Version::$DOCVERSION) . \Joomla\CMS\Factory::getDate()->format("YmdHis");
 
 		$dom = new DOMDocument('1.0');
 		$dom->preserveWhiteSpace = false;
@@ -107,24 +107,24 @@ class J2xmlView extends JViewLegacy
 		$data = $dom->saveXML();
 
 		// modify the MIME type
-		$document = JFactory::getDocument();
+		$document = \Joomla\CMS\Factory::getDocument();
 		$compression = $params->get('compression', 0);
 
 		if (!\extension_loaded('zlib') || ini_get('zlib.output_compression'))
 		{
 			$document->setMimeEncoding('text/xml', true);
-			JFactory::getApplication()->setHeader('Content-disposition', 'attachment; filename="' . $out . '.xml"', true);
+			\Joomla\CMS\Factory::getApplication()->setHeader('Content-disposition', 'attachment; filename="' . $out . '.xml"', true);
 		}
 		elseif ($compression)
 		{
 			$document->setMimeEncoding('application/gzip', true);
-			JFactory::getApplication()->setHeader('Content-disposition', 'attachment; filename="' . $out . '.gz"', true);
+			\Joomla\CMS\Factory::getApplication()->setHeader('Content-disposition', 'attachment; filename="' . $out . '.gz"', true);
 			$data = gzencode($data, 4);
 		}
 		else
 		{
 			$document->setMimeEncoding('text/xml', true);
-			JFactory::getApplication()->setHeader('Content-disposition', 'attachment; filename="' . $out . '.xml"', true);
+			\Joomla\CMS\Factory::getApplication()->setHeader('Content-disposition', 'attachment; filename="' . $out . '.xml"', true);
 		}
 		echo $data;
 		return true;

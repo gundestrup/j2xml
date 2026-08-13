@@ -16,7 +16,7 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or die();
+defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Category;
 use eshiol\J2xml\Table\Fieldgroup;
@@ -45,7 +45,7 @@ class Field extends Table
 	 */
 	public function __construct (\JDatabaseDriver $db)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		parent::__construct('#__fields', 'id', $db);
 	}
@@ -57,7 +57,7 @@ class Field extends Table
 	 */
 	function toXML ($mapKeysToText = false)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$this->_excluded = array_merge($this->_excluded, array(
 				'group_id'
@@ -83,7 +83,7 @@ class Field extends Table
 			->where($this->_db->quoteName('c.id') . ' = ' . $this->_db->quoteName('fc.category_id'))
 			->where($this->_db->quoteName('fc.field_id') . ' = ' . (int) $this->id);
 
-		$version = new \JVersion();
+		$version = new \Joomla\CMS\Version();
 		if (($this->type == 'subform') && $version->isCompatible('4'))
 		{
 			$query = $this->_db->getQuery(true)
@@ -128,16 +128,16 @@ class Field extends Table
 	 */
 	public static function import ($xml, &$params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$import_fields = $params->get('fields', 0);
 		if ($import_fields == 0)
 			return;
 
 		$context = $params->get('context');
-		$db = \JFactory::getDBO();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$nullDate = $db->getNullDate();
-		$userid = \JFactory::getUser()->id;
+		$userid = \Joomla\CMS\Factory::getUser()->id;
 
 		foreach ($xml->xpath("//j2xml/field") as $record)
 		{
@@ -161,8 +161,8 @@ class Field extends Table
 				}
 				else
 				{ // backward compatibility
-					\JTable::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_fields/tables');
-					$table = \JTable::getInstance('Field', 'FieldsTable');
+					\Joomla\CMS\Table\Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_fields/tables');
+					$table = \Joomla\CMS\Table\Table::getInstance('Field', 'FieldsTable');
 				}
 
 				if (!$field)
@@ -179,13 +179,13 @@ class Field extends Table
 				$table->bind($data);
 				if ($table->store())
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_FIELD_IMPORTED', $table->title), \JLog::INFO, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FIELD_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 					// @todo Trigger the onContentAfterSave event.
 				}
 				else
 				{
-					\JLog::add(
-							new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_FIELD_NOT_IMPORTED', $data['title'], $table->getError()), \JLog::ERROR,
+					\Joomla\CMS\Log\Log::add(
+							new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FIELD_NOT_IMPORTED', $data['title'], $table->getError()), \Joomla\CMS\Log\Log::ERROR,
 									'lib_j2xml'));
 				}
 				$table = null;
@@ -200,7 +200,7 @@ class Field extends Table
 	 */
 	public static function prepareData ($record, &$data, $params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$params->set('extension', 'com_fields');
 		parent::prepareData($record, $data, $params);
@@ -210,13 +210,13 @@ class Field extends Table
 			$data['description'] = '';
 		}
 
-		if (isset($data['modified_time']) && ($data['modified_time'] != \JFactory::getDbo()->getNullDate()))
+		if (isset($data['modified_time']) && ($data['modified_time'] != \Joomla\CMS\Factory::getDbo()->getNullDate()))
 		{
 			$data['modified_time'] = self::fixDate($data['modified_time']);
 		}
 
-		$db = \JFactory::getDBO();
-		$version = new \JVersion();
+		$db = \Joomla\CMS\Factory::getDbo();
+		$version = new \Joomla\CMS\Version();
 		if (($data['type'] == 'subform') && $version->isCompatible('4'))
 		{
 			$query = $db->getQuery(true)
@@ -259,14 +259,14 @@ class Field extends Table
 	 */
 	public static function export ($id, &$xml, $options)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if ($xml->xpath("//j2xml/field/id[text() = '" . $id . "']"))
 		{
 			return;
 		}
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$item = new Field($db);
 		if (!$item->load($id))
 		{

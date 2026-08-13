@@ -16,7 +16,7 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or die();
+defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 /**
  *
@@ -51,11 +51,11 @@ class Menutype extends \eshiol\J2XML\Table\Table
 	 */
 	public static function export ($id, &$xml, $options)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'lib_j2xml'));
-		\JLog::add(new \JLogEntry('id: ' . $id, \JLog::DEBUG, 'lib_j2xml'));
-		\JLog::add(new \JLogEntry('options: ' . print_r($options, true), \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('id: ' . $id, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('options: ' . print_r($options, true), \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$item = new Menutype($db);
 		if (!$item->load($id))
 		{
@@ -73,12 +73,12 @@ class Menutype extends \eshiol\J2XML\Table\Table
 			->select($db->qn('params'))
 			->from($db->qn('#__modules'))
 			->where($db->qn('module') . ' = ' . $db->q('mod_menu'));
-		\JLog::add(new \JLogEntry($query, \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 		$modules = $db->setQuery($query)->loadObjectList();
 
 		foreach ($modules as $module)
 		{
-			$params = new \JRegistry($module->params);
+			$params = new \Joomla\Registry\Registry($module->params);
 			if ($params->get('menutype') == $item->menutype)
 			{
 				Module::export($module->id, $xml, $options);
@@ -101,7 +101,7 @@ class Menutype extends \eshiol\J2XML\Table\Table
 			                                       // ->order($db->qn('level')) //
 			                                       // export all levels
 		order($db->qn('lft'));
-		\JLog::add(new \JLogEntry($query, \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 		$ids_menu = $db->setQuery($query)->loadColumn();
 
 		foreach ($ids_menu as $id_menu)
@@ -120,9 +120,9 @@ class Menutype extends \eshiol\J2XML\Table\Table
 	 */
 	public static function import ($xml, &$params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'lib_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$import_menus = $params->get('import_menus', '1');
 
 		foreach ($xml->xpath("//j2xml/menutype[not(title = '')]") as $record)
@@ -136,7 +136,7 @@ class Menutype extends \eshiol\J2XML\Table\Table
 			)))
 				->from($db->qn('#__menu_types'))
 				->where($db->qn('menutype') . '=' . $db->q($data['menutype']));
-			\JLog::add(new \JLogEntry($query, \JLog::DEBUG, 'lib_j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 			$menutype = $db->setQuery($query)->loadResult();
 
 			if (!$menutype || ($import_menus == 2))
@@ -157,12 +157,12 @@ class Menutype extends \eshiol\J2XML\Table\Table
 				$table->bind($data);
 				if ($table->store())
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_MENUTYPE_IMPORTED', $table->title), \JLog::INFO, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENUTYPE_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 					// Trigger the onContentAfterSave event.
 				}
 				else
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_MENUTYPE_NOT_IMPORTED', $data['title'], $table->getError()), \JLog::ERROR, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENUTYPE_NOT_IMPORTED', $data['title'], $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 				}
 				$table = null;
 			}

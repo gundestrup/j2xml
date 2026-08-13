@@ -16,7 +16,7 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or die();
+defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Category;
 use eshiol\J2xml\Table\Image;
@@ -46,7 +46,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 	 */
 	public function __construct (\JDatabaseDriver $db)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		parent::__construct('#__user_notes', 'id', $db);
 	}
@@ -58,14 +58,14 @@ class Usernote extends \eshiol\J2xml\Table\Table
 	 */
 	public static function export ($id, &$xml, $options)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if ($xml->xpath("//j2xml/usernote/id[text() = '" . $id . "']"))
 		{
 			return;
 		}
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$item = new Usernote($db);
 		if (!$item->load($id))
 		{
@@ -123,7 +123,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 	 */
 	public static function import ($xml, &$params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$import_usernotes = $params->get('usernotes', 0);
 		if ($import_usernotes == 0)
@@ -141,7 +141,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 		$users = json_decode($params->get('imported_users', '[]'), true);
 		foreach ($users as $user_id => $overwrite)
 		{
-			$username = \JFactory::getUser($user_id)->username;
+			$username = \Joomla\CMS\Factory::getUser($user_id)->username;
 			$path = "//j2xml/usernote[user_id='{$username}']";
 */
 			$path = "//j2xml/usernote[user_id!='']";
@@ -151,7 +151,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 
 				unset($data['id']);
 
-				$table = \JTable::getInstance('Note', 'UsersTable');
+				$table = \Joomla\CMS\Table\Table::getInstance('Note', 'UsersTable');
 
 //				if (!$overwrite)
 //				{
@@ -166,11 +166,11 @@ class Usernote extends \eshiol\J2xml\Table\Table
 				$table->bind($data);
 				if ($table->store())
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_USERNOTE_IMPORTED', $data['subject']), \JLog::INFO, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERNOTE_IMPORTED', $data['subject']), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 				}
 				else
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_USERNOTE_NOT_IMPORTED', $data['subject'], $table->getError()), \JLog::ERROR, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERNOTE_NOT_IMPORTED', $data['subject'], $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 				}
 			}
 /*
@@ -185,7 +185,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 	 */
 	public static function prepareData ($record, &$data, $params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$params->set('extension', 'com_users');
 		parent::prepareData($record, $data, $params);
@@ -203,7 +203,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 	 */
 	function toXML ($mapKeysToText = false)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$this->_aliases['user_id'] = (string) $this->_db->getQuery(true)
 			->select($this->_db->quoteName('username'))

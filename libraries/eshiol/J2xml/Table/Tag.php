@@ -16,7 +16,7 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or die();
+defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Image;
 use eshiol\J2xml\Table\Table;
@@ -44,7 +44,7 @@ class Tag extends Table
 	 */
 	public function __construct (\JDatabaseDriver $db)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		parent::__construct('#__tags', 'id', $db);
 	}
@@ -67,16 +67,16 @@ class Tag extends Table
 	 */
 	public static function import ($xml, &$params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$import_tags = $params->get('tags', 0);
 		if ($import_tags == 0)
 			return;
 
 		$context = $params->get('context');
-		$db = \JFactory::getDBO();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$nullDate = $db->getNullDate();
-		$userid = \JFactory::getUser()->id;
+		$userid = \Joomla\CMS\Factory::getUser()->id;
 
 		foreach ($xml->xpath("//j2xml/tag") as $record)
 		{
@@ -111,8 +111,8 @@ class Tag extends Table
 			}
 			else
 			{ // Joomla! 3.x
-				\JTable::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_tags/tables');
-				$table = \JTable::getInstance('Tag', 'TagsTable');
+				\Joomla\CMS\Table\Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_tags/tables');
+				$table = \Joomla\CMS\Table\Table::getInstance('Tag', 'TagsTable');
 			}
 
 			if (!$tag || ($import_tags == 2))
@@ -133,14 +133,14 @@ class Tag extends Table
 
 				if ($table->store())
 				{
-					\JLog::add(new \JLogEntry(\JText::sprintf('LIB_J2XML_MSG_TAG_IMPORTED', $table->title), \JLog::INFO, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_TAG_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 				}
 				else
 				{
-					\JLog::add(
-							new \JLogEntry(
-									\JText::sprintf('LIB_J2XML_MSG_TAG_NOT_IMPORTED', $data['title'] . ' (id = ' . $id . ')', $table->getError()),
-									\JLog::ERROR, 'lib_j2xml'));
+					\Joomla\CMS\Log\Log::add(
+							new \Joomla\CMS\Log\LogEntry(
+									\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_TAG_NOT_IMPORTED', $data['title'] . ' (id = ' . $id . ')', $table->getError()),
+									\Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 				}
 			}
 		}
@@ -158,14 +158,14 @@ class Tag extends Table
 	 */
 	public static function convertPathsToIds ($tags)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if ($tags)
 		{
 			// Remove duplicates
 			$tags = array_unique((array) $tags);
 
-			$db = \JFactory::getDbo();
+			$db = \Joomla\CMS\Factory::getDbo();
 
 			$query = $db->getQuery(true)
 				->select('id')
@@ -207,14 +207,14 @@ class Tag extends Table
 	 */
 	public static function export ($id, &$xml, $options)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		if ($xml->xpath("//j2xml/tag/id[text() = '" . $id . "']"))
 		{
 			return;
 		}
 
-		$db = \JFactory::getDbo();
+		$db = \Joomla\CMS\Factory::getDbo();
 		$item = new Tag($db);
 		if (!$item->load($id))
 		{
@@ -285,7 +285,7 @@ class Tag extends Table
 	 */
 	public static function prepareData ($record, &$data, $params)
 	{
-		\JLog::add(new \JLogEntry(__METHOD__, \JLog::DEBUG, 'com_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$params->set('extension', 'com_tags');
 		parent::prepareData($record, $data, $params);
