@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+#
+# Pre-commit hook for J2XML
+#
+# Runs on staged PHP files:
+#   1. PHP lint with 8.4 and 8.5 (if available)
+#   2. PHPStan static analysis (if installed)
+#   3. Test suite (if one exists)
+#
+# Installation:
+#   ./scripts/install-hooks.sh
+#
+# To bypass temporarily:
+#   git commit --no-verify
+#
+set -euo pipefail
+
+# Colours
+red='\033[0;31m'
+green='\033[0;32m'
+yellow='\033[0;33m'
+nc='\033[0m' # no colour
+
+info()  { printf "${green}[pre-commit]${nc} %s\n" "$*"; }
+warn()  { printf "${yellow}[pre-commit]${nc} %s\n" "$*"; }
+error() { printf "${red}[pre-commit]${nc} %s\n" "$*" >&2; }
+
+# Collect staged PHP files (only added/copied/modified, not deleted)
+staged_php_files=$(git diff --cached --name-only --diff-filter=ACM -- '*.php' || true)
+
+if [ -z "$staged_php_files" ]; then
+	info "No staged PHP files — skipping checks."
+	exit 0
+fi
+
+staged_count=$(echo "$staged_php_files" | wc -l | tr -d ' ')
+info "$staged_count staged PHP file(s) to check."
+
+# ---------------------------------------------------------------------------
+# 1. PHP lint
+# ---------------------------------------------------------------------------
+#
+# Lint with every PHP 8.4+ binary available on the system. We target
+# PHP 8.4 and 8.5 only — older versions are not supported by this fork.
+#
+# Discover PHP binaries: prefer Homebrew keg paths, fall back to PATH.
+#
+php_binaries=()
+for candidate in \
+	/opt/homebrew/opt/php@8.4/bin/php \
+	/opt/homebrew/opt/php@8.5/bin/php \
+	/usr/local/opt/php@8.4/bin/php \
+	/usr/local/opt/php@8.5/bin/php
+do
+	if [ -x "$candidate" ]; then
+		php_binaries+=("$candidate")
+	fi
+done
+
+# Fall back to whatever `php` is on PATH (if not already added).
+# Deduplicate by resolving symlinks so we don't lint twice with the same binary.
+path_php=$(command -v php 2>/dev/null || true)
+if [ -n "$path_php" ]; then
+	resolved=$(readlink -f "$path_php" 2>/dev/null || echo "$path_php")
+	already=0
+	for existing in "${php_binaries[@]}"; do
+		existing_resolved=$(readlink -f "$existing" 2>/dev/null || echo "$existing")
+		if [ "$resolved" = "$existing_resolved" ]; then
+			already=1
+			break
+		fi
+	done
+	if [ $already -eq 0 ]; then
+		php_binaries+=("$path_php")
+	fi
+fi
+
+if [ ${#php_binaries[@]} -eq 0 ]; then
+	error "No PHP binary found. Install PHP 8.4+ (brew install php@8.4)."
+	exit 1
+fi
+
+lint_failed=0
+for php_bin in "${php_binaries[@]}"; do
+	php_version=$("$php_bin" -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;')
+	info "Linting with PHP $php_version ($php_bin)…"
+
+	while IFS= read -r file; do
+		if ! output=$("$php_bin" -l "$file" 2>&1); then
+			error "  FAIL: $file"
+			error "  $output"
+			lint_failed=1
+		fi
+	done <<< "$staged_php_files"
+done
+
+if [ $lint_failed -ne 0 ]; then
+	error "PHP lint failed. Fix the errors above or use --no-verify to bypass."
+	exit 1
+fi
+
+info "PHP lint passed on all ${#php_binaries[@]} PHP binary/binaries."
+
+# ---------------------------------------------------------------------------
+# 2. PHPStan static analysis (if installed)
+# ---------------------------------------------------------------------------
+phpstan_bin=$(command -v phpstan 2>/dev/null || true)
+if [ -n "$phpstan_bin" ]; then
+	info "Running PHPStan…"
+
+	# Build a config on the fly if none exists, targeting PHP 8.4+.
+	# Only analyse staged files (not the whole codebase) for speed.
+	if [ ! -f "phpstan.neon" ] && [ ! -f "phpstan.neon.dist" ]; then
+		tmp_dir=$(mktemp -d -t j2xml-phpstan.XXXXXX)
+		tmp_config="$tmp_dir/phpstan.neon"
+		cat > "$tmp_config" <<'NEON'
+parameters:
+	level: 0
+	reportUnmatchedIgnoredErrors: false
+NEON
+		phpstan_config_arg="--configuration=$tmp_config"
+	else
+		phpstan_config_arg=""
+	fi
+
+	# Pass staged PHP files as the paths to analyse.
+	phpstan_paths=""
+	while IFS= read -r f; do
+		phpstan_paths="$phpstan_paths $f"
+	done <<< "$staged_php_files"
+
+	if ! $phpstan_bin analyse $phpstan_config_arg $phpstan_paths --no-progress --memory-limit=512M --error-format=table; then
+		error "PHPStan found issues. Fix them above or use --no-verify to bypass."
+		rm -rf "$tmp_dir" 2>/dev/null || true
+		exit 1
+	fi
+	rm -rf "$tmp_dir" 2>/dev/null || true
+	info "PHPStan passed."
+else
+	warn "phpstan not found on PATH — skipping static analysis. (brew install phpstan)"
+fi
+
+# ---------------------------------------------------------------------------
+# 3. Test suite (if one exists)
+# ---------------------------------------------------------------------------
+if [ -f "phpunit.xml" ] || [ -f "phpunit.xml.dist" ]; then
+	phpunit_bin=$(command -v phpunit 2>/dev/null || true) || \
+	phpunit_bin="vendor/bin/phpunit"
+	if [ -x "$phpunit_bin" ]; then
+		info "Running PHPUnit…"
+		if ! $phpunit_bin; then
+			error "Tests failed. Fix them above or use --no-verify to bypass."
+			exit 1
+		fi
+		info "Tests passed."
+	else
+		warn "phpunit.xml found but phpunit binary not available — skipping tests."
+	fi
+else
+	info "No test suite found (no phpunit.xml) — skipping tests."
+fi
+
+# ---------------------------------------------------------------------------
+info "All pre-commit checks passed."
+exit 0
