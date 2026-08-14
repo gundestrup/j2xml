@@ -7,7 +7,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -19,346 +19,29 @@
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Session\Session;
 
-\Joomla\CMS\HTML\HTMLHelper::_('bootstrap.tooltip');
+Text::script('COM_J2XML_IMPORTING');
+Text::script('COM_J2XML_PACKAGEIMPORTER_UPLOAD_ERROR_UNKNOWN');
+Text::script('COM_J2XML_PACKAGEIMPORTER_UPLOAD_ERROR_EMPTY');
+Text::script('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN');
+Text::script('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED');
+Text::script('COM_J2XML_PACKAGEIMPORTER_NO_PACKAGE');
 
-\Joomla\CMS\HTML\HTMLHelper::_('jquery.token');
+$token  = Session::getFormToken();
+$return = Factory::getApplication()->input->getBase64('return');
 
-\Joomla\CMS\Language\Text::script('COM_J2XML_IMPORTING');
-\Joomla\CMS\Language\Text::script('COM_J2XML_PACKAGEIMPORTER_UPLOAD_ERROR_UNKNOWN');
-\Joomla\CMS\Language\Text::script('COM_J2XML_PACKAGEIMPORTER_UPLOAD_ERROR_EMPTY');
-\Joomla\CMS\Language\Text::script('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN');
-\Joomla\CMS\Language\Text::script('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED');
+$params = ComponentHelper::getParams('com_j2xml');
+$this->document->addScriptOptions('J2XML', ['HaltOnError' => (bool) $params->get('haltonerror', 1)]);
 
-\Joomla\CMS\Factory::getDocument()->addScriptDeclaration('
-	Joomla.submitbuttonpackage = function()
-	{
-		var form = document.getElementById("adminForm");
-
-		// do field validation
-		if (form.install_package.value == "")
-		{
-			alert("' . \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_NO_PACKAGE', true) . '");
-		}
-		else
-		{
-			JoomlaInstaller.showLoading();
-			form.installtype.value = "upload"
-			form.submit();
-		}
-	};
-');
-
-// Drag and Drop installation scripts
-$token    = \Joomla\CMS\Session\Session::getFormToken();
-$return   = \Joomla\CMS\Factory::getApplication()->input->getBase64('return');
-
-$document = \Joomla\CMS\Factory::getDocument();
-$params   = ComponentHelper::getParams('com_j2xml');
-$document->addScriptOptions('J2XML', array('HaltOnError' => (bool) $params->get('haltonerror', 1)));
-
-// Drag-drop installation
-$document->addScriptDeclaration(
-<<<JS
-	jQuery(document).ready(function($) {
-		if (typeof FormData === 'undefined') {
-			$('#legacy-uploader').show();
-			$('#uploader-wrapper').hide();
-			return;
-		}
-
-		var uploading = false;
-		var dragZone  = $('#dragarea');
-		var fileInput = $('#install_package');
-		var button    = $('#select-file-button');
-		var url       = 'index.php?option=com_installer&task=install.ajax_upload';
-		var returnUrl = $('#installer-return').val();
-		var actions   = $('.upload-actions');
-		var progress  = $('.upload-progress');
-		var progressBar = progress.find('.bar');
-		var percentage = progress.find('.uploading-number');
-
-		if (returnUrl) {
-			url += '&return=' + returnUrl;
-		}
-
-		button.on('click', function(e) {
-			fileInput.click();
-		});
-
-		fileInput.on('change', function (e) {
-			e.preventDefault();
-			e.stopPropagation();
-
-			if (uploading) {
-				return;
-			}
-
-			var files = e.originalEvent.target.files || e.originalEvent.dataTransfer.files;
-
-			if (!files.length) {
-				return;
-			}
-
-			var file = files[0];
-
-			var reader = new FileReader();
-			reader.onload = function(event) {
-				console.log('reader.onload');
-				try {
-					var data = pako.ungzip(this.result, {"to": "string"});
-					console.log('gzip');
-				} catch (err) {
-					console.log('xml');
-					var data = this.result;
-				}
-				tmp = strstr(data, '<?xml version="1.0" ');
-				data = (tmp !== false ? tmp : data);
-				console.log(data);
-
-				validated = false;
-				eshiol.j2xml.validate.forEach(function(fn) {
-					validated = validated || fn(data);
-				});
-				if (!validated) {
-					Joomla.renderMessages({'error': [Joomla.JText._('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN')]});
-					return false;
-				}
-
-				eshiol.j2xml.convert.forEach(function(fn) {
-					data = fn(data);
-				});
-
-				var xmlDoc;
-				var nodes = Array();
-				try {
-				   	xmlDoc = $.parseXML(data);
-					xml = $(xmlDoc);
-					root = xml.find(":root")[0];
-
-					if (root.nodeName != "j2xml") {
-						console.log(Joomla.JText._('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'));
-						Joomla.renderMessages({'error': [Joomla.JText._('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN')]});
-					} else {
-						console.log('j2xml file version ' + $(root).attr('version'));
-					}
-				} catch(e) {
-					/*
-					console.log(e);
-					Joomla.renderMessages({'error': [e.message.split('\\n').join('<br />')]});
-					return false;
-					*/
-				} finally {
-					$('#j2xml_filename').val(file.name);
-					$('#j2xml_data').val(btoa(unescape(encodeURIComponent(data))));
-
-					var j2xmlOptions  = Joomla.getOptions('J2XML'),
-						JoomlaVersion = j2xmlOptions && j2xmlOptions.Joomla ? j2xmlOptions.Joomla : '3';
-
-					if  (JoomlaVersion == '4') {
-						var el = document.getElementById('j2xmlImportModal')
-						var modal = bootstrap.Modal.getInstance(el) // Returns a Bootstrap modal instance
-						modal.show();
-					} else {
-						$('#j2xmlImportModal').modal();
-					}
-
-					fileInput.val('');
-					return false;
-				}
-			};
-			reader.readAsText(file, 'UTF-8');
-		});
-
-		dragZone.on('dragenter', function(e) {
-			e.preventDefault();
-			e.stopPropagation();
-
-			dragZone.addClass('hover');
-
-			return false;
-		});
-
-		// Notify user when file is over the drop area
-		dragZone.on('dragover', function(e) {
-			e.preventDefault();
-			e.stopPropagation();
-
-			dragZone.addClass('hover');
-
-			return false;
-		});
-
-		dragZone.on('dragleave', function(e) {
-			e.preventDefault();
-			e.stopPropagation();
-			dragZone.removeClass('hover');
-
-			return false;
-		});
-
-		dragZone.on('drop', function(e) {
-			e.preventDefault();
-			e.stopPropagation();
-
-			dragZone.removeClass('hover');
-
-			if (uploading) {
-				return;
-			}
-
-			var files = e.originalEvent.target.files || e.originalEvent.dataTransfer.files;
-
-			if (!files.length) {
-				return;
-			}
-
-			var file = files[0];
-
-			var reader = new FileReader();
-			reader.onload = function(event) {
-				console.log('reader.onload');
-				try {
-					var data = pako.ungzip(this.result, {"to": "string"});
-					console.log('gzip');
-				} catch (err) {
-					console.log('xml');
-					var data = this.result;
-				}
-				tmp = strstr(data, '<?xml version="1.0" ');
-				data = (tmp !== false ? tmp : data);
-				console.log(data);
-
-				validated = false;
-				eshiol.j2xml.validate.forEach(function(fn) {
-					validated = validated || fn(data);
-				});
-				if (!validated) {
-					Joomla.renderMessages({'error': [Joomla.JText._('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN')]});
-					return false;
-				}
-
-				eshiol.j2xml.convert.forEach(function(fn) {
-					data = fn(data);
-				});
-
-				var xmlDoc;
-				var nodes = Array();
-				try {
-				   	xmlDoc = $.parseXML(data);
-					xml = $(xmlDoc);
-					root = xml.find(":root")[0];
-
-					if (root.nodeName != "j2xml") {
-						console.log(Joomla.JText._('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'));
-						Joomla.renderMessages({'error': [Joomla.JText._('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN')]});
-					} else {
-						console.log('j2xml file version ' + $(root).attr('version'));
-					}
-				} catch(e) {
-					/*
-					console.log(e);
-					Joomla.renderMessages({'error': [Joomla.JText._('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN')]});
-					return false;
-					*/
-				} finally {
-					$('#j2xml_filename').val(file.name);
-					$('#j2xml_data').val(btoa(unescape(encodeURIComponent(data))));
-
-					var j2xmlOptions  = Joomla.getOptions('J2XML'),
-						JoomlaVersion = j2xmlOptions && j2xmlOptions.Joomla ? j2xmlOptions.Joomla : '3';
-
-					if  (JoomlaVersion == '4') {
-						var el = document.getElementById('j2xmlImportModal')
-						var modal = bootstrap.Modal.getInstance(el) // Returns a Bootstrap modal instance
-						modal.show();
-					} else {
-						$('#j2xmlImportModal').modal();
-					}
-
-					fileInput.val('');
-					return false;
-				}
-			};
-			reader.readAsText(file, 'UTF-8');
-		});
-	});
-JS
-);
-
-$document->addStyleDeclaration(
-<<<CSS
-	#dragarea {
-		background-color: #fafbfc;
-		border: 1px dashed #999;
-		box-sizing: border-box;
-		padding: 5% 0;
-		transition: all 0.2s ease 0s;
-		width: 100%;
-	}
-
-	#dragarea p.lead {
-		color: #999;
-	}
-
-	#upload-icon {
-		font-size: 48px;
-		width: auto;
-		height: auto;
-		margin: 0;
-		line-height: 175%;
-		color: #999;
-		transition: all .2s;
-	}
-
-	#dragarea.hover {
-		border-color: #666;
-		background-color: #eee;
-	}
-
-	#dragarea.hover #upload-icon,
-	#dragarea p.lead {
-		color: #666;
-	}
-
-	 .upload-progress, .install-progress {
-		width: 50%;
-		margin: 5px auto;
-	 }
-
-	/* Default transition (.3s) is too slow, progress will not run to 100% */
-	.upload-progress .progress .bar {
-		-webkit-transition: width .1s;
-		-moz-transition: width .1s;
-		-o-transition: width .1s;
-		transition: width .1s;
-	}
-
-	#dragarea[data-state=pending] .upload-progress {
-		display: none;
-	}
-
-	#dragarea[data-state=pending] .install-progress {
-		display: none;
-	}
-
-	#dragarea[data-state=uploading] .install-progress {
-		display: none;
-	}
-
-	#dragarea[data-state=uploading] .upload-actions {
-		display: none;
-	}
-
-	#dragarea[data-state=installing] .upload-progress {
-		display: none;
-	}
-
-	#dragarea[data-state=installing] .upload-actions {
-		display: none;
-	}
-CSS
-);
+/** @var \Joomla\CMS\WebAsset\WebAssetManager $wa */
+$wa = $this->document->getWebAssetManager();
+$wa->useScript('com_j2xml.import')
+	->useScript('bootstrap.modal')
+	->useStyle('com_j2xml.import');
 
 $max = strtoupper(trim((string) ini_get('upload_max_filesize')));
 if ($max !== '' && $max !== '0')
@@ -378,11 +61,11 @@ else
 	$maxSize = 0;
 }
 
-$document->addScriptOptions('progressBarContainerClass', 'progress');
-$document->addScriptOptions('progressBarClass', 'progress-bar progress-bar-striped progress-bar-animated bg');
-$document->addScriptOptions('progressBarErrorClass', 'progress-bar progress-bar-striped progress-bar-animated bg-error');
+$this->document->addScriptOptions('progressBarContainerClass', 'progress');
+$this->document->addScriptOptions('progressBarClass', 'progress-bar progress-bar-striped progress-bar-animated bg');
+$this->document->addScriptOptions('progressBarErrorClass', 'progress-bar progress-bar-striped progress-bar-animated bg-error');
 ?>
-<legend><?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_UPLOAD_IMPORT_DATA'); ?></legend>
+<legend><?php echo Text::_('COM_J2XML_PACKAGEIMPORTER_UPLOAD_IMPORT_DATA'); ?></legend>
 
 <div id="uploader-wrapper">
 	<div id="dragarea" data-state="pending">
@@ -402,33 +85,33 @@ $document->addScriptOptions('progressBarErrorClass', 'progress-bar progress-bar-
 				</div>
 				<p class="lead">
 					<span class="uploading-text">
-						<?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_UPLOADING'); ?>
+						<?php echo Text::_('COM_J2XML_PACKAGEIMPORTER_UPLOADING'); ?>
 					</span>
 					<span class="uploading-number">0</span><span class="uploading-symbol">%</span>
 				</p>
 			</div>
 			<div class="install-progress">
-				<div class="progress progress-striped active">
-					<div class="bar" style="width: 100%;"></div>
+				<div class="progress">
+					<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%;"></div>
 				</div>
 				<p class="lead">
 					<span class="installing-text">
-						<?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_IMPORTING'); ?>
+						<?php echo Text::_('COM_J2XML_PACKAGEIMPORTER_IMPORTING'); ?>
 					</span>
 				</p>
 			</div>
 			<div class="upload-actions">
 				<p class="lead">
-					<?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_DRAG_FILE_HERE'); ?>
+					<?php echo Text::_('COM_J2XML_PACKAGEIMPORTER_DRAG_FILE_HERE'); ?>
 				</p>
 				<p>
 					<button id="select-file-button" type="button" class="btn btn-success">
 						<span class="icon-copy" aria-hidden="true"></span>
-						<?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_SELECT_FILE'); ?>
+						<?php echo Text::_('COM_J2XML_PACKAGEIMPORTER_SELECT_FILE'); ?>
 					</button>
 				</p>
 				<p>
-					<?php echo \Joomla\CMS\Language\Text::sprintf('JGLOBAL_MAXIMUM_UPLOAD_SIZE_LIMIT', $maxSize); ?>
+					<?php echo Text::sprintf('JGLOBAL_MAXIMUM_UPLOAD_SIZE_LIMIT', $maxSize); ?>
 				</p>
 			</div>
 		</div>
@@ -436,17 +119,16 @@ $document->addScriptOptions('progressBarErrorClass', 'progress-bar progress-bar-
 </div>
 
 <div id="legacy-uploader" style="display: none;">
-	<div class="control-group">
-		<label for="install_package" class="control-label"><?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_DATA_FILE'); ?></label>
-		<div class="controls">
-			<input class="input_box" id="install_package" name="install_package" type="file" size="57" /><br>
-			<?php echo \Joomla\CMS\Language\Text::sprintf('JGLOBAL_MAXIMUM_UPLOAD_SIZE_LIMIT', $maxSize); ?>
+	<div class="row mb-3">
+		<label for="install_package" class="form-label col-sm-3 col-form-label"><?php echo Text::_('COM_J2XML_PACKAGEIMPORTER_DATA_FILE'); ?></label>
+		<div class="col-sm-9">
+			<input class="form-control" id="install_package" name="install_package" type="file" />
+			<?php echo Text::sprintf('JGLOBAL_MAXIMUM_UPLOAD_SIZE_LIMIT', $maxSize); ?>
 		</div>
 	</div>
-	<div class="form-actions">
-<!-- <button class="btn btn-primary" type="button" id="installbutton_package" onclick="Joomla.submitbuttonpackage()"> -->
+	<div class="d-grid gap-2">
 		<button class="btn btn-primary" type="button" id="installbutton_package">
-			<?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_UPLOAD_AND_INSTALL'); ?>
+			<?php echo Text::_('COM_J2XML_PACKAGEIMPORTER_UPLOAD_AND_INSTALL'); ?>
 		</button>
 	</div>
 

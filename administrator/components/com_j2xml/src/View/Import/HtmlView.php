@@ -7,7 +7,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -20,6 +20,13 @@ namespace Joomla\Component\J2xml\Administrator\View\Import;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
+use Joomla\CMS\Log\LogEntry;
+use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Toolbar\Toolbar;
+use Joomla\CMS\Toolbar\ToolbarHelper;
 
 /**
  * J2xml Import View
@@ -39,19 +46,18 @@ class HtmlView extends \Joomla\Component\J2xml\Administrator\View\DefaultHtmlVie
 	 */
 	public function display($tpl = null)
 	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		// Initialiase variables.
-		$this->form  = $this->get('Form');
+		$this->form = $this->get('Form');
 
 		$paths = new \stdClass;
 		$paths->first = '';
 		$state = $this->get('state');
 
-		$this->paths = &$paths;
-		$this->state = &$state;
+		$this->paths = $paths;
+		$this->state = $state;
 
-		\Joomla\CMS\Plugin\PluginHelper::importPlugin('installer');
+		PluginHelper::importPlugin('installer');
 
 		parent::display($tpl);
 	}
@@ -61,21 +67,21 @@ class HtmlView extends \Joomla\Component\J2xml\Administrator\View\DefaultHtmlVie
 	 *
 	 * @since 1.6
 	 */
-	protected function addToolbar ()
+	protected function addToolbar()
 	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		\Joomla\CMS\Toolbar\ToolbarHelper::title(\Joomla\CMS\Language\Text::_('COM_J2XML_TOOLBAR_J2XML'), 'upload import');
+		ToolbarHelper::title(Text::_('COM_J2XML_TOOLBAR_J2XML'), 'upload import');
 
-		if (\Joomla\CMS\Factory::getUser()->authorise('core.admin'))
+		if (Factory::getUser()->authorise('core.admin'))
 		{
-			\Joomla\CMS\Toolbar\ToolbarHelper::preferences('com_j2xml');
+			ToolbarHelper::preferences('com_j2xml');
 		}
 
-		$doc = \Joomla\CMS\Factory::getDocument();
-		$doc->addStyleDeclaration('#toolbar-credit{float:right;}');
+		// Load the admin stylesheet (includes toolbar-credit styling)
+		$this->document->getWebAssetManager()->useStyle('com_j2xml.admin');
 
-		$toolbar = \Joomla\CMS\Toolbar\Toolbar::getInstance('toolbar');
-		$toolbar->appendButton('Popup', 'credit', 'COM_J2XML_DONATE', 'https://www.eshiol.it/' . \Joomla\CMS\Language\Text::_('COM_J2XML_DONATE_1')  . '?tmpl=component', 550, 350);
+		$toolbar = Toolbar::getInstance('toolbar');
+		$toolbar->appendButton('Popup', 'credit', 'COM_J2XML_DONATE', 'https://www.eshiol.it/' . Text::_('COM_J2XML_DONATE_1') . '?tmpl=component', 550, 350);
 	}
 }

@@ -15,7 +15,6 @@
 		<filename>install.postgresql.sql</filename>
 		<filename>install.sqlazure.sql</filename>
 		<folder>layouts</folder>
-		<folder>src</folder>
 	</files>
 	<install>
 		<sql>

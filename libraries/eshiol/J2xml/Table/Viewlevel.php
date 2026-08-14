@@ -16,7 +16,6 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Table;
 
@@ -52,9 +51,9 @@ class Viewlevel extends Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$this->_excluded = array_merge($this->_excluded, array(
+		$this->_excluded = array_merge($this->_excluded, [
 				'rules'
-		));
+		]);
 
 		$serverType = $this->_db->getServerType();
 
@@ -71,13 +70,13 @@ class Viewlevel extends Table
 				  FROM usergroups AS p, #__usergroups AS c
 				  WHERE c.parent_id = p.id
 				)
-				SELECT (\'["\' || path || \'"]\') FROM usergroups WHERE id IN ' . str_replace(array(
+				SELECT (\'["\' || path || \'"]\') FROM usergroups WHERE id IN ' . str_replace([
 					'[',
 					']'
-			), array(
+			], [
 					'(',
 					')'
-			), $this->rules);
+			], $this->rules);
 		}
 		else
 		{
@@ -85,13 +84,13 @@ class Viewlevel extends Table
 				->select($this->_db->quoteName('title'))
 				->from($this->_db->quoteName('#__j2xml_usergroups', 'g'))
 				->where(
-					$this->_db->quoteName('g.id') . ' IN ' . str_replace(array(
+					$this->_db->quoteName('g.id') . ' IN ' . str_replace([
 							'[',
 							']'
-					), array(
+					], [
 							'(',
 							')'
-					), $this->rules));
+					], $this->rules));
 		}
 
 		return parent::toXML($mapKeysToText);
@@ -131,10 +130,10 @@ class Viewlevel extends Table
 			$id = $data['id'];
 
 			$query = $db->getQuery(true)
-				->select(array(
+				->select([
 					$db->quoteName('id'),
 					$db->quoteName('title')
-			))
+			])
 				->from($db->quoteName('#__viewlevels'))
 				->where($db->quoteName('title') . ' = ' . $db->quote($data['title']));
 			$item = $db->setQuery($query)->loadObject();
@@ -153,7 +152,7 @@ class Viewlevel extends Table
 				}
 
 				// Add rules to the viewlevel data.
-				$rules_id = array();
+				$rules_id = [];
 				if (isset($data['rule']))
 				{
 					$rules_id[] = $data['rule'];
@@ -178,7 +177,7 @@ class Viewlevel extends Table
 					else
 					{
 						$groups = json_decode($rules_id[$i]);
-						$g = array();
+						$g = [];
 						$id = 0;
 
 						for ($j = 0; $j < count($groups); $j ++)
@@ -193,10 +192,10 @@ class Viewlevel extends Table
 							else // import usergroup
 							{
 								$u = new \Joomla\CMS\Table\Usergroup($db); // \Joomla\CMS\Table\Table::getInstance('Usergroup');
-								$u->save(array(
+								$u->save([
 										'title' => $groups[$j],
 										'parent_id' => $id
-								));
+								]);
 								$id = $u->id;
 								\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERGROUP_IMPORTED', $groups[$j]), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 							}

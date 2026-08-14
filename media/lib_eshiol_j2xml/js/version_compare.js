@@ -28,11 +28,13 @@
  * @copyright by Jon Papaioannou (["john", "papaioannou"].join(".") + "@gmail.com")
  * @license This function is in the public domain. Do what you want with it, no strings attached.
  */
+'use strict';
+
 function versionCompare(v1, v2, options) {
-	var lexicographical = options && options.lexicographical,
-		zeroExtend = options && options.zeroExtend,
-		v1parts = v1.split('.'),
-		v2parts = v2.split('.');
+	const lexicographical = options && options.lexicographical;
+	const zeroExtend = options && options.zeroExtend;
+	let v1parts = v1.split('.');
+	let v2parts = v2.split('.');
 
 	function isValidPart(x) {
 		return (lexicographical ? /^\d+[A-Za-z]*$/ : /^\d+$/).test(x);
@@ -52,23 +54,21 @@ function versionCompare(v1, v2, options) {
 		v2parts = v2parts.map(Number);
 	}
 
-	for (var i = 0; i < v1parts.length; ++i) {
-		if (v2parts.length == i) {
+	for (let i = 0; i < v1parts.length; ++i) {
+		if (v2parts.length === i) {
 			return 1;
 		}
 
-		if (v1parts[i] == v2parts[i]) {
+		if (v1parts[i] === v2parts[i]) {
 			continue;
-		}
-		else if (v1parts[i] > v2parts[i]) {
+		} else if (v1parts[i] > v2parts[i]) {
 			return 1;
-		}
-		else {
+		} else {
 			return -1;
 		}
 	}
 
-	if (v1parts.length != v2parts.length) {
+	if (v1parts.length !== v2parts.length) {
 		return -1;
 	}
 

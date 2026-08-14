@@ -45,6 +45,7 @@
 			<filename>access.xml</filename>
 			<filename>config.xml</filename>
 			<folder>forms</folder>
+			<folder>layouts</folder>
 			<folder>sql</folder>
 			<folder>views</folder>
 			<folder>services</folder>
@@ -56,6 +57,8 @@
 		</languages>
 	</administration>
 	<media destination="com_j2xml" folder="media">
+		<filename>joomla.asset.json</filename>
 		<folder>js</folder>
+		<folder>css</folder>
 	</media>
 </extension>

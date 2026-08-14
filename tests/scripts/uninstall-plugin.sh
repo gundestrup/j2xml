@@ -76,7 +76,7 @@ echo "[uninstall] Fetching extension manager page..."
 MANAGE_PAGE=$(curl -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
     "$JOOMLA_URL/administrator/index.php?option=com_installer&view=manage" 2>/dev/null)
 
-CSRF=$(echo "$MANAGE_PAGE" | sed -n 's/.*"csrf.token":"\([a-f0-9]\{32\}\)".*/\1/p' | head -1)
+CSRF=$(echo "$MANAGE_PAGE" | sed -n 's/.*"csrf.token":[[:space:]]*"\([a-f0-9]\{32\}\)".*/\1/p' | head -1)
 if [ -z "$CSRF" ]; then
     # Try to get it from the form
     CSRF=$(echo "$MANAGE_PAGE" | sed -n 's/.*name="\(token\)" value="\([a-f0-9]\{32\}\)".*/\2/p' | head -1)

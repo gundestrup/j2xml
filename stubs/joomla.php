@@ -494,6 +494,8 @@ namespace Joomla\CMS\MVC\View
         public $paths = null;
         public $showMessage = false;
         protected $_basePath = null;
+        /** @var \Joomla\CMS\Document\Document */
+        public $document = null;
 
         public function __construct(array $config = []) {}
         public function display(?string $tpl = null) {}
@@ -1005,6 +1007,11 @@ namespace Joomla\CMS\Layout
         public function setIncludePaths(array $paths): self { return $this; }
         public function getIncludePaths(): array { return []; }
         public function getLayoutId(): string { return ''; }
+    }
+
+    class LayoutHelper
+    {
+        public static function render(string $layoutFile, array $displayData = [], ?string $basePath = null, ?string $options = null): string { return ''; }
     }
 }
 

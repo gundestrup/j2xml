@@ -16,7 +16,6 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Category;
 use eshiol\J2xml\Table\Image;
@@ -153,11 +152,11 @@ class Usernote extends \eshiol\J2xml\Table\Table
 //				if (!$overwrite)
 //				{
 					$table->load(
-						array(
+						[
 							'user_id' => $data['user_id'],
 							'catid' => $data['catid'],
 							'subject' => $data['subject']
-						));
+						]);
 //				}
 
 				$table->bind($data);

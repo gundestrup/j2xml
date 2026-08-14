@@ -20,12 +20,18 @@ namespace Joomla\Component\J2xml\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Log\Log;
+use Joomla\CMS\Log\LogEntry;
+use Joomla\CMS\MVC\Model\FormModel;
+
 /**
  * Export model.
  *
  * @since 3.9.0
  */
-class ExportModel extends \Joomla\CMS\MVC\Model\FormModel
+class ExportModel extends FormModel
 {
 
 	/**
@@ -33,7 +39,7 @@ class ExportModel extends \Joomla\CMS\MVC\Model\FormModel
 	 *
 	 * @var string
 	 */
-	protected $_context = 'j2xml';
+	protected $context = 'j2xml';
 
 	/**
 	 * Constructor.
@@ -44,14 +50,14 @@ class ExportModel extends \Joomla\CMS\MVC\Model\FormModel
 	 * @see JModelLegacy
 	 * @since 3.9.0
 	 */
-	public function __construct($config = array())
+	public function __construct($config = [])
 	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$layout = \Joomla\CMS\Factory::getApplication()->input->get('layout', 'default');
+		$layout = Factory::getApplication()->input->get('layout', 'default');
 		if ($layout != 'default')
 		{
-			$this->_context .= '.' . $layout;
+			$this->context .= '.' . $layout;
 		}
 
 		parent::__construct($config);
@@ -69,18 +75,18 @@ class ExportModel extends \Joomla\CMS\MVC\Model\FormModel
 	 *
 	 * @since 3.9.0
 	 */
-	public function getForm($data = array(), $loadData = true)
+	public function getForm($data = [], $loadData = true)
 	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
 		try
 		{
-			$form = $this->loadForm($this->_context, 'export', array(
+			$form = $this->loadForm($this->context, 'export', [
 				'control' => 'jform',
 				'load_data' => false
-			));
+			]);
 
-			$layout = \Joomla\CMS\Factory::getApplication()->input->get('layout', 'default');
+			$layout = Factory::getApplication()->input->get('layout', 'default');
 			if ($layout != 'default')
 			{
 				$form->loadFile('export_' . $layout);
@@ -106,7 +112,7 @@ class ExportModel extends \Joomla\CMS\MVC\Model\FormModel
 			}
 			else
 			{
-				$data = array();
+				$data = [];
 			}
 
 			// Allow for additional modification of the form, and events to be triggered.
@@ -135,22 +141,22 @@ class ExportModel extends \Joomla\CMS\MVC\Model\FormModel
 	 */
 	protected function loadFormData()
 	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
 		// Check the session for previously entered form data.
-		$data   = \Joomla\CMS\Factory::getApplication()->getUserState('com_j2xml.export.data', array());
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('getUserState(\'com_j2xml.export.data\'): ' . print_r($data, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
-		$jform  = array();
+		$data   = Factory::getApplication()->getUserState('com_j2xml.export.data', []);
+		Log::add(new LogEntry('getUserState(\'com_j2xml.export.data\'): ' . print_r($data, true), Log::DEBUG, 'com_j2xml'));
+		$jform  = [];
 		foreach($data as $k => $v)
 		{
 			$jform['export_' . $k] = $v;
 		}
 
-		$params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
+		$params = ComponentHelper::getParams('com_j2xml');
 		$data   = array_merge($params->toArray(), $jform);
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('data: ' . print_r($data, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		Log::add(new LogEntry('data: ' . print_r($data, true), Log::DEBUG, 'com_j2xml'));
 
-		$this->preprocessData($this->_context, $data);
+		$this->preprocessData($this->context, $data);
 
 		return $data;
 	}

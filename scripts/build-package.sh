@@ -67,12 +67,12 @@ cp "$ROOT_DIR/administrator/components/com_j2xml/script.php" "$STAGING/script.ph
 mkdir -p "$STAGING/site"
 cp "$ROOT_DIR/components/com_j2xml/j2xml.php" "$STAGING/site/j2xml.php"
 copy_dir "$ROOT_DIR/components/com_j2xml/controllers" "$STAGING/site/controllers"
-copy_dir "$ROOT_DIR/components/com_j2xml/helpers" "$STAGING/site/helpers"
 # Admin files (folder="admin")
 mkdir -p "$STAGING/admin"
 cp "$ROOT_DIR/administrator/components/com_j2xml/access.xml" "$STAGING/admin/access.xml"
 cp "$ROOT_DIR/administrator/components/com_j2xml/config.xml" "$STAGING/admin/config.xml"
 copy_dir "$ROOT_DIR/administrator/components/com_j2xml/forms" "$STAGING/admin/forms"
+copy_dir "$ROOT_DIR/administrator/components/com_j2xml/layouts" "$STAGING/admin/layouts"
 copy_dir "$ROOT_DIR/administrator/components/com_j2xml/sql" "$STAGING/admin/sql"
 copy_dir "$ROOT_DIR/administrator/components/com_j2xml/views" "$STAGING/admin/views"
 copy_dir "$ROOT_DIR/administrator/components/com_j2xml/services" "$STAGING/admin/services"
@@ -85,10 +85,17 @@ mkdir -p "$STAGING/admin/language/en-GB"
 cp "$ROOT_DIR/administrator/language/en-GB/en-GB.com_j2xml.ini" "$STAGING/admin/language/en-GB/"
 cp "$ROOT_DIR/administrator/language/en-GB/en-GB.com_j2xml.sys.ini" "$STAGING/admin/language/en-GB/"
 # Media (folder="media")
-mkdir -p "$STAGING/media/js"
+mkdir -p "$STAGING/media/js" "$STAGING/media/css"
 copy_dir "$ROOT_DIR/media/com_j2xml/js" "$STAGING/media/js"
+copy_dir "$ROOT_DIR/media/com_j2xml/css" "$STAGING/media/css"
+cp "$ROOT_DIR/media/com_j2xml/joomla.asset.json" "$STAGING/media/joomla.asset.json"
+substitute_placeholders "$STAGING/media/joomla.asset.json"
 # Substitute placeholders
 substitute_placeholders "$STAGING/j2xml.xml"
+# Substitute __DEPLOY_VERSION__ in JS files
+find "$STAGING/media/js" -type f -name '*.js' | while read -r f; do
+    substitute_placeholders "$f"
+done
 make_zip "$STAGING" "com_j2xml.zip"
 
 # --- lib_eshiol_J2xml.zip ---------------------------------------------------
@@ -112,8 +119,14 @@ cp "$ROOT_DIR/language/en-GB/en-GB.lib_j2xml.sys.ini" "$STAGING/language/en-GB/"
 # Media (folder="media")
 mkdir -p "$STAGING/media/js"
 copy_dir "$ROOT_DIR/media/lib_eshiol_j2xml/js" "$STAGING/media/js"
+cp "$ROOT_DIR/media/lib_eshiol_j2xml/joomla.asset.json" "$STAGING/media/joomla.asset.json"
+substitute_placeholders "$STAGING/media/joomla.asset.json"
 # Substitute placeholders
 substitute_placeholders "$STAGING/j2xml.xml"
+# Substitute __DEPLOY_VERSION__ in JS files
+find "$STAGING/media/js" -type f -name '*.js' | while read -r f; do
+    substitute_placeholders "$f"
+done
 make_zip "$STAGING" "lib_eshiol_J2xml.zip"
 
 # --- plg_system_j2xml.zip ---------------------------------------------------
@@ -128,7 +141,6 @@ cp "$ROOT_DIR/plugins/system/j2xml/install.mysql.sql" "$STAGING/"
 cp "$ROOT_DIR/plugins/system/j2xml/install.postgresql.sql" "$STAGING/"
 cp "$ROOT_DIR/plugins/system/j2xml/install.sqlazure.sql" "$STAGING/"
 copy_dir "$ROOT_DIR/plugins/system/j2xml/layouts" "$STAGING/layouts"
-copy_dir "$ROOT_DIR/plugins/system/j2xml/src" "$STAGING/src"
 # Language (folder="language")
 mkdir -p "$STAGING/language/en-GB"
 cp "$ROOT_DIR/administrator/language/en-GB/en-GB.plg_system_j2xml.ini" "$STAGING/language/en-GB/"

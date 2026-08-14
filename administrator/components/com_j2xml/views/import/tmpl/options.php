@@ -7,7 +7,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -18,29 +18,32 @@
 // no direct access
 defined('_JEXEC') or die;
 
-\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidator');
+use Joomla\CMS\Form\FormHelper;
+use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
 
 $ui = 'uitab';
 
 /** @var Joomla\CMS\WebAsset\WebAssetManager $wa */
 $wa = $this->document->getWebAssetManager();
-$wa->useScript('showon');
+$wa->useScript('showon')
+	->useScript('form.validate');
 ?>
 
 <form
-	action="<?php echo \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml'); ?>"
-	id="adminForm" method="post" name="adminForm" autocomplete="off"
-	class="form-horizontal">
+	action="<?php echo Route::_('index.php?option=com_j2xml'); ?>"
+	id="adminForm" method="post" name="adminForm" autocomplete="off">
 
 	<?php $fieldsets = $this->form->getFieldsets(); ?>
 
-	<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.startTabSet', 'j2xmlImport', array('active' => 'export')); ?>
+	<?php echo HTMLHelper::_($ui . '.startTabSet', 'j2xmlImport', ['active' => 'export']); ?>
 
 	<?php foreach ($fieldsets as $name => $fieldSet) : ?>
 		<?php if ($name == 'details') continue; ?>
 
 		<?php $label = empty($fieldSet->label) ? 'COM_J2XML_' . $name . '_FIELDSET_LABEL' : $fieldSet->label; ?>
-		<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.addTab', 'j2xmlImport', $name, \Joomla\CMS\Language\Text::_($label)); ?>
+		<?php echo HTMLHelper::_($ui . '.addTab', 'j2xmlImport', $name, Text::_($label)); ?>
 
 		<?php foreach ($this->form->getFieldset($name) as $field) : ?>
 			<?php
@@ -48,9 +51,7 @@ $wa->useScript('showon');
 				$groupClass = $field->type === 'Spacer' ? ' field-spacer' : '';
 			?>
 			<?php if ($field->showon) : ?>
-				<?php \Joomla\CMS\HTML\HTMLHelper::_('jquery.framework'); ?>
-				<?php \Joomla\CMS\HTML\HTMLHelper::_('script', 'jui/cms.js', array('version' => 'auto', 'relative' => true)); ?>
-				<?php $dataShowOn = ' data-showon=\'' . json_encode(\Joomla\CMS\Form\FormHelper::parseShowOnConditions($field->showon, $field->formControl, $field->group)) . '\''; ?>
+				<?php $dataShowOn = ' data-showon=\'' . json_encode(FormHelper::parseShowOnConditions($field->showon, $field->formControl, $field->group)) . '\''; ?>
 			<?php endif; ?>
 			<?php if ($field->hidden) : ?>
 				<?php echo $field->input; ?>
@@ -68,7 +69,7 @@ $wa->useScript('showon');
 			<?php endif; ?>
 		<?php endforeach; ?>
 
-		<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.endTab'); ?>
+		<?php echo HTMLHelper::_($ui . '.endTab'); ?>
 	<?php endforeach; ?>
-	<?php echo \Joomla\CMS\HTML\HTMLHelper::_($ui . '.endTabSet'); ?>
+	<?php echo HTMLHelper::_($ui . '.endTabSet'); ?>
 </form>

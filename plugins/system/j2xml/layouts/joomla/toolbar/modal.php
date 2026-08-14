@@ -8,7 +8,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -19,9 +19,12 @@
 // no direct access
 defined('_JEXEC') or die('Restricted access.');
 
-\JLog::add(new \Joomla\CMS\Log\LogEntry(__FILE__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
+use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Language\Text;
 
-\Joomla\CMS\HTML\HTMLHelper::_('behavior.core');
+Factory::getApplication()->getDocument()->getWebAssetManager()
+	->useScript('webcomponent.toolbar-button');
 
 /**
  * Generic toolbar button layout to open a modal
@@ -33,32 +36,50 @@ defined('_JEXEC') or die('Restricted access.');
  *								  - text	  string  Button text
  */
 
+$tagName = $tagName ?? 'button';
+
 $selector = $displayData['selector'];
-$class	= isset($displayData['class']) ? $displayData['class'] : 'btn btn-small';
-$icon	 = isset($displayData['icon']) ? $displayData['icon'] : 'out-3';
+$id	   = isset($displayData['id']) ? $displayData['id'] : '';
+$class	= isset($displayData['class']) ? $displayData['class'] : 'btn btn-sm btn-primary';
+$icon	 = isset($displayData['icon']) ? $displayData['icon'] : 'fas fa-download';
 $title	= $displayData['title'];
 $text	 = isset($displayData['text']) ? $displayData['text'] : '';
+$cancel   = isset($displayData['cancel']) ? $displayData['cancel'] : Text::_('JCANCEL');
+$ok	   = isset($displayData['ok']) ? $displayData['ok'] : Text::_('JOK');
 $onclick  = isset($displayData['onclick']) ? $displayData['onclick'] : '';
-$cancel   = isset($displayData['cancel']) ? $displayData['cancel'] : \Joomla\CMS\Language\Text::_('JCANCEL');
-$ok	   = isset($displayData['ok']) ? $displayData['ok'] : \Joomla\CMS\Language\Text::_('JOK');
-
-\Joomla\CMS\Language\Text::script('JLIB_HTML_PLEASE_MAKE_A_SELECTION_FROM_THE_LIST');
-$message = "alert(Joomla.JText._('JLIB_HTML_PLEASE_MAKE_A_SELECTION_FROM_THE_LIST'));";
+$validate = !empty($formValidation) ? ' form-validation' : '';
 ?>
-<button type="button" class="<?php echo $class; ?>" data-toggle="modal" onclick="if (document.adminForm.boxchecked.value==0){<?php echo $message; ?>}else{jQuery('#<?php echo $selector; ?>Modal').modal('show');return true;}">
-	<span class="icon-<?php echo $icon; ?>" aria-hidden="true"></span>
-	<?php echo $text; ?>
-</button>
+
+<joomla-toolbar-button<?php echo $id; ?> onclick="document.getElementById('<?php echo $selector; ?>Modal').open();
+	document.body.appendChild(document.getElementById('<?php echo $selector; ?>Modal'));"
+	data-toggle="modal">
+<<?php echo $tagName; ?>
+	class="<?php echo $class ?? ''; ?>"
+	<?php echo $htmlAttributes ?? ''; ?>
+	<?php echo $title; ?>
+	>
+	<span class="<?php echo $icon; ?>" aria-hidden="true"></span>
+	<?php echo $text ?? ''; ?>
+</<?php echo $tagName; ?>>
+</joomla-toolbar-button>
 
 <!-- Render the modal -->
 <?php
-echo \Joomla\CMS\HTML\HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal', array(
-	'url'         => $displayData['doTask'],
-	'title'	      => $title,
-	'modalWidth'  => '40',
-	'height'	  => '310px',
-	'footer'	  => '<button class="btn" data-dismiss="modal" type="button"'
-	. ' onclick="jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#' . $selector . 'CancelBtn\').click();">' . $cancel . '</button>'
-	. '<button class="btn btn-success" type="button"'
-	. ' onclick="' . $onclick . 'jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#' . $selector . 'OkBtn\').click();">'
-	. $ok . '</button>'));
+echo HTMLHelper::_('bootstrap.renderModal',
+	$selector . 'Modal',
+	[
+		'url'		 => $displayData['doTask'],
+		'title'	   => $title,
+		'modalWidth'  => '40',
+		'height'	  => '310px',
+		'closeButton' => true,
+		'footer'	  => '<button class="btn btn-secondary" data-dismiss="modal" type="button"'
+					. ' onclick="window.parent.Joomla.Modal.getCurrent().close();">'
+					. $cancel . '</button>'
+					.'<joomla-toolbar-button' . $validate
+					. ' onclick="' . $onclick . 'Joomla.iframeButtonClick({iframeSelector: \'#' . $selector . 'Modal\', buttonSelector: \'#' . $selector . 'OkBtn\'})">'
+					. '<button class="btn btn-success" type="button">'
+					. $ok . '</button>'
+					.'</joomla-toolbar-button>'
+	]
+);

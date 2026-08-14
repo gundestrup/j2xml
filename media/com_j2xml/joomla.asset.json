@@ -1,0 +1,69 @@
+{
+    "$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+    "name": "com_j2xml",
+    "version": "__DEPLOY_VERSION__",
+    "description": "J2XML component assets",
+    "license": "GPL-3.0-or-later",
+    "assets": [
+        {
+            "name": "com_j2xml.base64",
+            "type": "script",
+            "uri": "lib_eshiol_j2xml/js/base64.js"
+        },
+        {
+            "name": "com_j2xml.version_compare",
+            "type": "script",
+            "uri": "lib_eshiol_j2xml/js/version_compare.js"
+        },
+        {
+            "name": "com_j2xml.pako_inflate",
+            "type": "script",
+            "uri": "lib_eshiol_j2xml/js/pako_inflate.js"
+        },
+        {
+            "name": "com_j2xml.library",
+            "type": "script",
+            "uri": "lib_eshiol_j2xml/js/j2xml.js",
+            "dependencies": [
+                "com_j2xml.base64",
+                "com_j2xml.version_compare"
+            ]
+        },
+        {
+            "name": "com_j2xml.j2xml",
+            "type": "script",
+            "uri": "js/j2xml.js",
+            "dependencies": [
+                "com_j2xml.library",
+                "com_j2xml.pako_inflate"
+            ]
+        },
+        {
+            "name": "com_j2xml.admin",
+            "type": "script",
+            "uri": "js/admin.js",
+            "dependencies": [
+                "com_j2xml.j2xml"
+            ]
+        },
+        {
+            "name": "com_j2xml.import",
+            "type": "script",
+            "uri": "js/import.js",
+            "dependencies": [
+                "com_j2xml.j2xml",
+                "com_j2xml.pako_inflate"
+            ]
+        },
+        {
+            "name": "com_j2xml.admin",
+            "type": "style",
+            "uri": "css/admin.css"
+        },
+        {
+            "name": "com_j2xml.import",
+            "type": "style",
+            "uri": "css/import.css"
+        }
+    ]
+}

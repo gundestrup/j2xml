@@ -8,7 +8,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -24,8 +24,6 @@ if (!class_exists('eshiol\\J2xml\\Exporter'))
 {
 	\JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
 }
-
-\JLoader::register('eshiol\\J2xml\\Helper\\Joomla', __DIR__ . '/src/J2xml/Helper/Joomla.php');
 
 /**
  *
@@ -64,23 +62,23 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 		if ($this->params->get('debug', $cparams->get('debug', false)) || defined('JDEBUG') && JDEBUG)
 		{
 			\Joomla\CMS\Log\Log::addLogger(
-				array('text_file' => $this->params->get('log', 'eshiol.log.php'), 'extension' => 'plg_system_j2xml_file'),
+				['text_file' => $this->params->get('log', 'eshiol.log.php'), 'extension' => 'plg_system_j2xml_file'],
 				\Joomla\CMS\Log\Log::ALL,
-				array('plg_system_j2xml'));
+				['plg_system_j2xml']);
 		}
 		if (PHP_SAPI == 'cli')
 		{
 			\Joomla\CMS\Log\Log::addLogger(
-				array('logger' => 'echo', 'extension' => 'plg_system_j2xml'),
+				['logger' => 'echo', 'extension' => 'plg_system_j2xml'],
 				\Joomla\CMS\Log\Log::ALL & ~ \Joomla\CMS\Log\Log::DEBUG,
-				array('plg_system_j2xml'));
+				['plg_system_j2xml']);
 		}
 		else
 		{
 			\Joomla\CMS\Log\Log::addLogger(
-				array('logger' => (null !== $this->params->get('logger')) ? $this->params->get('logger') : 'messagequeue', 'extension' => 'plg_system_j2xml'),
+				['logger' => (null !== $this->params->get('logger')) ? $this->params->get('logger') : 'messagequeue', 'extension' => 'plg_system_j2xml'],
 				\Joomla\CMS\Log\Log::ALL & ~ \Joomla\CMS\Log\Log::DEBUG,
-				array('plg_system_j2xml'));
+				['plg_system_j2xml']);
 		}
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
@@ -205,12 +203,12 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 			}
 			$iconExport = 'icon-download';
 			$iconSend = 'icon-out';
-			$layout = new JLayoutFile('joomla4.toolbar.modal');
+			$layout = new JLayoutFile('joomla.toolbar.modal');
 
 			$layout->addIncludePath(JPATH_PLUGINS . '/system/j2xml/layouts');
 			$selector = 'j2xmlExport';
 			$dHtml	= $layout->render(
-				array(
+				[
 					'selector' => $selector,
 					'icon'	   => $iconExport,
 					'text'	   => \Joomla\CMS\Language\Text::_('JTOOLBAR_EXPORT'),
@@ -218,8 +216,8 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 					'class'	   => $buttonClass,
 					'doTask'   => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=export&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
 					'ok'	   => \Joomla\CMS\Language\Text::_('JTOOLBAR_EXPORT'),
-					'onclick'  => 'var cids=new Array();jQuery(\'input:checkbox[name=\\\'cid\[\]\\\']:checked\').each( function(){cids.push(jQuery(this).val());});jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#jform_cid\').val(cids);'
-			));
+					'onclick'  => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name="cid[]"]:checked\').forEach(function(cb){cids.push(cb.value);});document.querySelector(\'#' . $selector . 'Modal iframe\').contentWindow.document.getElementById(\'jform_cid\').value=cids;'
+				]);
 
 			$bar->appendButton('Custom', $dHtml, 'download');
 
@@ -236,10 +234,9 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 			{
 				\Joomla\CMS\Language\Text::script('LIB_J2XML_ERROR_UNKNOWN');
 
-				$layout->addIncludePath(JPATH_PLUGINS . '/system/j2xml/layout');
 				$selector = 'j2xmlSend';
 				$dHtml	= $layout->render(
-					array(
+					[
 						'selector'       => $selector,
 						'icon'	         => $iconSend,
 						'text'	         => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
@@ -247,9 +244,9 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 						'class'	         => $buttonClass,
 						'doTask'         => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=send&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
 						'ok'	         => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
-						'onclick'        => 'var cids=new Array();jQuery(\'input:checkbox[name=\\\'cid\[\]\\\']:checked\').each( function(){cids.push(jQuery(this).val());});jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#jform_cid\').val(cids);',
+						'onclick'        => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name="cid[]"]:checked\').forEach(function(cb){cids.push(cb.value);});document.querySelector(\'#' . $selector . 'Modal iframe\').contentWindow.document.getElementById(\'jform_cid\').value=cids;',
 						'formValidation' => true
-					));
+					]);
 				$bar->appendButton('Custom', $dHtml, 'send');
 			}
 		}
@@ -260,19 +257,4 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 
 		return true;
 	}
-
-	/**
-	 * Add an assets for debugger.
-	 *
-	 * @return  void
-	 *
-	 * @since   4.0.0
-	 */
-	public function onBeforeCompileHead()
-	{
-		// Use our own jQuery and fontawesome instead of the debug bar shipped version
-		$assetManager = $this->app->getDocument()->getWebAssetManager();
-		$assetManager->useScript('core')->useScript('jquery');
-	}
-
 }

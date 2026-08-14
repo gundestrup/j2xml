@@ -16,7 +16,6 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 /**
  *
@@ -130,10 +129,10 @@ class Menutype extends \eshiol\J2XML\Table\Table
 			self::prepareData($record, $data, $params);
 
 			$query = $db->getQuery(true)
-				->select($db->qn(array(
+				->select($db->qn([
 					'id',
 					'title'
-			)))
+			]))
 				->from($db->qn('#__menu_types'))
 				->where($db->qn('menutype') . '=' . $db->q($data['menutype']));
 			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));

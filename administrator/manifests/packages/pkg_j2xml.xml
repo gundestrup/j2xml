@@ -2,7 +2,7 @@
 <extension type="package" method="upgrade">
 	<name>J2XML 3.9</name>
 	<packagename>j2xml</packagename>
-	<description><![CDATA[J2XML 3.9 the ultimate solution to share content for Joomla! 3.x & 4.x]]></description>
+	<description><![CDATA[J2XML 3.9 the ultimate solution to share content for Joomla! 5.x & 6.x]]></description>
 
 	<author>Helios Ciancio</author>
 	<authorEmail>info (at) eshiol (dot) it</authorEmail>

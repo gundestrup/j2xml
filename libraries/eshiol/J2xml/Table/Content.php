@@ -16,7 +16,6 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Category;
 use eshiol\J2xml\Table\Field;
@@ -74,12 +73,12 @@ class Content extends Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
-		$this->_excluded = array_merge($this->_excluded, array(
+		$this->_excluded = array_merge($this->_excluded, [
 				'sectionid',
 				'mask',
 				'title_alias',
 				'ordering'
-		));
+		]);
 
 		// $this->_aliases['featured'] = 'SELECT IFNULL(f.ordering,0) FROM
 		// #__content_frontpage f RIGHT JOIN #__content a ON f.content_id = a.id
@@ -175,7 +174,7 @@ class Content extends Table
 			->select($this->_db->quoteName('f.id'))
 			->select($this->_db->quoteName('f.name'))
 			->from($this->_db->quoteName('#__fields', 'f'));
-		$fields = array();
+		$fields = [];
 		foreach ($this->_db->setQuery($query)->loadObjectList() as $field)
 		{
 			$fields['field' . $field->id] = $field->name;
@@ -215,15 +214,15 @@ class Content extends Table
 
 		$query = $this->_db->getQuery(true);
 		$this->_aliases['association'] = (string) $query
-			->select($query->concatenate(array($this->_db->quoteName('cc.path'), $this->_db->quoteName('c.alias')), '/'))
+			->select($query->concatenate([$this->_db->quoteName('cc.path'), $this->_db->quoteName('c.alias')], '/'))
 			->from($this->_db->quoteName('#__associations', 'asso1'))
 			->join('INNER', $this->_db->quoteName('#__associations', 'asso2') . ' ON ' . $this->_db->quoteName('asso1.key') . ' = ' . $this->_db->quoteName('asso2.key'))
 			->join('INNER', $this->_db->quoteName('#__content', 'c') . ' ON ' . $this->_db->quoteName('asso2.id') . ' = ' . $this->_db->quoteName('c.id'))
 			->join('INNER', $this->_db->quoteName('#__categories', 'cc') . ' ON ' . $this->_db->quoteName('c.catid') . ' = ' . $this->_db->quoteName('cc.id'))
-			->where(array(
+			->where([
 				$this->_db->quoteName('asso1.id') . ' = ' . (int) $this->id,
 				$this->_db->quoteName('asso1.context') . ' = ' . $this->_db->quote('com_content.item'),
-				$this->_db->quoteName('asso2.id') . ' <> ' . (int) $this->id));
+				$this->_db->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
 
 		return parent::toXML($mapKeysToText);
 	}
@@ -291,11 +290,11 @@ class Content extends Table
 			$content = $db->setQuery(
 				$query = $db->getQuery(true)
 					->select(
-						array(
+						[
 							$db->quoteName('id'),
 							$db->quoteName('title'),
 							'GREATEST(' . $db->quoteName('created') . ',' . $db->quoteName('modified') . ') ' . $db->quoteName('modified')
-						))
+						])
 					->from($db->quoteName('#__content'))
 					->where($db->quoteName('catid') . ' = ' . $db->quote($data['catid']))
 					->where($db->quoteName('alias') . ' = ' . $db->quote($data['alias'])))
@@ -529,7 +528,7 @@ class Content extends Table
 
 		if (empty($data['associations']))
 		{
-			$data['associations'] = array();
+			$data['associations'] = [];
 		}
 
 		if (isset($data['associationlist']))
@@ -610,11 +609,11 @@ class Content extends Table
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlBeforeExportContent', array(
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlBeforeExportContent', [
 			'lib_j2xml.article',
 			&$item,
 			$params
-		));
+		]);
 
 		if ($item->access > 6)
 		{
@@ -942,7 +941,7 @@ class Content extends Table
 					->where($db->quoteName('context') . ' = ' . $db->quote($contextLanguage));
 				\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 				$rows = $db->setQuery($query)->loadObjectList();
-				$associations = array();
+				$associations = [];
 				foreach ($rows as $row)
 				{
 					$associations[$row->language] = (int) $row->id;

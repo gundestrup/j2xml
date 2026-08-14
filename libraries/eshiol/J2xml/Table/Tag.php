@@ -16,7 +16,6 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Image;
 use eshiol\J2xml\Table\Table;
@@ -94,10 +93,10 @@ class Tag extends Table
 
 			$tag = $db->setQuery(
 					$db->getQuery(true)
-						->select(array(
+						->select([
 							$db->quoteName('id'),
 							$db->quoteName('title')
-					))
+					])
 						->from($db->quoteName('#__tags'))
 						->where($db->quoteName('path') . ' = ' . $db->quote($data['path'])))
 				->loadObject();
@@ -159,10 +158,10 @@ class Tag extends Table
 			$query = $db->getQuery(true)
 				->select('id')
 				->from('#__tags')
-				->where('path IN (' . implode(',', array_map(array(
+				->where('path IN (' . implode(',', array_map([
 					$db,
 					'quote'
-			), $tags)) . ')');
+			], $tags)) . ')');
 			$db->setQuery($query);
 
 			try

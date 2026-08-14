@@ -16,7 +16,6 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Contact;
 use eshiol\J2xml\Table\Field;
@@ -103,7 +102,7 @@ class User extends Table
 			->select($this->_db->quoteName('f.id'))
 			->select($this->_db->quoteName('f.name'))
 			->from($this->_db->quoteName('#__fields', 'f'));
-		$fields = array();
+		$fields = [];
 		foreach ($this->_db->setQuery($query)->loadObjectList() as $field)
 		{
 			$fields['field' . $field->id] = $field->name;
@@ -192,7 +191,7 @@ class User extends Table
 
 		$mvcFactory = Factory::getApplication()->bootComponent('com_users')->getMVCFactory();
 
-		$users = array();
+		$users = [];
 		foreach ($xml->xpath("//j2xml/user[not(username = '')]") as $record)
 		{
 			self::prepareData($record, $data, $params);
@@ -209,7 +208,7 @@ class User extends Table
 			}
 			elseif (isset($data['grouplist']))
 			{
-				$data['groups'] = array();
+				$data['groups'] = [];
 				foreach ($data['grouplist']['group'] as $v)
 				{
 					$data['groups'][] = parent::getUsergroupId($v);
@@ -326,12 +325,12 @@ class User extends Table
 							$order = 1;
 							$query->columns(
 									$db->quoteName(
-											array(
+											[
 													'user_id',
 													'profile_key',
 													'profile_value',
 													'ordering'
-											)));
+											]));
 							foreach ($data['profilelist']['profile'] as $v)
 							{
 								$query->values($id . ', ' . $db->quote($v['name']) . ', ' . $db->quote($v['value']) . ', ' . $order ++);
@@ -339,7 +338,7 @@ class User extends Table
 							$db->setQuery($query)->execute();
 						}
 					}
-					catch (\JException $e)
+					catch (\Exception $e)
 					{
 						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NO_PROFILE', $data['name']), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
 					}

@@ -1,0 +1,16 @@
+/**
+ * J2XML admin styles
+ *
+ * @version     __DEPLOY_VERSION__
+ */
+
+#loading {
+    background: rgba(255, 255, 255, .8) url("../../system/images/ajax-loader.gif") 50% 15% no-repeat;
+    position: fixed;
+    opacity: 0.8;
+    overflow: hidden;
+}
+
+#toolbar-credit {
+    float: right;
+}

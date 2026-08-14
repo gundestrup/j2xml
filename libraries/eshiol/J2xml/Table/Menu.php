@@ -16,7 +16,6 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 /**
  *
@@ -53,7 +52,7 @@ class Menu extends \eshiol\J2XML\Table\Table
 			$this->_aliases['component_id'] = 'SELECT ' . $this->_db->qn('name') . ' FROM ' . $this->_db->qn('#__extensions') . ' WHERE ' .
 					 $this->_db->qn('extension_id') . ' = ' . (int) $this->component_id;
 
-			$args = array();
+			$args = [];
 			parse_str(parse_url($this->link, PHP_URL_QUERY), $args);
 			if (isset($args['option']) && ($args['option'] == 'com_content'))
 			{
@@ -99,7 +98,7 @@ class Menu extends \eshiol\J2XML\Table\Table
 			return;
 		}
 
-		$args = array();
+		$args = [];
 		parse_str(parse_url($item->link ?: '', PHP_URL_QUERY), $args);
 
 		if (isset($args['option']) && ($args['option'] == 'com_content'))
@@ -163,10 +162,10 @@ class Menu extends \eshiol\J2XML\Table\Table
 			self::prepareData($record, $data, $params);
 
 			$query = $db->getQuery(true)
-				->select($db->quoteName(array(
+				->select($db->quoteName([
 					'id',
 					'title'
-			)))
+			]))
 				->from($db->quoteName('#__menu'))
 				->where($db->quoteName('path') . ' = ' . $db->quote($data['path']));
 			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
@@ -216,7 +215,7 @@ class Menu extends \eshiol\J2XML\Table\Table
 				{
 					if (isset($data['link']) && $data['link'])
 					{
-						$args = array();
+						$args = [];
 						parse_str(parse_url($data['link'], PHP_URL_QUERY), $args);
 						if (isset($args['option']))
 						{

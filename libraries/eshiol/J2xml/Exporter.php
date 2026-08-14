@@ -195,7 +195,7 @@ class Exporter
 		if (is_scalar($ids))
 		{
 			$id = $ids;
-			$ids = array();
+			$ids = [];
 			$ids[] = $id;
 		}
 
@@ -207,11 +207,11 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', array(
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
 			$this->_option . '.' . __FUNCTION__,
 			&$xml,
 			$params
-		));
+		]);
 
 		return $xml;
 	}
@@ -239,7 +239,7 @@ class Exporter
 		if (is_scalar($ids))
 		{
 			$id = $ids;
-			$ids = array();
+			$ids = [];
 			$ids[] = $id;
 		}
 
@@ -252,11 +252,11 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', array(
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
 			$this->_option . '.' . __FUNCTION__,
 			&$xml,
 			$params
-		));
+		]);
 
 		return $xml;
 	}
@@ -284,7 +284,7 @@ class Exporter
 		if (is_scalar($ids))
 		{
 			$id = $ids;
-			$ids = array();
+			$ids = [];
 			$ids[] = $id;
 		}
 
@@ -297,11 +297,11 @@ class Exporter
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', array(
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
 			$this->_option . '.' . __FUNCTION__,
 			&$xml,
 			$params
-		));
+		]);
 
 		return $xml;
 	}
@@ -329,7 +329,7 @@ class Exporter
 		if (is_scalar($ids))
 		{
 			$id = $ids;
-			$ids = array();
+			$ids = [];
 			$ids[] = $id;
 		}
 
@@ -341,11 +341,11 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', array(
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
 				$this->_option . '.' . __FUNCTION__,
 				&$xml,
 				$params
-		));
+		]);
 
 		return $xml;
 	}
@@ -373,7 +373,7 @@ class Exporter
 		if (is_scalar($ids))
 		{
 			$id = $ids;
-			$ids = array();
+			$ids = [];
 			$ids[] = $id;
 		}
 
@@ -385,11 +385,11 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', array(
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
 			$this->_option . '.' . __FUNCTION__,
 			&$xml,
 			$params
-		));
+		]);
 
 		return $xml;
 	}
@@ -417,7 +417,7 @@ class Exporter
 		if (is_scalar($ids))
 		{
 			$id = $ids;
-			$ids = array();
+			$ids = [];
 			$ids[] = $id;
 		}
 
@@ -429,11 +429,11 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', array(
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
 				$this->_option . '.' . __FUNCTION__,
 				&$xml,
 				$params
-		));
+		]);
 
 		return $xml;
 	}
@@ -461,7 +461,7 @@ class Exporter
 		if (is_scalar($ids))
 		{
 			$id = $ids;
-			$ids = array();
+			$ids = [];
 			$ids[] = $id;
 		}
 
@@ -473,11 +473,11 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', array(
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
 				$this->_option . '.' . __FUNCTION__,
 				&$xml,
 				$params
-		));
+		]);
 
 		return $xml;
 	}
@@ -507,7 +507,7 @@ class Exporter
 		if (is_scalar($ids))
 		{
 			$id = $ids;
-			$ids = array();
+			$ids = [];
 			$ids[] = $id;
 		}
 
@@ -519,11 +519,11 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', array(
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
 				$this->_option . '.' . __FUNCTION__,
 				&$xml,
 				$params
-		));
+		]);
 
 		return $xml;
 	}
@@ -553,7 +553,7 @@ class Exporter
 		if (is_scalar($ids))
 		{
 			$id = $ids;
-			$ids = array();
+			$ids = [];
 			$ids[] = $id;
 		}
 
@@ -565,11 +565,11 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', array(
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
 				$this->_option . '.' . __FUNCTION__,
 				&$xml,
 				$params
-		));
+		]);
 
 		return $xml;
 	}
@@ -597,7 +597,7 @@ class Exporter
 		if (is_scalar($ids))
 		{
 			$id = $ids;
-			$ids = array();
+			$ids = [];
 			$ids[] = $id;
 		}
 
@@ -610,11 +610,11 @@ class Exporter
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', array(
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
 			$this->_option . '.' . __FUNCTION__,
 			&$xml,
 			$params
-		));
+		]);
 
 		return $xml;
 	}

@@ -223,11 +223,11 @@ class Importer
 		{
 			\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 			// Trigger the onAfterImport event.
-			$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentAfterImport', array(
+			$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentAfterImport', [
 				'com_j2xml.import',
 				&$xml,
 				$params
-			));
+			]);
 		}
 
 		return true;

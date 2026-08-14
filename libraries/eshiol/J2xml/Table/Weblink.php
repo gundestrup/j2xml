@@ -16,7 +16,6 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Table;
 
@@ -67,15 +66,15 @@ class Weblink extends Table
 
 		$query = $this->_db->getQuery(true);
 		$this->_aliases['association'] = (string) $query
-			->select($query->concatenate(array($this->_db->quoteName('cc.path'), $this->_db->quoteName('c.alias')), '/'))
+			->select($query->concatenate([$this->_db->quoteName('cc.path'), $this->_db->quoteName('c.alias')], '/'))
 			->from($this->_db->quoteName('#__associations', 'asso1'))
 			->join('INNER', $this->_db->quoteName('#__associations', 'asso2') . ' ON ' . $this->_db->quoteName('asso1.key') . ' = ' . $this->_db->quoteName('asso2.key'))
 			->join('INNER', $this->_db->quoteName('#__weblinks', 'c') . ' ON ' . $this->_db->quoteName('asso2.id') . ' = ' . $this->_db->quoteName('c.id'))
 			->join('INNER', $this->_db->quoteName('#__categories', 'cc') . ' ON ' . $this->_db->quoteName('c.catid') . ' = ' . $this->_db->quoteName('cc.id'))
-			->where(array(
+			->where([
 				$this->_db->quoteName('asso1.id') . ' = ' . (int) $this->id,
 				$this->_db->quoteName('asso1.context') . ' = ' . $this->_db->quote('com_weblinks.item'),
-				$this->_db->quoteName('asso2.id') . ' <> ' . (int) $this->id));
+				$this->_db->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
 
 		return parent::toXML($mapKeysToText);
 	}
@@ -215,10 +214,10 @@ class Weblink extends Table
 			$id = $data['id'];
 
 			$query = $db->getQuery(true)
-				->select(array(
+				->select([
 					$db->quoteName('id'),
 					$db->quoteName('title')
-			))
+			])
 				->from($db->quoteName('#__weblinks'))
 				->where($db->quoteName('alias') . ' = ' . $db->quote($data['alias']));
 			$item = $db->setQuery($query)->loadObject();
@@ -272,7 +271,7 @@ class Weblink extends Table
 
 		if (empty($data['associations']))
 		{
-			$data['associations'] = array();
+			$data['associations'] = [];
 		}
 
 		if (isset($data['associationlist']))

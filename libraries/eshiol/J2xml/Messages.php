@@ -28,7 +28,7 @@ defined('_JEXEC') or die;
 class Messages
 {
 
-	public static $messages = array(
+	public static $messages = [
 			'LIB_J2XML_MSG_ARTICLE_IMPORTED',
 			'LIB_J2XML_MSG_ARTICLE_NOT_IMPORTED',
 			'LIB_J2XML_MSG_USER_IMPORTED',
@@ -76,5 +76,5 @@ class Messages
 			'LIB_J2XML_MSG_FIELDGROUP_IMPORTED',
 			'LIB_J2XML_MSG_FIELDGROUP_NOT_IMPORTED',
 			'LIB_J2XML_MSG_USER_SKIPPED',
-	);
+	];
 }

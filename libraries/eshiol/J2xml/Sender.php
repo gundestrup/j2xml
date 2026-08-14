@@ -33,7 +33,7 @@ use eshiol\J2xml\Version;
 class Sender
 {
 
-	public static $codes = array(
+	public static $codes = [
 		'-1' => 'message',
 		'message', // LIB_J2XML_MSG_ARTICLE_IMPORTED
 		'notice', // LIB_J2XML_MSG_ARTICLE_NOT_IMPORTED
@@ -82,7 +82,7 @@ class Sender
 		'message', // LIB_J2XML_MSG_FIELDGROUP_IMPORTED 44
 		'notice', // LIB_J2XML_MSG_FIELDGROUP_NOT_IMPORTED 45
 		'notice' // LIB_J2XML_MSG_USER_SKIPPED 46
-	);
+	];
 
 	/**
 	 * Send data to a remote Joomla site via the REST API.

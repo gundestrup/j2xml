@@ -16,7 +16,6 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Category;
 use eshiol\J2xml\Table\Fieldgroup;
@@ -56,9 +55,9 @@ class Field extends Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$this->_excluded = array_merge($this->_excluded, array(
+		$this->_excluded = array_merge($this->_excluded, [
 				'group_id'
-		));
+		]);
 
 		if ($this->group_id)
 		{
@@ -86,7 +85,7 @@ class Field extends Table
 				->select($this->_db->quoteName('id'))
 				->select($this->_db->quoteName('name'))
 				->from($this->_db->quoteName('#__fields'));
-			$fields = array();
+			$fields = [];
 			foreach ($this->_db->setQuery($query)->loadObjectList() as $field)
 			{
 				$fields[$field->id] = $field->name;
@@ -215,7 +214,7 @@ class Field extends Table
 				->select($db->quoteName('name'))
 				->from($db->quoteName('#__fields'))
 				->where($db->quoteName('context') . ' = ' . $db->quote($data['context']));
-			$fields = array();
+			$fields = [];
 			foreach ($db->setQuery($query)->loadObjectList() as $field)
 			{
 				$fields[$field->name] = $field->id;

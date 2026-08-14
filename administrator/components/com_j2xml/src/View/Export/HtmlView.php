@@ -20,12 +20,16 @@ namespace Joomla\Component\J2xml\Administrator\View\Export;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Log\Log;
+use Joomla\CMS\Log\LogEntry;
+use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+
 /**
  * View class for export items.
  *
  * @since 3.9.0
  */
-class HtmlView extends \Joomla\CMS\MVC\View\HtmlView
+class HtmlView extends BaseHtmlView
 {
 
 	/**
@@ -45,7 +49,7 @@ class HtmlView extends \Joomla\CMS\MVC\View\HtmlView
 	 */
 	public function display($tpl = null)
 	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
 		// Initialiase variables.
 		$this->form  = $this->get('Form');

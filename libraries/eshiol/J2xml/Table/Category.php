@@ -16,7 +16,6 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Image;
 use eshiol\J2xml\Table\Table;
@@ -72,16 +71,16 @@ class Category extends Table
 		$this->_aliases['association'] = (string) $query
 			->select('CASE WHEN ' .  $this->_db->quoteName('cc1.level') . ' = 1'
 				. ' THEN ' . $this->_db->quoteName('cc1.alias')
-				. ' ELSE ' . $query->concatenate(array($this->_db->quoteName('cc2.path'), $this->_db->quoteName('cc1.alias')), '/')
+				. ' ELSE ' . $query->concatenate([$this->_db->quoteName('cc2.path'), $this->_db->quoteName('cc1.alias')], '/')
 				. ' END')
 			->from($this->_db->quoteName('#__associations', 'asso1'))
 			->join('INNER', $this->_db->quoteName('#__associations', 'asso2') . ' ON ' . $this->_db->quoteName('asso1.key') . ' = ' . $this->_db->quoteName('asso2.key'))
 			->join('INNER', $this->_db->quoteName('#__categories', 'cc1') . ' ON ' . $this->_db->quoteName('asso2.id') . ' = ' . $this->_db->quoteName('cc1.id'))
 			->join('INNER', $this->_db->quoteName('#__categories', 'cc2') . ' ON ' . $this->_db->quoteName('cc1.parent_id') . ' = ' . $this->_db->quoteName('cc2.id'))
-			->where(array(
+			->where([
 				$this->_db->quoteName('asso1.id') . ' = ' . (int) $this->id,
 				$this->_db->quoteName('asso1.context') . ' = ' . $this->_db->quote('com_categories.item'),
-				$this->_db->quoteName('asso2.id') . ' <> ' . (int) $this->id));
+				$this->_db->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
 
 		return parent::toXML($mapKeysToText);
 	}
@@ -153,11 +152,11 @@ class Category extends Table
 			else
 			{
 				$query = $db->getQuery(true)
-					->select(array(
+					->select([
 						$db->quoteName('id'),
 						$db->quoteName('title'),
 						$db->quoteName('path')
-				))
+				])
 					->from($db->quoteName('#__categories'))
 					->where($db->quoteName('extension') . ' = ' . $db->quote($extension))
 					->where($db->quoteName('path') . ' = ' . $db->quote($path));
@@ -176,10 +175,10 @@ class Category extends Table
 					if (!$category && ($keep_id == 1))
 					{
 						$query = $db->getQuery(true)
-							->select(array(
+							->select([
 								$db->quoteName('id'),
 								$db->quoteName('title')
-						))
+						])
 							->from($db->quoteName('#__categories'))
 							->where($db->quoteName('extension') . ' = ' . $db->quote($extension))
 							->where($db->quoteName('path') . ' = ' . $db->quote($path));
@@ -237,7 +236,7 @@ class Category extends Table
 
 					// Trigger the onContentBeforeSave event.
 					// $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentBeforeSave',
-					// array($this->_option.'.category', &$table, $isNew));
+					// [$this->_option.'.category', &$table, $isNew]);
 					// if (!in_array(false, $results, true))
 
 					if ($table->store())
@@ -346,9 +345,9 @@ class Category extends Table
 			return;
 		}
 
-		$allowed_extensions = array(
+		$allowed_extensions = [
 				'com_content'
-		);
+		];
 		if (in_array($item->extension, $allowed_extensions))
 		{
 			if (isset($options['content']) && $options['content'])
@@ -453,7 +452,7 @@ class Category extends Table
 
 		if (empty($data['associations']))
 		{
-			$data['associations'] = array();
+			$data['associations'] = [];
 		}
 
 		if (isset($data['associationlist']))

@@ -16,7 +16,6 @@
  * or other free or open source software licenses.
  */
 namespace eshiol\J2xml\Table;
-defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Version;
 use Joomla\CMS\Component\ComponentHelper;
@@ -36,7 +35,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 * @var array
 	 * @since 1.5.3.39
 	 */
-	protected $_excluded = array();
+	protected $_excluded = [];
 
 	/**
 	 * An array of key names to be exported as alias
@@ -44,7 +43,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 * @var array
 	 * @since 1.5.3.39
 	 */
-	protected $_aliases = array();
+	protected $_aliases = [];
 
 	/**
 	 * An array of key names to be exported in json encoded format
@@ -52,7 +51,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 * @var array
 	 * @since 13.6.116
 	 */
-	protected $_jsonEncode = array();
+	protected $_jsonEncode = [];
 
 	/**
 	 *
@@ -81,7 +80,7 @@ class Table extends \Joomla\CMS\Table\Table
 
 		parent::__construct($table, $key, $db);
 
-		$this->_excluded = array(
+		$this->_excluded = [
 			'asset_id',
 			'parent_id',
 			'lft',
@@ -89,8 +88,8 @@ class Table extends \Joomla\CMS\Table\Table
 			'level',
 			'checked_out',
 			'checked_out_time'
-		);
-		$this->_aliases = array();
+		];
+		$this->_aliases = [];
 	}
 
 	/**
@@ -197,7 +196,7 @@ class Table extends \Joomla\CMS\Table\Table
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		// Initialise variables.
-		$xml = array();
+		$xml = [];
 
 		foreach (get_object_vars($this) as $k => $v)
 		{
@@ -454,14 +453,14 @@ class Table extends \Joomla\CMS\Table\Table
 		{
 			if (isset($data['field']))
 			{
-				$data['com_fields'] = array(
+				$data['com_fields'] = [
 					$data['field']['name'] => $data['field']['value']
-				);
+				];
 				unset($data['field']);
 			}
 			elseif (isset($data['fieldlist']['field']))
 			{
-				$data['com_fields'] = array();
+				$data['com_fields'] = [];
 				foreach ($data['fieldlist']['field'] as $field)
 				{
 					$data['com_fields'][$field['name']] = $field['value'];
@@ -584,7 +583,7 @@ class Table extends \Joomla\CMS\Table\Table
 			{
 				// import usergroup tree if it doesn't exists
 				$groups = json_decode($usergroup);
-				$g = array();
+				$g = [];
 				$usergroupId = 0;
 				$parentId = 0;
 				for ($j = 0; $j < count($groups); $j ++)
@@ -600,10 +599,10 @@ class Table extends \Joomla\CMS\Table\Table
 					if (!($usergroupId = $db->setQuery($query)->loadResult()))
 					{
 						$u = \Joomla\CMS\Table\Table::getInstance('Usergroup');
-						$u->save(array(
+						$u->save([
 							'title' => $groups[$j],
 							'parent_id' => $parentId
-						));
+						]);
 						$usergroupId = $u->id;
 						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERGROUP_IMPORTED', $groups[$j]), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 					}
@@ -956,7 +955,7 @@ class Table extends \Joomla\CMS\Table\Table
 		{
 			$db = \Joomla\CMS\Factory::getDbo();
 			$query = $db->getQuery(true);
-			$path = $query->concatenate(array($db->quoteName('menutype'), $db->quoteName('path')), '/');
+			$path = $query->concatenate([$db->quoteName('menutype'), $db->quoteName('path')], '/');
 			$query->select($db->quoteName('id'))
 				->from($db->quoteName('#__menu'))
 				->where($path . ' = ' . $db->quote($menu));

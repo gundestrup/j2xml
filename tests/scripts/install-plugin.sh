@@ -67,7 +67,7 @@ echo "[install] Fetching installer page..."
 INSTALLER_PAGE=$(curl -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
     "$JOOMLA_URL/administrator/index.php?option=com_installer&view=install" 2>/dev/null)
 
-CSRF=$(echo "$INSTALLER_PAGE" | sed -n 's/.*"csrf.token":"\([a-f0-9]\{32\}\)".*/\1/p' | head -1)
+CSRF=$(echo "$INSTALLER_PAGE" | sed -n 's/.*"csrf.token":[[:space:]]*"\([a-f0-9]\{32\}\)".*/\1/p' | head -1)
 if [ -z "$CSRF" ]; then
     echo "FAIL: Could not find CSRF token on installer page"
     exit 1
