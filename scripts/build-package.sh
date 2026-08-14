@@ -15,7 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUTPUT_DIR="${1:-$ROOT_DIR/build}"
 
-VERSION="3.10.233"
+VERSION="4.0.0"
 DATE="$(date +%Y-%m-%d)"
 
 # --- helpers ----------------------------------------------------------------

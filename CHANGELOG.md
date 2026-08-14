@@ -17,13 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased] - 2026-08
+## [4.0.0] - 2026-08
+
+**Major release: Joomla 3 support removed; Joomla 5/6 + PHP 8.4+ only.**
+
+### Removed
+- **Joomla 3 compatibility shims** — removed `plugins/system/j2xml/layouts/joomla/` (jQuery-based modal/form-field layouts), `plugins/system/j2xml/src/joomla/` (J3 `JLayoutFile` alias shims), and `plugins/system/j2xml/src/J2xml/Helper/Joomla.php`
+- **`onBeforeCompileHead` jQuery loader** — removed explicit jQuery loading from the system plugin; Joomla 5/6 loads web assets on demand
+- **Inline jQuery `onclick` handlers** — replaced with vanilla JavaScript event listeners
+- **`JPATH_PLATFORM` shim** — removed from all 14 Table classes
+- **`LIBXML_PARSEHUGE` manual `define()`** — removed; the constant is native to libxml ≥ 2.7.0
 
 ### Fixed
 - **Issue #72: Import HTTP 500 on Joomla 5.2+** — fixed class alias and API compatibility issues that caused fatal errors during import
 - **Issue #71: Import articles from J3 to J5** — articles now import correctly from J3-era XML format (version 21.12.0) into Joomla 5
 - **Issue #70: Import users on J5** — user import now works correctly, including handling of multiple group assignments and empty params
-- **Joomla 6 compatibility: all J* legacy class aliases migrated** — replaced all `JFactory`, `JLog`, `JText`, `JComponentHelper`, `JPluginHelper`, `JRoute`, `JFile`, `JFolder`, `JHtml`, `JTable*`, `JController*`, `JModel*`, `JViewLegacy`, `JToolBarHelper`, `JSession`, `JRegistry`, `JVersion`, `JUri`, `JClientHelper`, `JFilterOutput`, `JUserHelper`, `JArrayHelper`, `JDate`, `JError`, `JHelperTags`, `JLanguageAssociations`, `JLanguageMultilang`, `JApplicationCli`, `JResponse`, `JFilesystemHelper`, `JInstallerHelper` with fully-qualified namespaced Joomla CMS classes throughout the codebase
+- **Joomla 6 compatibility: all J\* legacy class aliases migrated** — replaced all `JFactory`, `JLog`, `JText`, `JComponentHelper`, `JPluginHelper`, `JRoute`, `JFile`, `JFolder`, `JHtml`, `JTable*`, `JController*`, `JModel*`, `JViewLegacy`, `JToolBarHelper`, `JSession`, `JRegistry`, `JVersion`, `JUri`, `JClientHelper`, `JFilterOutput`, `JUserHelper`, `JArrayHelper`, `JDate`, `JError`, `JHelperTags`, `JLanguageAssociations`, `JLanguageMultilang`, `JApplicationCli`, `JResponse`, `JFilesystemHelper`, `JInstallerHelper` with fully-qualified namespaced Joomla CMS classes throughout the codebase
 - **User import: UserFactory not set** — `User::prepareData` now uses Joomla's MVC factory instead of instantiating `UserModel` directly
 - **User import: params null handling** — `User::prepareData` now handles empty/null `params` field from XML
 - **User import: multiple group elements** — multiple `<group>` elements in XML are now processed individually instead of passing an array to `getUsergroupId`
@@ -35,14 +44,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Docker-based integration test suite** — `tests/docker/` with Joomla 5 + 6 containers (PHP 8.4, MySQL 8.0); `tests/scripts/run-all-tests.sh` verifies issues #72, #71, #70 and Joomla 6 compatibility
 - **Test fixtures** — `tests/fixtures/articles-j3.xml`, `users-j3.xml`, `categories-j3.xml` with J3-era XML format (version 21.12.0)
-- **PHPStan static analysis** — committed `phpstan.neon` config with `stubs/joomla.php` scan file declaring the Joomla CMS framework symbols used by J2XML (classes, functions, constants, legacy J* aliases); `phpstan-baseline.neon` suppresses known pre-existing issues; pre-commit hook updated to use the committed config
+- **PHPStan static analysis** — committed `phpstan.neon` config with `stubs/joomla.php` scan file declaring the Joomla CMS framework symbols used by J2XML (classes, functions, constants, legacy J\* aliases); `phpstan-baseline.neon` suppresses known pre-existing issues; pre-commit hook updated to use the committed config
+- **Deprecated patterns tracker** — `README.TODO.deprecated.md` documents all remaining deprecated APIs with file locations, recommended replacements, and target versions
 
 ### Changed
+- **`Factory::getDbo()` → container-based `DatabaseInterface`** — all 56 occurrences replaced with `Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class)` (non-Table classes) or `$this->getDatabase()` is not used because Table methods are static
+- **`Factory::getUser()` → `Factory::getApplication()->getIdentity()`** — all 11 occurrences replaced
+- **`Factory::getDate()` → `new \Joomla\CMS\Date\Date('now')`** — all 3 occurrences replaced (the container does not register `Date` as a service in Joomla 5)
+- **`Factory::getDocument()` → `Factory::getApplication()->getDocument()`** — 4 non-template occurrences replaced
+- **`Factory::getLanguage()` → `Factory::getApplication()->getLanguage()`** — 3 occurrences replaced
+- **`Factory::getConfig()` → `Factory::getApplication()->getConfig()`** — 3 occurrences replaced
+- **`JObject` → `\stdClass`** in `helpers/j2xml.php`
+- **`JHtmlSidebar` → `Joomla\CMS\HTML\Helpers\Sidebar`** in `helpers/j2xml.php`
+- **`JLayoutFile` → `Joomla\CMS\Layout\FileLayout`** in system plugin
+- **`JApplicationCms` → `\Joomla\CMS\Application\CMSApplication`** in plugin docblock
+- **`CliApplication::getInstance()` → `Factory::getApplication()`** in Exporter and Importer constructors
+- **`JPATH_COMPONENT_ADMINISTRATOR` → explicit `JPATH_ADMINISTRATOR . '/components/com_j2xml'`** — 3 occurrences replaced
+- **`strpos() === false` → `str_contains()`** — 3 occurrences modernized to PHP 8.0+ syntax
+- **`array()` → `[]`** — short array syntax applied to `helpers/j2xml.php` and `script.php`
+- **`Joomla.request()` → native `fetch()`** in `j2xml.js`
+- **`Joomla.JText` namespace removed** from `j2xml.js`
+- **`JoomlaInstaller` moved** from `admin.js` to `lib_eshiol_j2xml/js/j2xml.js` to fix backwards dependency
+- **Bootstrap 5 modal asset** explicitly loaded in `default.php` and `default_package.php` templates
+- **Component manifest** — `version` attribute updated to `5.0`; added `<minimumJoomla>5.0</minimumJoomla>` and `<minimumPhp>8.1</minimumPhp>`
+- **Library manifest** — added `<namespace path="eshiol/J2xml">eshiol\J2xml</namespace>` for automatic PSR-4 autoloading
+- **Copyright years** updated from 2010-2023 to 2010-2026 across all PHP, XML, INI, JS, and CSS files
 - **phpxmlrpc vendored library upgraded from 4.10.1 to 4.11.5** (latest stable, Nov 2025) — replaced all files in `libraries/eshiol/phpxmlrpc/src/` and `lib/`; preserved J2XML-specific `Log/Logger/XmlrpcLogger.php`; re-applied `utf8_encode()` → `mb_convert_encoding()` patches on top of 4.11.5
 
 ### Note
 - Verified clean lint on PHP 8.4.24 and PHP 8.5.9 (0 errors, 0 deprecations)
-- Joomla 5.4.7 and 6.1.2 both still provide `J*` legacy class aliases via the Behaviour - Backward Compatibility plugin; the 1,725 `J*` usages work on J5/J6 with the compat plugin enabled (default)
+- PHPStan passes with 0 errors
+- All 26 integration tests pass on Joomla 5.4.7 and Joomla 6.1.2
+- See `README.TODO.deprecated.md` for remaining deprecated patterns scheduled for future removal
 
 ---
 
