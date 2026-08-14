@@ -94,8 +94,10 @@ INSTALL_CODE=$(curl -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -L -o /tmp/j2xml-inst
 echo "[install] Install HTTP code: $INSTALL_CODE"
 
 # Step 4: Check the result
-# Joomla redirects to the installer page after install. Look for success/error messages.
+# Joomla redirects to the installer page after install. Look for success/error/warning messages.
 RESULT_HTML=$(cat /tmp/j2xml-install-result-$VERSION.html 2>/dev/null || echo "")
+
+INSTALL_WARNINGS=""
 
 # Check for success message
 if echo "$RESULT_HTML" | grep -q "Installation of the package was successful\|alert-success"; then
@@ -104,6 +106,42 @@ elif echo "$RESULT_HTML" | grep -q "alert-danger\|alert-error"; then
     echo "[install] Installation may have failed (error message found)"
     # Try to extract the error message
     echo "$RESULT_HTML" | grep -o 'alert-danger[^<]*<[^>]*>[^<]*' | head -3
+fi
+
+# Check for installer warnings (alert-warning class or JInstaller: messages)
+# These are non-fatal but indicate packaging problems (e.g. missing language files)
+# Specifically look for "File does not exist" which means the manifest references
+# a file that is not in the package zip.
+WARNINGS_HTML=$(echo "$RESULT_HTML" | grep -io 'alert-warning[^<]*<[^>]*>[^<]*' | grep -i 'File does not exist\|JInstaller' | head -10 || true)
+INSTALLER_WARNINGS=$(echo "$RESULT_HTML" | grep -io 'JInstaller[^<]*File does not exist[^<]*' | head -10 || true)
+
+if [ -n "$WARNINGS_HTML" ] || [ -n "$INSTALLER_WARNINGS" ]; then
+    echo "[install] WARNING: Installer warnings detected:"
+    if [ -n "$WARNINGS_HTML" ]; then
+        echo "  alert-warning: $WARNINGS_HTML"
+        INSTALL_WARNINGS="$WARNINGS_HTML"
+    fi
+    if [ -n "$INSTALLER_WARNINGS" ]; then
+        echo "  JInstaller: $INSTALLER_WARNINGS"
+        INSTALL_WARNINGS="${INSTALL_WARNINGS}${INSTALLER_WARNINGS}"
+    fi
+fi
+
+# Also check the Joomla log file in the container for installer warnings
+# Joomla logs "JInstaller:" messages and other warnings to the log directory
+JLOG_DIR=$(docker exec "$CONTAINER" php -r '
+require "/var/www/html/configuration.php";
+$c = new JConfig();
+echo $c->log_path;
+' 2>/dev/null || echo "/var/www/html/administrator/logs")
+
+if [ -n "$JLOG_DIR" ]; then
+    JLOG_WARNINGS=$(docker exec "$CONTAINER" bash -c "grep -r 'File does not exist' '$JLOG_DIR'/*.log* 2>/dev/null | tail -10" 2>/dev/null || true)
+    if [ -n "$JLOG_WARNINGS" ]; then
+        echo "[install] WARNING: Joomla log contains installer warnings:"
+        echo "$JLOG_WARNINGS"
+        INSTALL_WARNINGS="${INSTALL_WARNINGS}${JLOG_WARNINGS}"
+    fi
 fi
 
 # Step 5: Verify extensions are registered in the database
@@ -148,6 +186,15 @@ EXT_COUNT=$(echo "$VERIFY" | tr -d '\r' | grep "^COUNT:" | cut -d: -f2)
 
 if [ "${EXT_COUNT:-0}" -ge 4 ]; then
     echo "SUCCESS: J2XML installed on Joomla $VERSION ($EXT_COUNT extensions found)"
+    # Even if extensions are registered, fail if installer warnings were detected
+    # (e.g. missing language files, missing manifest-referenced files)
+    if [ -n "$INSTALL_WARNINGS" ]; then
+        echo "FAIL: Installation completed but installer warnings were detected"
+        echo "  This usually indicates a packaging problem (missing files, wrong paths in manifest)"
+        echo "  Warnings found:"
+        echo "$INSTALL_WARNINGS" | sed 's/^/    /'
+        exit 1
+    fi
     exit 0
 else
     echo "WARNING: Only $EXT_COUNT extensions found (expected 4+)"

@@ -104,6 +104,17 @@ UNINSTALL_CODE=$(curl -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -L \
 
 echo "[uninstall] Uninstall HTTP code: $UNINSTALL_CODE"
 
+# Check for uninstaller warnings — only flag "File does not exist" which indicates
+# a packaging problem. "Package Uninstall: This extension is missing or has already
+# been uninstalled" is normal Joomla cascade behavior and is NOT a packaging problem.
+UNINSTALL_RESULT_HTML=$(cat /tmp/j2xml-uninstall-result-$VERSION.html 2>/dev/null || echo "")
+UNINSTALL_WARNINGS=""
+if echo "$UNINSTALL_RESULT_HTML" | grep -iq "File does not exist"; then
+    UNINSTALL_WARNINGS=$(echo "$UNINSTALL_RESULT_HTML" | grep -io 'JInstaller[^<]*File does not exist[^<]*\|File does not exist[^<]*' | head -10 || true)
+    echo "[uninstall] WARNING: Uninstaller warnings detected (missing files):"
+    echo "$UNINSTALL_WARNINGS" | sed 's/^/  /'
+fi
+
 # Wait a moment for uninstall to complete
 sleep 2
 
@@ -187,6 +198,13 @@ echo "[uninstall] Files remaining: $FILES_REMAINING"
 # Step 7: Report results
 if [ "${REMAINING_COUNT:-0}" -eq 0 ] && [ "$FILES_REMAINING" -eq 0 ]; then
     echo "SUCCESS: J2XML cleanly uninstalled from Joomla $VERSION"
+    # Fail if uninstaller warnings were detected (e.g. missing files during removal)
+    if [ -n "$UNINSTALL_WARNINGS" ]; then
+        echo "FAIL: Uninstall completed but uninstaller warnings were detected"
+        echo "  Warnings found:"
+        echo "$UNINSTALL_WARNINGS" | sed 's/^/    /'
+        exit 1
+    fi
     exit 0
 else
     echo "WARNING: $REMAINING_COUNT extensions and $FILES_REMAINING files still remain"

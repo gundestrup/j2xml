@@ -311,7 +311,15 @@ if bash "$SCRIPT_DIR/install-plugin.sh" 5 > /tmp/j2xml-install-5.log 2>&1; then
     pass "J2XML installed on Joomla 5 from compiled zip"
 else
     fail "Failed to install J2XML on Joomla 5 from zip"
-    cat /tmp/j2xml-install-5.log | tail -20
+    cat /tmp/j2xml-install-5.log | tail -30
+fi
+
+# Check install log for installer warnings (missing files = packaging problem)
+if grep -q "FAIL:.*installer warnings\|File does not exist" /tmp/j2xml-install-5.log 2>/dev/null; then
+    fail "Install J5: Installer warnings detected (packaging problem)"
+    grep -i "File does not exist\|JInstaller.*File" /tmp/j2xml-install-5.log | head -5
+else
+    pass "Install J5: No installer warnings"
 fi
 
 info "Installing J2XML on Joomla 6 from zip..."
@@ -319,7 +327,15 @@ if bash "$SCRIPT_DIR/install-plugin.sh" 6 > /tmp/j2xml-install-6.log 2>&1; then
     pass "J2XML installed on Joomla 6 from compiled zip"
 else
     fail "Failed to install J2XML on Joomla 6 from zip"
-    cat /tmp/j2xml-install-6.log | tail -20
+    cat /tmp/j2xml-install-6.log | tail -30
+fi
+
+# Check install log for installer warnings
+if grep -q "FAIL:.*installer warnings\|File does not exist" /tmp/j2xml-install-6.log 2>/dev/null; then
+    fail "Install J6: Installer warnings detected (packaging problem)"
+    grep -i "File does not exist\|JInstaller.*File" /tmp/j2xml-install-6.log | head -5
+else
+    pass "Install J6: No installer warnings"
 fi
 
 # =============================================================================
@@ -596,7 +612,15 @@ if bash "$SCRIPT_DIR/uninstall-plugin.sh" 5 > /tmp/j2xml-uninstall-5.log 2>&1; t
     pass "Uninstall: J2XML cleanly uninstalled from Joomla 5"
 else
     fail "Uninstall: Failed to cleanly uninstall from Joomla 5"
-    cat /tmp/j2xml-uninstall-5.log | tail -20
+    cat /tmp/j2xml-uninstall-5.log | tail -30
+fi
+
+# Check uninstall log for warnings (only "File does not exist" = packaging problem)
+if grep -q "FAIL:.*uninstaller warnings\|File does not exist" /tmp/j2xml-uninstall-5.log 2>/dev/null; then
+    fail "Uninstall J5: Uninstaller warnings detected (missing files)"
+    grep -i "File does not exist" /tmp/j2xml-uninstall-5.log | head -5
+else
+    pass "Uninstall J5: No uninstaller warnings"
 fi
 
 info "Uninstalling J2XML from Joomla 6..."
@@ -604,7 +628,15 @@ if bash "$SCRIPT_DIR/uninstall-plugin.sh" 6 > /tmp/j2xml-uninstall-6.log 2>&1; t
     pass "Uninstall: J2XML cleanly uninstalled from Joomla 6"
 else
     fail "Uninstall: Failed to cleanly uninstall from Joomla 6"
-    cat /tmp/j2xml-uninstall-6.log | tail -20
+    cat /tmp/j2xml-uninstall-6.log | tail -30
+fi
+
+# Check uninstall log for warnings
+if grep -q "FAIL:.*uninstaller warnings\|File does not exist" /tmp/j2xml-uninstall-6.log 2>/dev/null; then
+    fail "Uninstall J6: Uninstaller warnings detected (missing files)"
+    grep -i "File does not exist" /tmp/j2xml-uninstall-6.log | head -5
+else
+    pass "Uninstall J6: No uninstaller warnings"
 fi
 
 # =============================================================================
