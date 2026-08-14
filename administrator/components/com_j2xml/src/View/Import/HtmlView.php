@@ -73,7 +73,7 @@ class HtmlView extends \Joomla\Component\J2xml\Administrator\View\DefaultHtmlVie
 
 		ToolbarHelper::title(Text::_('COM_J2XML_TOOLBAR_J2XML'), 'upload import');
 
-		if (Factory::getUser()->authorise('core.admin'))
+		if (Factory::getApplication()->getIdentity()->authorise('core.admin'))
 		{
 			ToolbarHelper::preferences('com_j2xml');
 		}

@@ -8,7 +8,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -59,10 +59,10 @@ class Exporter
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db         = \Joomla\CMS\Factory::getDbo();
+		$db         = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
 		$this->_option = (PHP_SAPI != 'cli') ? \Joomla\CMS\Factory::getApplication()->input->getCmd('option') : 'cli_' .
-				 strtolower(get_class(\Joomla\CMS\Application\CliApplication::getInstance()));
+				 strtolower(get_class(\Joomla\CMS\Factory::getApplication()));
 
 		// Merge the default translation with the current translation
 		$jlang = \Joomla\CMS\Factory::getApplication()->getLanguage();
@@ -148,7 +148,7 @@ class Exporter
 		$data = $dom->saveXML();
 
 		// modify the MIME type
-		$document = \Joomla\CMS\Factory::getDocument();
+		$document = \Joomla\CMS\Factory::getApplication()->getDocument();
 
 		// Verify that the server supports gzip compression before we attempt to gzip encode the data.
 		// @codeCoverageIgnoreStart

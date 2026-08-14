@@ -2,12 +2,13 @@
 <extension type="library" method="upgrade">
 	<name>J2XML</name>
 	<libraryname>eshiol/J2xml</libraryname>
+	<namespace path="eshiol/J2xml">eshiol\J2xml</namespace>
 	<description>J2XML Library. Export/Import Joomla! content.</description>
 	<author>Helios Ciancio</author>
 	<authorEmail>info (at) eshiol (dot) it</authorEmail>
 	<authorUrl>www.eshiol.it</authorUrl>
 	<creationDate>__DEPLOY_DATE__</creationDate>
-	<copyright><![CDATA[(C) 2010 - 2023 Helios Ciancio. All Rights Reserved.]]></copyright>
+	<copyright><![CDATA[(C) 2010 - 2026 Helios Ciancio. All Rights Reserved.]]></copyright>
 	<license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3</license>
 	<version>__DEPLOY_VERSION__</version>
 	<files>

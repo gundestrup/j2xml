@@ -8,7 +8,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -70,9 +70,9 @@ class Tag extends Table
 			return;
 
 		$context = $params->get('context');
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$nullDate = $db->getNullDate();
-		$userid = \Joomla\CMS\Factory::getUser()->id;
+		$userid = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 
 		foreach ($xml->xpath("//j2xml/tag") as $record)
 		{
@@ -153,7 +153,7 @@ class Tag extends Table
 			// Remove duplicates
 			$tags = array_unique((array) $tags);
 
-			$db = \Joomla\CMS\Factory::getDbo();
+			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
 			$query = $db->getQuery(true)
 				->select('id')
@@ -202,7 +202,7 @@ class Tag extends Table
 			return;
 		}
 
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$item = new Tag($db);
 		if (!$item->load($id))
 		{

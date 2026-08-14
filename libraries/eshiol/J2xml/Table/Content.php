@@ -8,7 +8,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -258,9 +258,9 @@ class Content extends Table
 		//$params->def('content_category_default', self::getCategoryId('uncategorised', 'com_content'));
 		$force_to = $params->get('content_category_forceto');
 		$context = $params->get('context', 'com_content.article');
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$nullDate = $db->getNullDate();
-		$userid = \Joomla\CMS\Factory::getUser()->id;
+		$userid = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('content');
 
 		$params->set('extension', 'com_content');
@@ -463,7 +463,7 @@ class Content extends Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
-		$db      = \Joomla\CMS\Factory::getDbo();
+		$db      = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
 		$params->set('extension', 'com_content');
 		parent::prepareData($record, $data, $params);
@@ -479,7 +479,7 @@ class Content extends Table
 		}
 		$data['alias'] = \Joomla\CMS\Filter\OutputFilter::stringURLSafe($data['alias']);
 		if (trim(str_replace('-', '', $data['alias'])) == '') {
-			$data['alias'] = \Joomla\CMS\Factory::getDate()->format('Y-m-d-H-i-s');
+			$data['alias'] = (new \Joomla\CMS\Date\Date("now"))->format('Y-m-d-H-i-s');
 		}
 
 		if (!isset($data['fulltext']))
@@ -496,7 +496,7 @@ class Content extends Table
 		}
 		if (!isset($data['created_by']))
 		{
-			$data['created_by'] = \Joomla\CMS\Factory::getUser()->id;
+			$data['created_by'] = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 		}
 		if (!isset($data['language']))
 		{
@@ -599,7 +599,7 @@ class Content extends Table
 			return;
 		}
 
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$item = new Content($db);
 		if (!$item->load($id))
 		{
@@ -796,7 +796,7 @@ class Content extends Table
 			return;
 		}
 
-		$db      = Factory::getDbo();
+		$db      = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$context = 'com_content.article';
 
 		// Check id

@@ -183,10 +183,6 @@ class ImportModel extends FormModel
 		}
 
 		$data->content = strstr($data->content, '<?xml version="1.0" ');
-		if (!defined('LIBXML_PARSEHUGE'))
-		{
-			define(LIBXML_PARSEHUGE, 524288);
-		}
 
 		$xml = simplexml_load_string($data->content, 'SimpleXMLElement', LIBXML_PARSEHUGE);
 		if (!$xml)
@@ -234,7 +230,7 @@ class ImportModel extends FormModel
 		// Cleanup the install files.
 		if (!is_file($package['packagefile']))
 		{
-			$config = Factory::getConfig();
+			$config = Factory::getApplication()->getConfig();
 			$package['packagefile'] = $config->get('tmp_path') . '/' . $package['packagefile'];
 		}
 
@@ -312,7 +308,7 @@ class ImportModel extends FormModel
 		}
 
 		// Build the appropriate paths.
-		$config   = Factory::getConfig();
+		$config   = Factory::getApplication()->getConfig();
 		$tmp_dest = $config->get('tmp_path') . '/' . $userfile['name'];
 		$tmp_src  = $userfile['tmp_name'];
 
@@ -394,7 +390,7 @@ class ImportModel extends FormModel
 			return false;
 		}
 
-		$config   = Factory::getConfig();
+		$config   = Factory::getApplication()->getConfig();
 		$tmp_dest = $config->get('tmp_path');
 
 		// Unpack the downloaded package file.

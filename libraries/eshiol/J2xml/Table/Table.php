@@ -8,7 +8,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -369,7 +369,7 @@ class Table extends \Joomla\CMS\Table\Table
 
 		$nullDate = null;
 
-		$userid = \Joomla\CMS\Factory::getUser()->id;
+		$userid = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 
 		$data = self::xml2array($record, version_compare($params->get('version', Version::$DOCVERSION), '19.2.0', 'ne'));
 
@@ -507,7 +507,7 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 		else
 		{
-			$db = \Joomla\CMS\Factory::getDbo();
+			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$i = strrpos($article, '/');
 			$query = $db->getQuery(true)
 				->select($db->quoteName('c.id'))
@@ -540,14 +540,14 @@ class Table extends \Joomla\CMS\Table\Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$query = $db->getQuery(true)
 			->select($db->quoteName('id'))
 			->from($db->quoteName('#__users'))
 			->where($db->quoteName('username') . ' = ' . $db->quote($username));
 		$userId = $db->setQuery($query)->loadResult();
 
-		$userId = $userId ?: ($defaultUserId ?: \Joomla\CMS\Factory::getUser()->id);
+		$userId = $userId ?: ($defaultUserId ?: \Joomla\CMS\Factory::getApplication()->getIdentity()->id);
 
 		return $userId;
 	}
@@ -571,7 +571,7 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 		elseif (!is_numeric($usergroup))
 		{
-			$db = \Joomla\CMS\Factory::getDbo();
+			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$query = $db->getQuery(true)
 				->select($db->quoteName('id'))
 				->from($db->quoteName('#__j2xml_usergroups', 'g'))
@@ -635,7 +635,7 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 		else
 		{
-			$db = \Joomla\CMS\Factory::getDbo();
+			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$query = $db->getQuery(true)
 				->select($db->quoteName('id'))
 				->from($db->quoteName('#__viewlevels'))
@@ -666,7 +666,7 @@ class Table extends \Joomla\CMS\Table\Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		if (!is_numeric($category))
 		{
 			$query = $db->getQuery(true)
@@ -724,7 +724,7 @@ class Table extends \Joomla\CMS\Table\Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
 		try
 		{
@@ -953,7 +953,7 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 		else
 		{
-			$db = \Joomla\CMS\Factory::getDbo();
+			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$query = $db->getQuery(true);
 			$path = $query->concatenate([$db->quoteName('menutype'), $db->quoteName('path')], '/');
 			$query->select($db->quoteName('id'))
@@ -990,7 +990,7 @@ class Table extends \Joomla\CMS\Table\Table
 			return;
 		}
 
-		$db      = \Joomla\CMS\Factory::getDbo();
+		$db      = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
 		$isEnabled = \Joomla\CMS\Language\Associations::isEnabled();
 
@@ -1090,7 +1090,7 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 		else
 		{
-			$db = \Joomla\CMS\Factory::getDbo();
+			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$i = strrpos($contact, '/');
 			$query = $db->getQuery(true)
 				->select($db->quoteName('c.id'))
@@ -1132,7 +1132,7 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 		else
 		{
-			$db = \Joomla\CMS\Factory::getDbo();
+			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$i = strrpos($weblink, '/');
 			$query = $db->getQuery(true)
 				->select($db->quoteName('c.id'))

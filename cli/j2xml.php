@@ -7,7 +7,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -58,7 +58,7 @@ $config = new JConfig();
 \JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
 
 // Load Library language
-$lang = \Joomla\CMS\Factory::getLanguage();
+$lang = \Joomla\CMS\Factory::getApplication()->getLanguage();
 
 // Try the j2xmlimporter file in the current language (without allowing the loading of the file in the default language)
 $lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, false, false)
@@ -83,7 +83,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
 	public function doExecute()
 	{
 		// Merge the default translation with the current translation
-		$lang = \Joomla\CMS\Factory::getLanguage();
+		$lang = \Joomla\CMS\Factory::getApplication()->getLanguage();
 		$lang->load('lib_j2xml', JPATH_SITE, null, false, false)
 			|| $lang->load('lib_j2xml', JPATH_ADMINISTRATOR, null, false, false)
 			// Fallback to the lib_j2xml file in the default language

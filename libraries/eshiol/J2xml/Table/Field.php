@@ -8,7 +8,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -130,9 +130,9 @@ class Field extends Table
 			return;
 
 		$context = $params->get('context');
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$nullDate = $db->getNullDate();
-		$userid = \Joomla\CMS\Factory::getUser()->id;
+		$userid = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 
 		foreach ($xml->xpath("//j2xml/field") as $record)
 		{
@@ -201,12 +201,12 @@ class Field extends Table
 			$data['params'] = '{}';
 		}
 
-		if (isset($data['modified_time']) && ($data['modified_time'] != \Joomla\CMS\Factory::getDbo()->getNullDate()))
+		if (isset($data['modified_time']) && ($data['modified_time'] != \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class)->getNullDate()))
 		{
 			$data['modified_time'] = self::fixDate($data['modified_time']);
 		}
 
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		if ($data['type'] == 'subform')
 		{
 			$query = $db->getQuery(true)
@@ -256,7 +256,7 @@ class Field extends Table
 			return;
 		}
 
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$item = new Field($db);
 		if (!$item->load($id))
 		{

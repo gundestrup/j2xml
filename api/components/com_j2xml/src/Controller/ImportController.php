@@ -58,7 +58,7 @@ class ImportController extends BaseController
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
 		$app   = Factory::getApplication();
-		$user  = Factory::getUser();
+		$user  = Factory::getApplication()->getIdentity();
 
 		// Check authorisation — the API token plugin already authenticated
 		// the user, but we still need the core.admin ACL on com_j2xml.
@@ -93,7 +93,7 @@ class ImportController extends BaseController
 
 		// If the body is JSON, extract the XML from the "data" field.
 		$contentType = $app->input->server->getString('HTTP_CONTENT_TYPE', '');
-		if (strpos($contentType, 'application/json') !== false)
+		if (str_contains($contentType, 'application/json'))
 		{
 			$json = json_decode($raw, true);
 			if (is_array($json) && isset($json['data']))
@@ -109,11 +109,6 @@ class ImportController extends BaseController
 
 		// Extract the XML declaration and parse.
 		$raw = strstr($raw, '<?xml version="1.0" ');
-
-		if (!defined('LIBXML_PARSEHUGE'))
-		{
-			define('LIBXML_PARSEHUGE', 524288);
-		}
 
 		libxml_use_internal_errors(true);
 		$xml = simplexml_load_string($raw, 'SimpleXMLElement', LIBXML_PARSEHUGE);

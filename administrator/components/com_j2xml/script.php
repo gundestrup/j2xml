@@ -8,7 +8,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -18,7 +18,6 @@
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 
 /**
  *
@@ -87,7 +86,7 @@ class Com_J2xmlInstallerScript
     {
        if ($action === 'update')
 		{
-			$db    = Factory::getDbo();
+			$db    = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$query = $db->getQuery(true)
 				->select('*')
 				->from($db->quoteName('#__extensions'))
@@ -134,7 +133,7 @@ class Com_J2xmlInstallerScript
 	{
 		// Add token column to #__j2xml_websites if the table exists
 		// (created by J2XML Pro).
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$tables = $db->getTableList();
 		$prefix = $db->getPrefix();
 		$tableName = $prefix . 'j2xml_websites';
@@ -160,7 +159,7 @@ class Com_J2xmlInstallerScript
 	 */
 	public function deleteUnexistingFiles()
 	{
-		$files = array(
+		$files = [
 			/*
 			 * 3.9.232
 			 */
@@ -168,17 +167,17 @@ class Com_J2xmlInstallerScript
 			'/administrator/components/com_j2xml/controllers/cpanel.php',
 			'/language/en-GB/en-GB.lib_eshiol.ini',
 			'/language/en-GB/en-GB.lib_eshiol.sys.ini',
-		);
+		];
 
 		// TODO There is an issue while deleting folders using the ftp mode
-		$folders = array(
+		$folders = [
 			/*
 			 * 3.9.232
 			 */
 			'/administrator/components/com_j2xml/views/cpanel',
-		);
+		];
 
-		Factory::getLanguage()->load('com_j2xml', JPATH_ADMINISTRATOR);
+		Factory::getApplication()->getLanguage()->load('com_j2xml', JPATH_ADMINISTRATOR);
 
 		foreach ($files as $file)
 		{

@@ -112,7 +112,7 @@ class Sender
 			$data = gzencode($data, 9);
 		}
 
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$query = $db->getQuery(true)
 			->select($db->quoteName(['title', 'remote_url', 'token']))
 			->from($db->quoteName('#__j2xml_websites'))
@@ -137,7 +137,7 @@ class Sender
 		// Build the REST API endpoint URL.
 		$url = $server['remote_url'];
 
-		if (strpos($url, '://') === false)
+		if (!str_contains($url, '://'))
 		{
 			$url = 'https://' . $url;
 		}

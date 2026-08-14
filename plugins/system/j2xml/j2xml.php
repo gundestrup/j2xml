@@ -41,7 +41,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 	/**
 	 * Application object.
 	 *
-	 * @var JApplicationCms
+	 * @var \Joomla\CMS\Application\CMSApplication
 	 * @since 3.9.0
 	 */
 	protected $app;
@@ -89,7 +89,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 		}
 
 		// Only render if J2XML is installed and enabled
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$query = $db->getQuery(true)
 			->select($db->quoteName('enabled'))
 			->from($db->quoteName('#__extensions'))
@@ -117,7 +117,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 		}
 
 		// Only render for HTML output.
-		if (\Joomla\CMS\Factory::getDocument()->getType() !== 'html')
+		if (\Joomla\CMS\Factory::getApplication()->getDocument()->getType() !== 'html')
 		{
 			return;
 		}
@@ -129,7 +129,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 		}
 
 		// Only render if J2XML is installed and enabled
-		$db = \Joomla\CMS\Factory::getDbo();
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$query = $db->getQuery(true)
 			->select($db->quoteName('enabled'))
 			->from('#__extensions')
@@ -203,7 +203,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 			}
 			$iconExport = 'icon-download';
 			$iconSend = 'icon-out';
-			$layout = new JLayoutFile('joomla.toolbar.modal');
+			$layout = new \Joomla\CMS\Layout\FileLayout('joomla.toolbar.modal');
 
 			$layout->addIncludePath(JPATH_PLUGINS . '/system/j2xml/layouts');
 			$selector = 'j2xmlExport';

@@ -8,7 +8,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -18,6 +18,9 @@
 
 // no direct access
 defined('_JEXEC') or die;
+
+use Joomla\CMS\HTML\Helpers\Sidebar;
+use Joomla\CMS\Language\Text;
 
 /**
  * Content component helper.
@@ -30,17 +33,17 @@ class J2xmlHelper
 	/**
 	 * Gets a list of the actions that can be performed.
 	 *
-	 * @return JObject
+	 * @return \stdClass
 	 * @since 2.5
 	 */
 	public static function getActions ()
 	{
-		$user = \Joomla\CMS\Factory::getUser();
-		$result = new JObject();
+		$user = \Joomla\CMS\Factory::getApplication()->getIdentity();
+		$result = new \stdClass();
 
 		$assetName = 'com_content';
 
-		$actions = array(
+		$actions = [
 				'core.admin',
 				'core.manage',
 				'core.create',
@@ -48,11 +51,11 @@ class J2xmlHelper
 				'core.edit.own',
 				'core.edit.state',
 				'core.delete'
-		);
+		];
 
 		foreach ($actions as $action)
 		{
-			$result->set($action, $user->authorise($action, $assetName));
+			$result->{$action} = $user->authorise($action, $assetName);
 		}
 
 		return $result;
@@ -70,9 +73,9 @@ class J2xmlHelper
 
 	public static function copyright ()
 	{
-		if ($xml = \Joomla\CMS\Factory::getXML(JPATH_COMPONENT_ADMINISTRATOR . '/j2xml.xml'))
+		if ($xml = \Joomla\CMS\Factory::getXML(JPATH_ADMINISTRATOR . "/components/com_j2xml" . '/j2xml.xml'))
 		{
-			return '<div class="clearfix"> </div>' . '<div style="text-align:center;font-size:xx-small">' . \Joomla\CMS\Language\Text::_($xml->name) . ' ' . $xml->version .
+			return '<div class="clearfix"> </div>' . '<div style="text-align:center;font-size:xx-small">' . Text::_($xml->name) . ' ' . $xml->version .
 					 ' ' . str_replace('(C)', '&copy;', $xml->copyright) . '</div>';
 		}
 	}
@@ -85,8 +88,8 @@ class J2xmlHelper
 	 */
 	public static function addSubmenu ($vName = 'cpanel')
 	{
-		JHtmlSidebar::addEntry(\Joomla\CMS\Language\Text::_('COM_J2XML_SUBMENU_CPANEL'), 'index.php?option=com_j2xml&view=cpanel', $vName == 'cpanel');
-		JHtmlSidebar::addEntry(\Joomla\CMS\Language\Text::_('COM_J2XML_SUBMENU_WEBSITES'), 'index.php?option=com_j2xml&view=websites', $vName == 'websites');
+		Sidebar::addEntry(Text::_('COM_J2XML_SUBMENU_CPANEL'), 'index.php?option=com_j2xml&view=cpanel', $vName == 'cpanel');
+		Sidebar::addEntry(Text::_('COM_J2XML_SUBMENU_WEBSITES'), 'index.php?option=com_j2xml&view=websites', $vName == 'websites');
 	}
 
 	/**
@@ -96,10 +99,9 @@ class J2xmlHelper
 	 * @param string $value
 	 * @return string
 	 */
-	static function stripInvalidXml ($value)
+	public static function stripInvalidXml ($value)
 	{
 		$ret = "";
-		$current;
 		if (empty($value))
 		{
 			return $ret;

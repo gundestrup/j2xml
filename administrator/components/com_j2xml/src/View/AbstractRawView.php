@@ -92,7 +92,7 @@ class AbstractRawView extends HtmlView
 		$xml = null;
 		$j2xml->$exportMethod($this->ids, $xml, $params);
 
-		$out = 'j2xml' . str_replace('.', '', \eshiol\J2xml\Version::$DOCVERSION) . Factory::getDate()->format('YmdHis');
+		$out = 'j2xml' . str_replace('.', '', \eshiol\J2xml\Version::$DOCVERSION) . (new \Joomla\CMS\Date\Date('now'))->format('YmdHis');
 
 		$dom = new \DOMDocument('1.0');
 		$dom->preserveWhiteSpace = false;
@@ -100,7 +100,7 @@ class AbstractRawView extends HtmlView
 		$dom->loadXML($xml->asXML());
 		$data = $dom->saveXML();
 
-		$document = Factory::getDocument();
+		$document = Factory::getApplication()->getDocument();
 		$compression = $params->get('compression', 0);
 
 		if (!\extension_loaded('zlib') || ini_get('zlib.output_compression'))

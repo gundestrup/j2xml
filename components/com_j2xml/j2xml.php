@@ -72,7 +72,7 @@ $jinput = \Joomla\CMS\Factory::getApplication()->input;
 $controllerClass = 'J2xmlController';
 $task = $jinput->getCmd('task');
 
-if (strpos($task, '.') === false)
+if (!str_contains($task, '.'))
 {
 	$controllerPath = JPATH_COMPONENT . '/controller.php';
 }

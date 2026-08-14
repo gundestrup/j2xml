@@ -50,7 +50,7 @@ Text::script('LIB_J2XML_ERROR_STATUS0');
 	id="adminForm" method="post" name="adminForm"
 	class="form-horizontal form-validate">
 
-	<?php echo LayoutHelper::render('j2xml.fieldsets', ['form' => $this->form, 'tabSetId' => $tabSetId, 'ui' => $ui], JPATH_COMPONENT_ADMINISTRATOR); ?>
+	<?php echo LayoutHelper::render('j2xml.fieldsets', ['form' => $this->form, 'tabSetId' => $tabSetId, 'ui' => $ui], JPATH_ADMINISTRATOR . "/components/com_j2xml"); ?>
 
 	<button class="hidden" id="j2xmlSendOkBtn" type="button"
 		data-j2xml-task="send-submit"

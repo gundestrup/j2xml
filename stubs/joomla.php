@@ -119,7 +119,22 @@ namespace
         public static function getFilters(): array { return []; }
         public static function render(): string { return ''; }
     }
+}
 
+namespace Joomla\CMS\HTML\Helpers
+{
+    class Sidebar
+    {
+        public static function addEntry(string $name, string $link = '', bool $active = false): void {}
+        public static function getEntries(): array { return []; }
+        public static function addFilter(string $label, string $name, array $options, bool $noDefault = false): void {}
+        public static function getFilters(): array { return []; }
+        public static function render(): string { return ''; }
+    }
+}
+
+namespace
+{
     /** @deprecated Legacy base object class */
     class JObject
     {

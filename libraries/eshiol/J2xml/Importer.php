@@ -8,7 +8,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2023 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -60,7 +60,7 @@ class Importer
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db         = \Joomla\CMS\Factory::getDbo();
+		$db         = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$serverType = $db->getServerType();
 
 		// Merge the default translation with the current translation
@@ -69,12 +69,12 @@ class Importer
 		$jlang->load('lib_j2xml', JPATH_SITE, $jlang->getDefault(), true);
 		$jlang->load('lib_j2xml', JPATH_SITE, null, true);
 
-		$this->_user     = \Joomla\CMS\Factory::getUser();
+		$this->_user     = \Joomla\CMS\Factory::getApplication()->getIdentity();
 		$this->_nullDate = $db->getNullDate();
 		$this->_user_id  = $this->_user->get('id');
-		$this->_now      = \Joomla\CMS\Factory::getDate()->format("%Y-%m-%d-%H-%M-%S");
+		$this->_now      = (new \Joomla\CMS\Date\Date("now"))->format("%Y-%m-%d-%H-%M-%S");
 		$this->_option   = (PHP_SAPI != 'cli') ? \Joomla\CMS\Factory::getApplication()->input->getCmd('option') : 'cli_' .
-				 strtolower(get_class(\Joomla\CMS\Application\CliApplication::getInstance()));
+				 strtolower(get_class(\Joomla\CMS\Factory::getApplication()));
 
 		try {
 			$query = "CREATE TABLE IF NOT EXISTS " . $db->quoteName("#__j2xml_usergroups");
