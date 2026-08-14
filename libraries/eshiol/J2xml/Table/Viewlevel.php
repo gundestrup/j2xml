@@ -19,7 +19,6 @@ namespace eshiol\J2xml\Table;
 defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Table;
-\JLoader::import('eshiol.J2xml.Table.Table');
 
 /**
  *
@@ -32,12 +31,12 @@ class Viewlevel extends Table
 	/**
 	 * Constructor
 	 *
-	 * @param \JDatabaseDriver $db
+	 * @param \Joomla\Database\DatabaseDriver $db
 	 *			A database connector object
 	 *
 	 * @since 15.3.248
 	 */
-	public function __construct (\JDatabaseDriver $db)
+	public function __construct (\Joomla\Database\DatabaseDriver $db)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -57,8 +56,7 @@ class Viewlevel extends Table
 				'rules'
 		));
 
-		$version = new \Joomla\CMS\Version();
-		$serverType = $version->isCompatible('3.5') ? $this->_db->getServerType() : 'mysql';
+		$serverType = $this->_db->getServerType();
 
 		if ($serverType === 'postgresql')
 		{

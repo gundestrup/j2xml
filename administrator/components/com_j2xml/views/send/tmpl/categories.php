@@ -16,61 +16,26 @@
  */
 
 // no direct access
-defined('_JEXEC') or die();
+defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
 
-$version = new \Joomla\CMS\Version();
+$ui = 'uitab';
 
-$ui = $version->isCompatible('4') ? 'uitab' : 'bootstrap';
-
-if ($version->isCompatible('3.4'))
-{
-	\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidator');
-}
-else
-{
-	\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidation');
-}
+\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidator');
 
 \Joomla\CMS\HTML\HTMLHelper::_('behavior.keepalive');
 \Joomla\CMS\HTML\HTMLHelper::_('jquery.framework', true);
 
-if ($version->isCompatible( '4' ))
-{
-	\Joomla\CMS\Factory::getDocument()->getWebAssetManager()
-		->useScript( 'webcomponent.toolbar-button' );
-	$this->document->addScriptOptions('progressBarContainerClass', 'progress');
-	$this->document->addScriptOptions('progressBarClass', 'progress-bar progress-bar-striped progress-bar-animated bg-success');
-}
-else
-{
-	\Joomla\CMS\HTML\HTMLHelper::_('behavior.framework');
-	\Joomla\CMS\HTML\HTMLHelper::_($ui . '.tooltip', '.hasTooltip', array(
-		'placement' => 'bottom'
-	));
-	\Joomla\CMS\HTML\HTMLHelper::_('formbehavior.chosen', 'select');
-
-	\Joomla\CMS\HTML\HTMLHelper::_('behavior.tabstate');
-	\Joomla\CMS\Factory::getDocument()->addScriptDeclaration(<<<EOL
-		// Select first tab
-		jQuery(document).ready(function() {
-			jQuery( '#j2xmlCategoriesTabs a:first' ).tab( 'show' );
-
-			// url validator
-			document.formvalidator.setHandler( 'url', function( value, element ) {
-				var regex = /^(https?|ftp|rmtp|mms):\/\/(([A-Z0-9][A-Z0-9_-]*)(\.[A-Z0-9][A-Z0-9_-]*)*)(:(\d+))?\/?/i;
-				return regex.test( value );
-			});
-		});
-EOL
-	);
-}
+\Joomla\CMS\Factory::getDocument()->getWebAssetManager()
+	->useScript( 'webcomponent.toolbar-button' );
+$this->document->addScriptOptions('progressBarContainerClass', 'progress');
+$this->document->addScriptOptions('progressBarClass', 'progress-bar progress-bar-striped progress-bar-animated bg-success');
 
 $params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 $min = ($params->get('debug', 0) ? '' : '.min');
 $doc = \Joomla\CMS\Factory::getDocument();
-$doc->addScript("../media/lib_eshiol_phpxmlrpc/js/jquery.xmlrpc{$min}.js", array('version'=>'auto'));
+
 $doc->addScript("../media/lib_eshiol_j2xml/js/j2xml{$min}.js", array('version'=>'auto'));
 
 \Joomla\CMS\Language\Text::script('COM_J2XML_SEND_ERROR');
@@ -135,7 +100,8 @@ $doc->addScript("../media/lib_eshiol_j2xml/js/j2xml{$min}.js", array('version'=>
 
 				eshiol.j2xml.send({
 					export_url: 'index.php?option=com_j2xml&task=categories.export&format=json&<?php echo \Joomla\CMS\Session\Session::getFormToken(); ?>=1',
-					remote_url: jQuery('#jform_remote_url').val().replace(/\/?$/, '/') + 'index.php?option=com_j2xml&task=services.import&format=xmlrpc',
+					remote_url: jQuery('#jform_remote_url').val().replace(/\/?$/, '/') + 'api/index.php/v1/j2xml/import',
+					token: jQuery('#jform_token').val(),
 					compression: jQuery('#jform_compression').val(),
 					password: jQuery('input:radio[name=\'jform\[password\]\']:checked').first().val(),
 					fields: jQuery('input:radio[name=\'jform\[fields\]\']:checked').first().val(),

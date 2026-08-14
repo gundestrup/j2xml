@@ -215,9 +215,9 @@
     <title>Test Field Group</title>
     <description>Test field group for articles</description>
     <state>1</state>
-    <created>2024-01-15 10:00:00</created>
-    <created_by>50</created_by>
-    <modified>2024-01-15 10:00:00</modified>
+    <created_time>2024-01-15 10:00:00</created_time>
+    <created_user_id>50</created_user_id>
+    <modified_time>2024-01-15 10:00:00</modified_time>
     <modified_by>50</modified_by>
     <params>{}</params>
   </fieldgroup>
@@ -232,13 +232,14 @@
     <default_value></default_value>
     <type>text</type>
     <fieldparams>{}</fieldparams>
+    <params>{}</params>
     <description>A test text field</description>
     <state>1</state>
     <required>0</required>
     <only_use_in_subform>0</only_use_in_subform>
-    <created>2024-01-15 10:00:00</created>
+    <created_time>2024-01-15 10:00:00</created_time>
     <created_user_id>50</created_user_id>
-    <modified>2024-01-15 10:00:00</modified>
+    <modified_time>2024-01-15 10:00:00</modified_time>
     <modified_by>50</modified_by>
     <group>Test Field Group</group>
   </field>

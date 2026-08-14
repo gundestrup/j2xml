@@ -16,7 +16,7 @@
  */
 
 // no direct access
-defined('_JEXEC') or die();
+defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -24,18 +24,11 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Session\Session;
 
-$version = new \Joomla\CMS\Version();
-
-$ui = $version->isCompatible('4') ? 'uitab' : 'bootstrap';
+$ui = 'uitab';
 
 // MooTools is loaded for B/C for extensions generating JavaScript in their install scripts, this call will be removed at 4.0
 \Joomla\CMS\HTML\HTMLHelper::_('jquery.framework', true);
 \Joomla\CMS\HTML\HTMLHelper::_('bootstrap.tooltip');
-
-if (!$version->isCompatible('4'))
-{
-	\Joomla\CMS\HTML\HTMLHelper::_('behavior.framework');
-}
 
 \Joomla\CMS\Factory::getDocument()->addScriptDeclaration('
 	Joomla.submitbutton4 = function() {
@@ -188,60 +181,24 @@ Factory::getApplication()->triggerEvent('onLoadJS');
 // Load the import options form
 $selector = 'j2xmlImport';
 
-if ($version->isCompatible('4'))
-{
-	echo HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal',
-		array(
-			'title' => Text::_('COM_J2XML_IMPORT'),
-			'url' => \Joomla\CMS\Router\Route::_('index.php?'. http_build_query([
-				'option' => 'com_j2xml',
-				'view' => 'import',
-				'layout' => 'options',
-				'tmpl' => 'component',
-				Session::getFormToken() => 1
-				])),
-			'height' => '420px',
-			'width' => '300px',
-			'modalWidth' => '50',
-			'footer' =>
-				'<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-hidden="true">'
-				. Text::_('JTOOLBAR_CANCEL') . '</button>'
-				. '<button type="button" class="btn btn-success" data-bs-dismiss="modal" aria-hidden="true"'
-				. ' onclick="eshiol.j2xml.importerModal();">'
-				. Text::_("COM_J2XML_IMPORT") . '</button>'
-		)
-	);
-}
-elseif ($version->isCompatible('3.4'))
-{
-	echo \Joomla\CMS\HTML\HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal',
-		array(
-			'title' => \Joomla\CMS\Language\Text::_('COM_J2XML_IMPORT'),
-			'url' => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=import&amp;layout=options&amp;tmpl=component'),
-			'height' => '370px',
-			'width' => '300px',
-			'modalWidth' => '50',
-			'modalHeight' => '50',
-			'footer' => '<a class="btn" data-dismiss="modal" type="button"'
-				. ' onclick="jQuery(\'#' . $selector .'Modal iframe\').contents().find(\'#' . $selector . 'CancelBtn\').click();">' . \Joomla\CMS\Language\Text::_("JTOOLBAR_CANCEL") . '</a>'
-				. '<button class="btn btn-success" type="button"'
-				. ' onclick="eshiol.j2xml.importerModal();jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#' . $selector . 'OkBtn\').click();">'
-				. \Joomla\CMS\Language\Text::_("COM_J2XML_IMPORT") . '</button>'));
-}
-else
-{
-	echo \Joomla\CMS\HTML\HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal',
-		array(
-			'title' => \Joomla\CMS\Language\Text::_('COM_J2XML_IMPORT'),
-			'url' => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=import&amp;layout=options&amp;tmpl=component'),
-			'height' => '370px',
-			'width' => '300px',
-			'modalWidth' => '40'),
-			addslashes('<div class="container-fluid"><div class="row-fluid"><div class="span12"><div class="btn-toolbar">'
-			. '<a class="btn btn-wrapper pull-right" data-dismiss="modal" type="button"'
-			. ' onclick="jQuery(\'#' . $selector .'Modal iframe\').contents().find(\'#' . $selector . 'CancelBtn\').click();">' . \Joomla\CMS\Language\Text::_("JTOOLBAR_CANCEL") . '</a>'
-			. '<button class="btn btn-success btn-wrapper pull-right" type="button"'
-			. ' onclick="eshiol.j2xml.importerModal();jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#' . $selector . 'OkBtn\').click();">'
-			. \Joomla\CMS\Language\Text::_("COM_J2XML_IMPORT") . '</button>'
-			. '</div></div></div></div>'));
-}
+echo HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal',
+	array(
+		'title' => Text::_('COM_J2XML_IMPORT'),
+		'url' => \Joomla\CMS\Router\Route::_('index.php?'. http_build_query([
+			'option' => 'com_j2xml',
+			'view' => 'import',
+			'layout' => 'options',
+			'tmpl' => 'component',
+			Session::getFormToken() => 1
+			])),
+		'height' => '420px',
+		'width' => '300px',
+		'modalWidth' => '50',
+		'footer' =>
+			'<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-hidden="true">'
+			. Text::_('JTOOLBAR_CANCEL') . '</button>'
+			. '<button type="button" class="btn btn-success" data-bs-dismiss="modal" aria-hidden="true"'
+			. ' onclick="eshiol.j2xml.importerModal();">'
+			. Text::_("COM_J2XML_IMPORT") . '</button>'
+	)
+);

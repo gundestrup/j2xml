@@ -16,45 +16,15 @@
  */
 
 // no direct access
-defined('_JEXEC') or die();
+defined('_JEXEC') or die;
 
-$version = new \Joomla\CMS\Version();
+\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidator');
 
-if ($version->isCompatible('3.4'))
-{
-	\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidator');
-}
-else
-{
-	\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidation');
-}
+$ui = 'uitab';
 
-if ($version->isCompatible('4'))
-{
-	$ui = 'uitab';
-
-	/** @var Joomla\CMS\WebAsset\WebAssetManager $wa */
-	$wa = $this->document->getWebAssetManager();
-	$wa->useScript('showon');
-}
-else
-{
-	$ui = 'bootstrap';
-
-	\Joomla\CMS\HTML\HTMLHelper::_($ui . '.tooltip', '.hasTooltip', array(
-			'placement' => 'bottom'
-	));
-	\Joomla\CMS\HTML\HTMLHelper::_('formbehavior.chosen', 'select');
-
-	\Joomla\CMS\HTML\HTMLHelper::_('behavior.tabstate');
-	\Joomla\CMS\Factory::getDocument()->addScriptDeclaration(<<<EOL
-		// Select first tab
-		jQuery(document).ready(function() {
-			jQuery( '#j2xmlTabs a:first' ).tab( 'show' );
-		});
-EOL
-			);
-}
+/** @var Joomla\CMS\WebAsset\WebAssetManager $wa */
+$wa = $this->document->getWebAssetManager();
+$wa->useScript('showon');
 ?>
 
 <form

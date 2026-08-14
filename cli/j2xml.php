@@ -28,7 +28,6 @@ define('DS', DIRECTORY_SEPARATOR);
 
 // Initialize Joomla framework
 const _JEXEC = 1;
-//define('_JEXEC', 1);
 
 // Configure error reporting to maximum for CLI output.
 error_reporting(E_ALL & ~E_NOTICE);
@@ -46,28 +45,17 @@ if (!defined('_JDEFINES'))
 	require_once JPATH_BASE.'/includes/defines.php';
 }
 
-// Get the framework.
-if (file_exists(JPATH_LIBRARIES.'/import.legacy.php'))
-{
-	require_once JPATH_LIBRARIES.'/import.legacy.php';
-}
-else
-{
-	require_once JPATH_LIBRARIES.'/import.php';
-	// Import necessary classes not handled by the autoloaders
-	jimport('joomla.application.component.helper');
-	// Force library to be in JError legacy mode
-	JError::$legacy = true;
-}
-
 // Bootstrap the CMS libraries.
-require_once JPATH_LIBRARIES.'/cms.php';
+require_once JPATH_LIBRARIES.'/bootstrap.php';
 
 // Import the configuration.
 require_once JPATH_CONFIGURATION.'/configuration.php';
 
 // System configuration.
 $config = new JConfig();
+
+// Register the eshiol\J2xml namespace for PSR-0 autoloading.
+\JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
 
 // Load Library language
 $lang = \Joomla\CMS\Factory::getLanguage();
@@ -77,17 +65,11 @@ $lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, false, false)
 	// Fallback to the j2xmlimporter file in the default language
 	|| $lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, true);
 
-jimport('eshiol.J2xml.Importer');
-jimport('eshiol.J2xmlpro.Importer');
-jimport('eshiol.J2xml.Version');
-jimport('eshiol.J2xmlpro.Version');
-jimport('eshiol.J2xml.messages');
-
 /**
  * @package  Joomla.CLI
  * @since    2.5
  */
-class J2xmlCli extends JApplicationCli
+class J2xmlCli extends \Joomla\CMS\Application\CliApplication
 {
 	private static $codes = array('message'=>'i','notice'=>'!','error'=>'x');
 
@@ -174,9 +156,8 @@ class J2xmlCli extends JApplicationCli
 			exit(0);
 		}
 
-		$dispatcher = \JEventDispatcher::getInstance();
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
-		$results = $dispatcher->trigger('onBeforeImport', array('cli_j2xml.import', &$xml));
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onBeforeImport', array('cli_j2xml.import', &$xml));
 		if (!$xml)
 		{
 			$this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
@@ -219,7 +200,7 @@ class J2xmlCli extends JApplicationCli
 				$iparams->set('viewlevels', $params->get('import_viewlevels', 1));
 				$iparams->set('content', $params->get('import_content'));
 				$iparams->set('weblinks', $params->get('import_weblinks'));
-				$iparams->set('logger', 'xmlrpc');
+				$iparams->set('logger', 'cli');
 
 				$iparams->set('keep_frontpage', $params->get('keep_frontpage'));
 				$iparams->set('keep_rating', $params->get('keep_rating'));
@@ -257,8 +238,8 @@ class J2xmlCli extends JApplicationCli
 	}
 }
 
-// Instantiate the application object, passing the class name to JCli::getInstance
-// and use chaining to execute the application.
-$cli = JApplicationCli::getInstance('J2XMLCli');
-JFactory::$application = $cli;
+// Instantiate the CLI application via the DI container and execute.
+$container = \Joomla\CMS\Factory::getContainer();
+$container->registerServiceProvider(new \Joomla\CMS\Application\Service\Provider\CliApplication());
+$cli = $container->get(\Joomla\CMS\Application\CliApplication::class);
 $cli->execute();

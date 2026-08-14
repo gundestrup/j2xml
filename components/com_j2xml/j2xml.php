@@ -16,14 +16,16 @@
  */
 
 // no direct access
-defined('_JEXEC') or die();
+defined('_JEXEC') or die;
 
-jimport('eshiol.J2xmlpro.Version');
-jimport('eshiol.J2xml.Version');
+// Register the eshiol\J2xml namespace for PSR-0 autoloading.
+if (!class_exists('eshiol\\J2xml\\Version'))
+{
+	\JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
+}
 
 $params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 
-JLoader::import('joomla.log.log');
 if ($params->get('debug') || defined('JDEBUG') && JDEBUG)
 {
 	\Joomla\CMS\Log\Log::addLogger(
@@ -41,8 +43,7 @@ $app       = \Joomla\CMS\Factory::getApplication();
 $poweredBy = 'J2XML/' . (class_exists('eshiol\J2xmlpro\Version') ? \eshiol\J2xmlpro\Version::getShortVersion() : \eshiol\J2xml\Version::getShortVersion());
 header('X-Powered-By: ' . $poweredBy);
 
-$jversion  = new \Joomla\CMS\Version();
-$forceCORS = $app->get('cors', !$jversion->isCompatible('4'));
+$forceCORS = $app->get('cors', false);
 if ($forceCORS)
 {
 	/**
@@ -85,40 +86,11 @@ else
 
 	$controllerPath = JPATH_COMPONENT . '/controllers/' . $controllerName;
 
-	$format = $jinput->getCmd('format');
-	if ($format == 'xmlrpc')
-	{
-		$jversion = new \Joomla\CMS\Version();
-		if ($jversion->isCompatible('3.9'))
-		{
-			$lib_xmlrpc = 'eshiol/phpxmlrpc';
-		}
-		else
-		{
-			$lib_xmlrpc = 'phpxmlrpc';
-		}
+	\Joomla\CMS\Log\Log::addLogger(
+		array('logger' => 'messagequeue', 'extension' => 'com_j2xml'),
+		\Joomla\CMS\Log\Log::ALL & ~ \Joomla\CMS\Log\Log::DEBUG,
+		array('lib_j2xml', 'com_j2xml'));
 
-		if (\Joomla\CMS\Helper\LibraryHelper::isEnabled($lib_xmlrpc) && $params->get('xmlrpc'))
-		{
-			require_once JPATH_LIBRARIES . '/eshiol/phpxmlrpc/Log/Logger/XmlrpcLogger.php';
-			\Joomla\CMS\Log\Log::addLogger(
-				array('logger' => 'xmlrpc', 'extension' => 'com_j2xml', 'service' => 'XMLRPCJ2XMLServices'),
-				\Joomla\CMS\Log\Log::ALL & ~ \Joomla\CMS\Log\Log::DEBUG,
-				array('lib_j2xml', 'com_j2xml'));
-		}
-		else
-		{
-			\Joomla\CMS\Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::_('LIB_J2XML_MSG_XMLRPC_DISABLED'), 'error');
-		}
-		$controllerPath .= '.' . strtolower($format);
-	}
-	else
-	{
-		\Joomla\CMS\Log\Log::addLogger(
-			array('logger' => 'messagequeue', 'extension' => 'com_j2xml'),
-			\Joomla\CMS\Log\Log::ALL & ~ \Joomla\CMS\Log\Log::DEBUG,
-			array('lib_j2xml', 'com_j2xml'));
-	}
 	$controllerPath .= '.php';
 	// Set the name for the controller and instantiate it
 	$controllerClass .= ucfirst($controllerName);

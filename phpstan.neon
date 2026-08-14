@@ -23,10 +23,7 @@ parameters:
         - libraries/eshiol/J2xml
         - plugins
         - cli
-
-    # Exclude bundled third-party libraries that have their own upstream.
-    excludePaths:
-        - libraries/eshiol/phpxmlrpc/*
+        - api
 
     # Joomla framework symbols are not available via Composer in this
     # repo.  We declare the subset we use in a single scan file so

@@ -4,7 +4,7 @@
 #
 # Produces build/pkg_j2xml.zip containing:
 #   com_j2xml.zip, lib_eshiol_J2xml.zip, plg_system_j2xml.zip,
-#   lib_eshiol_phpxmlrpc.zip, plg_system_basicauth.zip
+#   plg_webservices_j2xml.zip
 #
 # Usage: scripts/build-package.sh [output_dir]
 #
@@ -70,14 +70,16 @@ copy_dir "$ROOT_DIR/components/com_j2xml/controllers" "$STAGING/site/controllers
 copy_dir "$ROOT_DIR/components/com_j2xml/helpers" "$STAGING/site/helpers"
 # Admin files (folder="admin")
 mkdir -p "$STAGING/admin"
-cp "$ROOT_DIR/administrator/components/com_j2xml/j2xml.php" "$STAGING/admin/j2xml.php"
 cp "$ROOT_DIR/administrator/components/com_j2xml/access.xml" "$STAGING/admin/access.xml"
 cp "$ROOT_DIR/administrator/components/com_j2xml/config.xml" "$STAGING/admin/config.xml"
-cp "$ROOT_DIR/administrator/components/com_j2xml/controller.php" "$STAGING/admin/controller.php"
-copy_dir "$ROOT_DIR/administrator/components/com_j2xml/controllers" "$STAGING/admin/controllers"
-copy_dir "$ROOT_DIR/administrator/components/com_j2xml/models" "$STAGING/admin/models"
+copy_dir "$ROOT_DIR/administrator/components/com_j2xml/forms" "$STAGING/admin/forms"
 copy_dir "$ROOT_DIR/administrator/components/com_j2xml/sql" "$STAGING/admin/sql"
 copy_dir "$ROOT_DIR/administrator/components/com_j2xml/views" "$STAGING/admin/views"
+copy_dir "$ROOT_DIR/administrator/components/com_j2xml/services" "$STAGING/admin/services"
+copy_dir "$ROOT_DIR/administrator/components/com_j2xml/src" "$STAGING/admin/src"
+# API files (folder="api")
+mkdir -p "$STAGING/api"
+copy_dir "$ROOT_DIR/api/components/com_j2xml/src" "$STAGING/api/src"
 # Admin language (folder="admin/language")
 mkdir -p "$STAGING/admin/language/en-GB"
 cp "$ROOT_DIR/administrator/language/en-GB/en-GB.com_j2xml.ini" "$STAGING/admin/language/en-GB/"
@@ -114,23 +116,6 @@ copy_dir "$ROOT_DIR/media/lib_eshiol_j2xml/js" "$STAGING/media/js"
 substitute_placeholders "$STAGING/j2xml.xml"
 make_zip "$STAGING" "lib_eshiol_J2xml.zip"
 
-# --- lib_eshiol_phpxmlrpc.zip -----------------------------------------------
-echo "Building lib_eshiol_phpxmlrpc.zip..."
-STAGING="$TMPDIR/lib_eshiol_phpxmlrpc"
-mkdir -p "$STAGING"
-# Manifest at root
-cp "$ROOT_DIR/administrator/manifests/libraries/eshiol/phpxmlrpc.xml" "$STAGING/phpxmlrpc.xml"
-# Library files
-copy_dir "$ROOT_DIR/libraries/eshiol/phpxmlrpc/Log" "$STAGING/Log"
-copy_dir "$ROOT_DIR/libraries/eshiol/phpxmlrpc/lib" "$STAGING/lib"
-copy_dir "$ROOT_DIR/libraries/eshiol/phpxmlrpc/src" "$STAGING/src"
-# Media (folder="media")
-mkdir -p "$STAGING/media/js"
-copy_dir "$ROOT_DIR/media/lib_eshiol_phpxmlrpc/js" "$STAGING/media/js"
-# Substitute placeholders
-substitute_placeholders "$STAGING/phpxmlrpc.xml"
-make_zip "$STAGING" "lib_eshiol_phpxmlrpc.zip"
-
 # --- plg_system_j2xml.zip ---------------------------------------------------
 echo "Building plg_system_j2xml.zip..."
 STAGING="$TMPDIR/plg_system_j2xml"
@@ -152,23 +137,22 @@ cp "$ROOT_DIR/administrator/language/en-GB/en-GB.plg_system_j2xml.sys.ini" "$STA
 substitute_placeholders "$STAGING/j2xml.xml"
 make_zip "$STAGING" "plg_system_j2xml.zip"
 
-# --- plg_system_basicauth.zip -----------------------------------------------
-echo "Building plg_system_basicauth.zip..."
-STAGING="$TMPDIR/plg_system_basicauth"
+# --- plg_webservices_j2xml.zip ----------------------------------------------
+echo "Building plg_webservices_j2xml.zip..."
+STAGING="$TMPDIR/plg_webservices_j2xml"
 mkdir -p "$STAGING"
 # Manifest at root
-cp "$ROOT_DIR/plugins/system/basicauth/basicauth.xml" "$STAGING/basicauth.xml"
+cp "$ROOT_DIR/plugins/webservices/j2xml/j2xml.xml" "$STAGING/j2xml.xml"
 # Plugin files
-cp "$ROOT_DIR/plugins/system/basicauth/basicauth.php" "$STAGING/"
-cp "$ROOT_DIR/plugins/system/basicauth/install.mysql.sql" "$STAGING/"
-cp "$ROOT_DIR/plugins/system/basicauth/install.postgresql.sql" "$STAGING/"
-cp "$ROOT_DIR/plugins/system/basicauth/install.sqlazure.sql" "$STAGING/"
+cp "$ROOT_DIR/plugins/webservices/j2xml/j2xml.php" "$STAGING/"
+cp "$ROOT_DIR/plugins/webservices/j2xml/index.html" "$STAGING/"
 # Language (folder="language")
 mkdir -p "$STAGING/language/en-GB"
-cp "$ROOT_DIR/administrator/language/en-GB/en-GB.plg_system_basicauth.ini" "$STAGING/language/en-GB/"
-cp "$ROOT_DIR/administrator/language/en-GB/en-GB.plg_system_basicauth.sys.ini" "$STAGING/language/en-GB/"
-# basicauth has a hardcoded version, no placeholders to substitute
-make_zip "$STAGING" "plg_system_basicauth.zip"
+cp "$ROOT_DIR/administrator/language/en-GB/en-GB.plg_webservices_j2xml.ini" "$STAGING/language/en-GB/"
+cp "$ROOT_DIR/administrator/language/en-GB/en-GB.plg_webservices_j2xml.sys.ini" "$STAGING/language/en-GB/"
+# Substitute placeholders
+substitute_placeholders "$STAGING/j2xml.xml"
+make_zip "$STAGING" "plg_webservices_j2xml.zip"
 
 # --- pkg_j2xml.zip ----------------------------------------------------------
 echo "Building pkg_j2xml.zip..."
@@ -180,8 +164,7 @@ cp "$ROOT_DIR/administrator/manifests/packages/pkg_j2xml.xml" "$STAGING/pkg_j2xm
 cp "$OUTPUT_DIR/com_j2xml.zip" "$STAGING/"
 cp "$OUTPUT_DIR/lib_eshiol_J2xml.zip" "$STAGING/"
 cp "$OUTPUT_DIR/plg_system_j2xml.zip" "$STAGING/"
-cp "$OUTPUT_DIR/lib_eshiol_phpxmlrpc.zip" "$STAGING/"
-cp "$OUTPUT_DIR/plg_system_basicauth.zip" "$STAGING/"
+cp "$OUTPUT_DIR/plg_webservices_j2xml.zip" "$STAGING/"
 # Package language
 mkdir -p "$STAGING/language/en-GB"
 cp "$ROOT_DIR/language/en-GB/en-GB.pkg_j2xml.sys.ini" "$STAGING/language/en-GB/"

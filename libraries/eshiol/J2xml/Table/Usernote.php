@@ -22,11 +22,7 @@ use eshiol\J2xml\Table\Category;
 use eshiol\J2xml\Table\Image;
 use eshiol\J2xml\Table\Table;
 use eshiol\J2xml\Table\User;
-\JLoader::import('eshiol.J2xml.Table.Category');
-\JLoader::import('eshiol.J2xml.Table.Image');
-\JLoader::import('eshiol.J2xml.Table.Table');
-\JLoader::import('eshiol.J2xml.Table.User');
-\JLoader::register('UsersTableNote', JPATH_ADMINISTRATOR . '/components/com_users/tables/note.php');
+use Joomla\Component\Users\Administrator\Table\NoteTable;
 
 /**
  *
@@ -39,12 +35,12 @@ class Usernote extends \eshiol\J2xml\Table\Table
 	/**
 	 * Constructor
 	 *
-	 * @param \JDatabaseDriver $db
+	 * @param \Joomla\Database\DatabaseDriver $db
 	 *			A database connector object
 	 *
 	 * @since 15.3.248
 	 */
-	public function __construct (\JDatabaseDriver $db)
+	public function __construct (\Joomla\Database\DatabaseDriver $db)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -151,7 +147,8 @@ class Usernote extends \eshiol\J2xml\Table\Table
 
 				unset($data['id']);
 
-				$table = \Joomla\CMS\Table\Table::getInstance('Note', 'UsersTable');
+				$db = \Joomla\CMS\Factory::getDbo();
+			$table = new NoteTable($db);
 
 //				if (!$overwrite)
 //				{

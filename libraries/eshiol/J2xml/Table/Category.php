@@ -23,11 +23,6 @@ use eshiol\J2xml\Table\Table;
 use eshiol\J2xml\Table\Tag;
 use eshiol\J2xml\Table\User;
 use eshiol\J2xml\Table\Viewlevel;
-\JLoader::import('eshiol.J2xml.Table.Image');
-\JLoader::import('eshiol.J2xml.Table.Table');
-\JLoader::import('eshiol.J2xml.Table.Tag');
-\JLoader::import('eshiol.J2xml.Table.User');
-\JLoader::import('eshiol.J2xml.Table.Viewlevel');
 
 /**
  *
@@ -40,12 +35,12 @@ class Category extends Table
 	/**
 	 * Constructor
 	 *
-	 * @param \JDatabaseDriver $db
+	 * @param \Joomla\Database\DatabaseDriver $db
 	 *			A database connector object
 	 *
 	 * @since 1.5.1
 	 */
-	public function __construct (\JDatabaseDriver $db)
+	public function __construct (\Joomla\Database\DatabaseDriver $db)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -61,21 +56,17 @@ class Category extends Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$version = new \Joomla\CMS\Version();
-		if ($version->isCompatible('3.1'))
-		{
-			// $this->_aliases['tag'] = 'SELECT t.path FROM #__tags t,
-			// #__contentitem_tag_map m WHERE type_alias = "' . $this->extension
-			// . '.category' . '" AND t.id = m.tag_id AND m.content_item_id = '.
-			// $this->id;
-			$this->_aliases['tag'] = (string) $this->_db->getQuery(true)
+		// $this->_aliases['tag'] = 'SELECT t.path FROM #__tags t,
+		// #__contentitem_tag_map m WHERE type_alias = "' . $this->extension
+		// . '.category' . '" AND t.id = m.tag_id AND m.content_item_id = '.
+		// $this->id;
+		$this->_aliases['tag'] = (string) $this->_db->getQuery(true)
 				->select($this->_db->quoteName('t.path'))
 				->from($this->_db->quoteName('#__tags', 't'))
 				->from($this->_db->quoteName('#__contentitem_tag_map', 'm'))
 				->where($this->_db->quoteName('type_alias') . ' = ' . $this->_db->quote($this->extension . '.category'))
 				->where($this->_db->quoteName('t.id') . ' = ' . $this->_db->quoteName('m.tag_id'))
 				->where($this->_db->quoteName('m.content_item_id') . ' = ' . $this->_db->quote((string) $this->id));
-		}
 
 		$query = $this->_db->getQuery(true);
 		$this->_aliases['association'] = (string) $query
@@ -123,17 +114,8 @@ class Category extends Table
 		if (!$extension)
 			return;
 
-		$version = new \Joomla\CMS\Version();
-		if ($version->isCompatible('3.2'))
-		{
-			\Joomla\CMS\Factory::getApplication()->getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
-		}
-		else
-		{
-			\Joomla\CMS\Factory::getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
-		}
+		\Joomla\CMS\Factory::getApplication()->getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
 		$db = \Joomla\CMS\Factory::getDbo();
-		$version = new \Joomla\CMS\Version();
 
 		$keep_id = $params->get('keep_id', 0);
 		if ($keep_id)
@@ -248,7 +230,7 @@ class Category extends Table
 
 					$table->bind($data);
 
-					if ($version->isCompatible('3.1') && isset($data['tags']))
+					if (isset($data['tags']))
 					{
 						$table->newTags = Tag::convertPathsToIds($data['tags']);
 					}
@@ -317,7 +299,7 @@ class Category extends Table
 			}
 			if ($keep_id && ($autoincrement > $maxid))
 			{
-				$serverType = $version->isCompatible('3.5') ? $db->getServerType() : 'mysql';
+				$serverType = $db->getServerType();
 
 				if ($serverType === 'postgresql')
 				{
@@ -444,15 +426,11 @@ class Category extends Table
 
 		if (isset($options['tags']) && $options['tags'])
 		{
-			$version = new \Joomla\CMS\Version();
-			if ($version->isCompatible('3.1'))
+			$htags = new \Joomla\CMS\Helper\TagsHelper();
+			$itemtags = $htags->getItemTags($item->extension . '.category', $id);
+			foreach ($itemtags as $itemtag)
 			{
-				$htags = new \Joomla\CMS\Helper\TagsHelper();
-				$itemtags = $htags->getItemTags($item->extension . '.category', $id);
-				foreach ($itemtags as $itemtag)
-				{
-					Tag::export($itemtag->tag_id, $xml, $options);
-				}
+				Tag::export($itemtag->tag_id, $xml, $options);
 			}
 		}
 	}

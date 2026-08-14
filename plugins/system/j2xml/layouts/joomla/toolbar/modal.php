@@ -52,33 +52,13 @@ $message = "alert(Joomla.JText._('JLIB_HTML_PLEASE_MAKE_A_SELECTION_FROM_THE_LIS
 
 <!-- Render the modal -->
 <?php
-$version = new \Joomla\CMS\Version();
-if ($version->isCompatible('3.4'))
-{
-	echo \Joomla\CMS\HTML\HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal', array(
-		'url'         => $displayData['doTask'],
-		'title'	      => $title,
-		'modalWidth'  => '40',
-		'height'	  => '310px',
-		'footer'	  => '<button class="btn" data-dismiss="modal" type="button"'
-		. ' onclick="jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#' . $selector . 'CancelBtn\').click();">' . $cancel . '</button>'
-		. '<button class="btn btn-success" type="button"'
-		. ' onclick="' . $onclick . 'jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#' . $selector . 'OkBtn\').click();">'
-		. $ok . '</button>'));
-}
-else
-{
-	echo \Joomla\CMS\HTML\HTMLHelper::_(
-		'bootstrap.renderModal',
-		$selector . 'Modal',
-		array(
-			'url'         => $displayData['doTask'],
-			'title'       => $title,
-			'modalWidth'  => '40',
-			'height'      => '310px'),
-		'<button class="btn" data-dismiss="modal" type="button"'
-			. ' onclick="jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#' . $selector . 'CancelBtn\').click();">' . $cancel . '</button>'
-			. '<button class="btn btn-success" type="button"'
-			. ' onclick="' . $onclick . 'jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#' . $selector . 'OkBtn\').click();">'
-			. $ok . '</button>');
-}
+echo \Joomla\CMS\HTML\HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal', array(
+	'url'         => $displayData['doTask'],
+	'title'	      => $title,
+	'modalWidth'  => '40',
+	'height'	  => '310px',
+	'footer'	  => '<button class="btn" data-dismiss="modal" type="button"'
+	. ' onclick="jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#' . $selector . 'CancelBtn\').click();">' . $cancel . '</button>'
+	. '<button class="btn btn-success" type="button"'
+	. ' onclick="' . $onclick . 'jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#' . $selector . 'OkBtn\').click();">'
+	. $ok . '</button>'));

@@ -410,13 +410,13 @@
 		</field>
 
 		<field
-			name="xmlrpc"
+			name="api"
 			type="radio"
 			class="btn-group btn-group-yesno"
 			layout="joomla.form.field.radio.switcher"
-			default="0"
-			label="COM_J2XML_XMLRPC_LABEL"
-			description="COM_J2XML_XMLRPC_DESC">
+			default="1"
+			label="COM_J2XML_API_LABEL"
+			description="COM_J2XML_API_DESC">
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>
 		</field>

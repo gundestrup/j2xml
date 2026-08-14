@@ -24,11 +24,6 @@ use eshiol\J2xml\Table\Table;
 use eshiol\J2xml\Table\Usernote;
 use eshiol\J2xml\Table\Viewlevel;
 use Joomla\CMS\Factory;
-\JLoader::import('eshiol.J2xml.Table.Contact');
-\JLoader::import('eshiol.J2xml.Table.Field');
-\JLoader::import('eshiol.J2xml.Table.Table');
-\JLoader::import('eshiol.J2xml.Table.Usernote');
-\JLoader::import('eshiol.J2xml.Table.Viewlevel');
 
 /**
  *
@@ -41,12 +36,12 @@ class User extends Table
 	/**
 	 * Constructor
 	 *
-	 * @param \JDatabaseDriver $db
+	 * @param \Joomla\Database\DatabaseDriver $db
 	 *			A database connector object
 	 *
 	 * @since 1.5.3beta4.39
 	 */
-	public function __construct (\JDatabaseDriver $db)
+	public function __construct (\Joomla\Database\DatabaseDriver $db)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -62,8 +57,7 @@ class User extends Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$version = new \Joomla\CMS\Version();
-		$serverType = $version->isCompatible('3.5') ? $this->_db->getServerType() : 'mysql';
+		$serverType = $this->_db->getServerType();
 
 		if ($serverType === 'postgresql')
 		{
@@ -92,68 +86,59 @@ class User extends Table
 				->where($this->_db->quoteName('m.user_id') . ' = ' . (int) $this->id);
 		}
 
-		if ($version->isCompatible('3.7'))
+		// $this->_aliases['field'] = 'SELECT f.name, v.value FROM
+		// #__fields_values v, #__fields f WHERE f.id = v.field_id AND
+		// v.item_id = '. (int)$this->id;
+		$query = $this->_db->getQuery(true)
+			->select($this->_db->quoteName('f.name'))
+			->select($this->_db->quoteName('v.value'))
+			->from($this->_db->quoteName('#__fields_values', 'v'))
+			->from($this->_db->quoteName('#__fields', 'f'))
+			->where($this->_db->quoteName('f.id') . ' = ' . $this->_db->quoteName('v.field_id'))
+			->where($this->_db->quoteName('v.item_id') . ' = ' . $this->_db->quote((string) $this->id));
+		$query->where($this->_db->quoteName('f.type') . ' <> ' . $this->_db->quote('subform'));
+		$this->_aliases['field'] = (string) $query;
+
+		$query = $this->_db->getQuery(true)
+			->select($this->_db->quoteName('f.id'))
+			->select($this->_db->quoteName('f.name'))
+			->from($this->_db->quoteName('#__fields', 'f'));
+		$fields = array();
+		foreach ($this->_db->setQuery($query)->loadObjectList() as $field)
 		{
-			// $this->_aliases['field'] = 'SELECT f.name, v.value FROM
-			// #__fields_values v, #__fields f WHERE f.id = v.field_id AND
-			// v.item_id = '. (int)$this->id;
+			$fields['field' . $field->id] = $field->name;
+		}
+
+		$query = $this->_db->getQuery(true)
+			->select($this->_db->quoteName('f.name'))
+			->select($this->_db->quoteName('v.value'))
+			->from($this->_db->quoteName('#__fields_values', 'v'))
+			->from($this->_db->quoteName('#__fields', 'f'))
+			->where($this->_db->quoteName('f.type') . ' = ' . $this->_db->quote('subform'))
+			->where($this->_db->quoteName('f.id') . ' = ' . $this->_db->quoteName('v.field_id'))
+			->where($this->_db->quoteName('v.item_id') . ' = ' . $this->_db->quote((string) $this->id));
+		$fieldValues = $this->_db->setQuery($query)->loadObjectList();
+		foreach ($fieldValues as $field)
+		{
+			$subformValue = json_decode($field->value, true);
+			foreach ($subformValue as $rowId => $row)
+			{
+				foreach ($row as $fieldId => $fieldValue)
+				{
+					unset($subformValue[$rowId][$fieldId]);
+					$subformValue[$rowId][$fields[$fieldId]] = $fieldValue;
+				}
+			}
+			$subformValue = json_encode($subformValue, true);
+
 			$query = $this->_db->getQuery(true)
-				->select($this->_db->quoteName('f.name'))
-				->select($this->_db->quoteName('v.value'))
-				->from($this->_db->quoteName('#__fields_values', 'v'))
-				->from($this->_db->quoteName('#__fields', 'f'))
-				->where($this->_db->quoteName('f.id') . ' = ' . $this->_db->quoteName('v.field_id'))
-				->where($this->_db->quoteName('v.item_id') . ' = ' . $this->_db->quote((string) $this->id));
-			if ($version->isCompatible('4'))
+				->select($this->_db->quote($field->name))
+				->select($this->_db->quote($subformValue));
+			if ($serverType === 'sqlserver')
 			{
-				$query->where($this->_db->quoteName('f.type') . ' <> ' . $this->_db->quote('subform'));
+				$query->from($this->_db->quoteName('DUAL'));
 			}
-			$this->_aliases['field'] = (string) $query;
-
-			if ($version->isCompatible('4'))
-			{
-				$query = $this->_db->getQuery(true)
-					->select($this->_db->quoteName('f.id'))
-					->select($this->_db->quoteName('f.name'))
-					->from($this->_db->quoteName('#__fields', 'f'));
-				$fields = array();
-				foreach ($this->_db->setQuery($query)->loadObjectList() as $field)
-				{
-					$fields['field' . $field->id] = $field->name;
-				}
-
-				$query = $this->_db->getQuery(true)
-					->select($this->_db->quoteName('f.name'))
-					->select($this->_db->quoteName('v.value'))
-					->from($this->_db->quoteName('#__fields_values', 'v'))
-					->from($this->_db->quoteName('#__fields', 'f'))
-					->where($this->_db->quoteName('f.type') . ' = ' . $this->_db->quote('subform'))
-					->where($this->_db->quoteName('f.id') . ' = ' . $this->_db->quoteName('v.field_id'))
-					->where($this->_db->quoteName('v.item_id') . ' = ' . $this->_db->quote((string) $this->id));
-				$fieldValues = $this->_db->setQuery($query)->loadObjectList();
-				foreach ($fieldValues as $field)
-				{
-					$subformValue = json_decode($field->value, true);
-					foreach ($subformValue as $rowId => $row)
-					{
-						foreach ($row as $fieldId => $fieldValue)
-						{
-							unset($subformValue[$rowId][$fieldId]);
-							$subformValue[$rowId][$fields[$fieldId]] = $fieldValue;
-						}
-					}
-					$subformValue = json_encode($subformValue, true);
-
-					$query = $this->_db->getQuery(true)
-						->select($this->_db->quote($field->name))
-						->select($this->_db->quote($subformValue));
-					if ($serverType === 'sqlserver')
-					{
-						$query->from($this->_db->quoteName('DUAL'));
-					}
-					$this->_aliases['field'] .= ' UNION ' . (string) $query;
-				}
-			}
+			$this->_aliases['field'] .= ' UNION ' . (string) $query;
 		}
 
 		// $this->_aliases['profile'] = 'SELECT profile_key name, profile_value
@@ -195,15 +180,7 @@ class User extends Table
 		$keepId = $params->get('keep_user_id', '0');
 		$keep_user_attribs = $params->get('keep_user_attribs', '1');
 
-		$version = new \Joomla\CMS\Version();
-		if ($version->isCompatible('3.2'))
-		{
-			\Joomla\CMS\Factory::getApplication()->getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
-		}
-		else
-		{
-			\Joomla\CMS\Factory::getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
-		}
+		\Joomla\CMS\Factory::getApplication()->getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
 
 		$db = \Joomla\CMS\Factory::getDbo();
 
@@ -213,16 +190,7 @@ class User extends Table
 			->from($db->quoteName('#__users')))
 			->loadResult();
 
-		$version = new \Joomla\CMS\Version();
-		if ($version->isCompatible('4'))
-		{
-			$mvcFactory = Factory::getApplication()->bootComponent('com_users')->getMVCFactory();
-		}
-		else
-		{
-			\JLoader::register('UsersModelUser', JPATH_ADMINISTRATOR . '/components/com_users/models/user.php');
-			$userModel = "\UsersModelUser";
-		}
+		$mvcFactory = Factory::getApplication()->bootComponent('com_users')->getMVCFactory();
 
 		$users = array();
 		foreach ($xml->xpath("//j2xml/user[not(username = '')]") as $record)
@@ -281,14 +249,7 @@ class User extends Table
 
 			if (!$data['id'] || ($import_users == 2))
 			{
-				if ($version->isCompatible('4'))
-				{
-					$user = $mvcFactory->createModel('User', 'Administrator', ['ignore_request' => true]);
-				}
-				else
-				{
-					$user = new $userModel();
-				}
+				$user = $mvcFactory->createModel('User', 'Administrator', ['ignore_request' => true]);
 				$result = $user->save($data);
 
 				$id = $db->setQuery(
@@ -399,7 +360,7 @@ class User extends Table
 			}
 		}
 
-		$serverType = $version->isCompatible('3.5') ? $db->getServerType() : 'mysql';
+		$serverType = $db->getServerType();
 		if ($autoincrement > $maxid)
 		{
 			if ($serverType === 'postgresql')
@@ -568,27 +529,23 @@ class User extends Table
 			}
 		}
 
-		$version = new \Joomla\CMS\Version();
-		if (isset($options['fields']) && $options['fields'] && $version->isCompatible('3.7'))
+		if (isset($options['fields']) && $options['fields'])
 		{
-			if ($version->isCompatible('4'))
+			// load subform fields
+			$query = $db->getQuery(true)
+				->select($db->quoteName('v.value'))
+				->from($db->quoteName('#__fields_values', 'v'))
+				->from($db->quoteName('#__fields', 'f'))
+				->where($db->quoteName('f.type') . ' = ' . $db->quote('subform'))
+				->where($db->quoteName('f.id') . ' = ' . $db->quoteName('v.field_id'));
+			$subformValues = $db->setQuery($query)->loadColumn();
+			foreach ($subformValues as $subformValue)
 			{
-				// load subform fields
-				$query = $db->getQuery(true)
-					->select($db->quoteName('v.value'))
-					->from($db->quoteName('#__fields_values', 'v'))
-					->from($db->quoteName('#__fields', 'f'))
-					->where($db->quoteName('f.type') . ' = ' . $db->quote('subform'))
-					->where($db->quoteName('f.id') . ' = ' . $db->quoteName('v.field_id'));
-				$subformValues = $db->setQuery($query)->loadColumn();
-				foreach ($subformValues as $subformValue)
+				foreach (json_decode($subformValue, true) as $row)
 				{
-					foreach (json_decode($subformValue, true) as $row)
+					foreach ($row as $fieldId => $fieldValue)
 					{
-						foreach ($row as $fieldId => $fieldValue)
-						{
-							Field::export(substr($fieldId, 5), $xml, $options);
-						}
+						Field::export(substr($fieldId, 5), $xml, $options);
 					}
 				}
 			}

@@ -309,17 +309,13 @@ class Menu extends \eshiol\J2XML\Table\Table
 		}
 		$data['level'] = substr_count($path , '/') + 1;
 
-		$version = new \Joomla\CMS\Version();
-		if ($version->isCompatible('4'))
+		if (!isset($data['img']))
 		{
-			if (!isset($data['img']))
-			{
-				$data['img'] = '';
-			}
-			if (!isset($data['link']))
-			{
-				$data['link'] = '';
-			}
+			$data['img'] = '';
+		}
+		if (!isset($data['link']))
+		{
+			$data['link'] = '';
 		}
 	}
 }

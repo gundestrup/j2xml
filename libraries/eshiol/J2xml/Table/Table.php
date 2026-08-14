@@ -22,13 +22,6 @@ use eshiol\J2xml\Version;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\Utilities\ArrayHelper;
 
-\JLoader::import('eshiol.J2xml.Version');
-
-if (!class_exists('JDatabaseDriver'))
-{
-	class_alias('\\Joomla\\Database\\DatabaseDriver', 'JDatabaseDriver');
-}
-
 /**
  *
  * Table
@@ -166,8 +159,7 @@ class Table extends \Joomla\CMS\Table\Table
 				// FROM #__viewlevels f RIGHT JOIN '.$this->_tbl.' a ON f.id =
 				// a.access WHERE a.id = '. (int)$this->id;
 				$query = $this->_db->getQuery(true);
-				$version = new \Joomla\CMS\Version();
-				$serverType = $version->isCompatible('3.5') ? $this->_db->getServerType() : 'mysql';
+				$serverType = $this->_db->getServerType();
 
 				if ($serverType === 'postgresql')
 				{
@@ -376,8 +368,7 @@ class Table extends \Joomla\CMS\Table\Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$version = new \Joomla\CMS\Version();
-		$nullDate = ($version->isCompatible('4') ? null : \Joomla\CMS\Factory::getDbo()->getNullDate());
+		$nullDate = null;
 
 		$userid = \Joomla\CMS\Factory::getUser()->id;
 
@@ -479,7 +470,7 @@ class Table extends \Joomla\CMS\Table\Table
 			}
 		}
 
-		if ($version->isCompatible('3.1') && isset($data['tag']))
+		if (isset($data['tag']))
 		{
 			$data['tags'] = (array) self::getTagId($data['tag']);
 			unset($data['tag']);
@@ -781,10 +772,9 @@ class Table extends \Joomla\CMS\Table\Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$version = new \Joomla\CMS\Version();
 		if (empty($date) || ($date == '0000-00-00 00:00:00') || ($date == '1970-01-01 00:00:00'))
 		{
-			$date = ($version->isCompatible('4') ? null : \Joomla\CMS\Factory::getDbo()->getNullDate());
+			$date = null;
 		}
 		else
 		{
@@ -1002,37 +992,13 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 
 		$db      = \Joomla\CMS\Factory::getDbo();
-		$version = new \Joomla\CMS\Version();
 
-		if ($version->isCompatible('3.2'))
-		{
-			$isEnabled = \Joomla\CMS\Language\Associations::isEnabled();
-		}
-		else
-		{
-			if (\Joomla\CMS\Language\Multilang::isEnabled())
-			{
-				$params = new \Joomla\Registry\Registry(\JPluginHelper::getPlugin('system', 'languagefilter')->params);
-
-				$isEnabled  = (bool) $params->get('item_associations', true);
-			}
-			else
-			{
-				$isEnabled = false;
-			}
-		}
+		$isEnabled = \Joomla\CMS\Language\Associations::isEnabled();
 
 		if ($isEnabled)
 		{
 			// Unset any invalid associations
-			if ($version->isCompatible('3.4'))
-			{
-				$associations = ArrayHelper::toInteger($associations);
-			}
-			else
-			{
-				\Joomla\Utilities\ArrayHelper::toInteger($associations);
-			}
+			$associations = ArrayHelper::toInteger($associations);
 
 			// Unset any invalid associations
 			foreach ($associations as $tag => $itemId)

@@ -24,10 +24,10 @@ class Joomla {
 	// Create alias class for original call in $filepath, then overload the class
 	public static function makeAlias($filepath, $originClassName, $aliasClassName)
 	{
-		\JLog::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
-		\JLog::add(new \Joomla\CMS\Log\LogEntry($filepath, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
-		\JLog::add(new \Joomla\CMS\Log\LogEntry($originClassName, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
-		\JLog::add(new \Joomla\CMS\Log\LogEntry($aliasClassName, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($filepath, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($originClassName, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
+		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($aliasClassName, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
 		if (!is_file($filepath)) return false;
 

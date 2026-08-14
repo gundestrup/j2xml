@@ -79,12 +79,6 @@ parameters:
 			path: libraries/eshiol/J2xml/Importer.php
 
 		-
-			message: '#^Class xmlrpc_client constructor invoked with 1 parameter, 2\-3 required\.$#'
-			identifier: arguments.count
-			count: 2
-			path: libraries/eshiol/J2xml/Sender.php
-
-		-
 			message: '#^Access to an undefined property eshiol\\J2xml\\Table\\Category\:\:\$extension\.$#'
 			identifier: property.notFound
 			count: 1
@@ -100,6 +94,12 @@ parameters:
 			message: '#^Static call to instance method Joomla\\CMS\\Application\\CMSApplication\:\:getRouter\(\)\.$#'
 			identifier: method.staticCall
 			count: 1
+			path: libraries/eshiol/J2xml/Table/Content.php
+
+		-
+			message: '#^Undefined variable\: \$version$#'
+			identifier: variable.undefined
+			count: 5
 			path: libraries/eshiol/J2xml/Table/Content.php
 
 		-
@@ -159,6 +159,12 @@ parameters:
 		-
 			message: '#^Result of static method Joomla\\Utilities\\ArrayHelper\:\:toInteger\(\) \(void\) is used\.$#'
 			identifier: staticMethod.void
+			count: 1
+			path: libraries/eshiol/J2xml/Table/Table.php
+
+		-
+			message: '#^Cannot unset offset mixed on null\.$#'
+			identifier: unset.offset
 			count: 1
 			path: libraries/eshiol/J2xml/Table/Table.php
 

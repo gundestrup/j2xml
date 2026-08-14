@@ -16,43 +16,13 @@
  */
 
 // no direct access
-defined('_JEXEC') or die();
+defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
 
-$version = new \Joomla\CMS\Version();
+\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidator');
 
-if ($version->isCompatible('3.4'))
-{
-	\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidator');
-}
-else
-{
-	\Joomla\CMS\HTML\HTMLHelper::_('behavior.formvalidation');
-}
-
-if ($version->isCompatible('4'))
-{
-	$ui = 'uitab';
-}
-else
-{
-	$ui = 'bootstrap';
-
-	\Joomla\CMS\HTML\HTMLHelper::_($ui . '.tooltip', '.hasTooltip', array(
-		'placement' => 'bottom'
-	));
-	\Joomla\CMS\HTML\HTMLHelper::_('formbehavior.chosen', 'select');
-
-	\Joomla\CMS\HTML\HTMLHelper::_('behavior.tabstate');
-	\Joomla\CMS\Factory::getDocument()->addScriptDeclaration(<<<EOL
-		// Select first tab
-		jQuery(document).ready(function() {
-			jQuery( '#j2xmlMenusTabs a:first' ).tab( 'show' );
-		});
-EOL
-	);
-}
+$ui = 'uitab';
 ?>
 
 <form
@@ -102,11 +72,5 @@ EOL
 
 	<button class="hidden" id="j2xmlExportOkBtn" type="button"
 		onclick="this.form.submit();window.top.setTimeout('window.parent.jQuery(\'#j2xmlExportModal\').modal(\'hide\')', 700);">
-
-		<?php /** if ($version->isCompatible('4')) : ?>
-			onclick="this.form.submit();window.top.setTimeout('window.parent.Joomla.Modal.getCurrent().close();', 700);"> ?>
-		<?php else : ?>
-			onclick="this.form.submit();window.top.setTimeout('window.parent.jQuery(\'#j2xmlExportModal\').modal(\'hide\')', 700);">
-		<?php endif; **/ ?>
 	</button>
 </form>

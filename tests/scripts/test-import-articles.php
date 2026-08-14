@@ -9,17 +9,15 @@
 
 require __DIR__ . '/bootstrap.php';
 
-// Import J2XML classes
-jimport('eshiol.J2xml.Importer');
-jimport('eshiol.J2xml.Exporter');
-jimport('eshiol.J2xml.Version');
+// Register the eshiol\J2xml namespace for PSR-0 autoloading.
+\JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
 
 echo "=== Test: Import articles (issues #72, #71) ===\n";
 echo "PHP: " . PHP_VERSION . "\n";
-echo "Joomla: " . (new JVersion())->getShortVersion() . "\n";
+echo "Joomla: " . (new \Joomla\CMS\Version())->getShortVersion() . "\n";
 
 // Count articles before
-$db = JFactory::getDbo();
+$db = \Joomla\CMS\Factory::getDbo();
 $query = $db->getQuery(true)->select('COUNT(*)')->from($db->quoteName('#__content'));
 $before = (int) $db->setQuery($query)->loadResult();
 echo "Articles before: $before\n";
@@ -43,7 +41,7 @@ echo "Content elements: " . count($xml->content) . "\n";
 $catFile = '/fixtures/categories-j3.xml';
 if (file_exists($catFile)) {
     $catXml = simplexml_load_file($catFile);
-    $catParams = new JRegistry();
+    $catParams = new \Joomla\Registry\Registry();
     $catParams->set('categories', 1);
     $catParams->set('content', 0);
     $catParams->set('users', 0);
@@ -57,7 +55,7 @@ if (file_exists($catFile)) {
 }
 
 // Import articles
-$params = new JRegistry();
+$params = new \Joomla\Registry\Registry();
 $params->set('content', 1);
 $params->set('categories', 0);
 $params->set('users', 0);

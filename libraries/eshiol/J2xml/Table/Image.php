@@ -18,8 +18,6 @@
 namespace eshiol\J2xml\Table;
 defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
-\JLoader::import('joomla.filesystem.file');
-\JLoader::import('joomla.filesystem.folder');
 
 /**
  *
@@ -59,13 +57,13 @@ class Image
 		{
 			$src = JPATH_SITE . '/' . urldecode(html_entity_decode($image['src'], ENT_QUOTES, 'UTF-8'));
 			$data = $image;
-			if (!\Joomla\CMS\Filesystem\File::exists($src) || ($import_images == 2))
+			if (!\Joomla\Filesystem\File::exists($src) || ($import_images == 2))
 			{
 				// many thx to Stefanos Tzigiannis
 				$folder = dirname($src);
-				if (!\Joomla\CMS\Filesystem\Folder::exists($folder))
+				if (!\Joomla\Filesystem\Folder::exists($folder))
 				{
-					if (\Joomla\CMS\Filesystem\Folder::create($folder))
+					if (\Joomla\Filesystem\Folder::create($folder))
 					{
 						\Joomla\CMS\Log\Log::add(
 								new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FOLDER_WAS_SUCCESSFULLY_CREATED', $folder), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
@@ -76,7 +74,7 @@ class Image
 						break;
 					}
 				}
-				if (\Joomla\CMS\Filesystem\File::write($src, base64_decode($data)))
+				if (\Joomla\Filesystem\File::write($src, base64_decode($data)))
 				{
 					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_IMAGE_IMPORTED', $image['src']), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
 				}
@@ -117,7 +115,7 @@ class Image
 		}
 
 		$file_path = JPATH_SITE . '/' . urldecode($image);
-		if (\Joomla\CMS\Filesystem\File::exists($file_path))
+		if (\Joomla\Filesystem\File::exists($file_path))
 		{
 			$img = $xml->addChild('img', base64_encode(file_get_contents($file_path)));
 			$img->addAttribute('src', htmlentities($image, ENT_QUOTES, "UTF-8"));

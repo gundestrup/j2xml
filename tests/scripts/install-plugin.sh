@@ -130,8 +130,8 @@ while (\$row = \$result->fetch_row()) {
 }
 if (!\$extTable) { echo 'FAIL: no extensions table\n'; exit(1); }
 
-// Check for J2XML extensions (libraries use eshiol/J2xml and eshiol/phpxmlrpc as element)
-\$result = \$mysqli->query(\"SELECT type, element, name, enabled FROM \`\$extTable\` WHERE element IN ('com_j2xml','eshiol/J2xml','eshiol/phpxmlrpc','pkg_j2xml','basicauth','j2xml') OR name LIKE '%J2XML%' OR name LIKE '%eshiol%' OR name LIKE '%XML-RPC%php%' ORDER BY type, element\");
+// Check for J2XML extensions (libraries use eshiol/J2xml as element)
+\$result = \$mysqli->query(\"SELECT type, element, name, enabled FROM \`\$extTable\` WHERE element IN ('com_j2xml','eshiol/J2xml','pkg_j2xml','j2xml') OR name LIKE '%J2XML%' OR name LIKE '%eshiol%' OR name LIKE '%webservices%j2xml%' ORDER BY type, element\");
 \$count = 0;
 \$lines = '';
 while (\$row = \$result->fetch_assoc()) {
@@ -146,11 +146,11 @@ echo "$VERIFY"
 
 EXT_COUNT=$(echo "$VERIFY" | tr -d '\r' | grep "^COUNT:" | cut -d: -f2)
 
-if [ "${EXT_COUNT:-0}" -ge 5 ]; then
+if [ "${EXT_COUNT:-0}" -ge 4 ]; then
     echo "SUCCESS: J2XML installed on Joomla $VERSION ($EXT_COUNT extensions found)"
     exit 0
 else
-    echo "WARNING: Only $EXT_COUNT extensions found (expected 5+)"
+    echo "WARNING: Only $EXT_COUNT extensions found (expected 4+)"
     # Check if the install result page has any useful info
     if [ -f /tmp/j2xml-install-result-$VERSION.html ]; then
         echo "[install] Checking install result page for errors..."

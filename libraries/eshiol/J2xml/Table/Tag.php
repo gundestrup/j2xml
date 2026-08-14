@@ -22,9 +22,6 @@ use eshiol\J2xml\Table\Image;
 use eshiol\J2xml\Table\Table;
 use eshiol\J2xml\Table\User;
 use Joomla\Component\Tags\Administrator\Table\TagTable;
-\JLoader::import('eshiol.J2xml.Table.Image');
-\JLoader::import('eshiol.J2xml.Table.Table');
-\JLoader::import('eshiol.J2xml.Table.User');
 
 /**
  *
@@ -37,12 +34,12 @@ class Tag extends Table
 	/**
 	 * Constructor
 	 *
-	 * @param \JDatabaseDriver $db
+	 * @param \Joomla\Database\DatabaseDriver $db
 	 *			A database connector object
 	 *
 	 * @since 14.8.240
 	 */
-	public function __construct (\JDatabaseDriver $db)
+	public function __construct (\Joomla\Database\DatabaseDriver $db)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -105,15 +102,7 @@ class Tag extends Table
 						->where($db->quoteName('path') . ' = ' . $db->quote($data['path'])))
 				->loadObject();
 
-			if (class_exists('TagTable'))
-			{ // Joomla! 4
-				$table = new TagTable($db);
-			}
-			else
-			{ // Joomla! 3.x
-				\Joomla\CMS\Table\Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_tags/tables');
-				$table = \Joomla\CMS\Table\Table::getInstance('Tag', 'TagsTable');
-			}
+			$table = new TagTable($db);
 
 			if (!$tag || ($import_tags == 2))
 			{

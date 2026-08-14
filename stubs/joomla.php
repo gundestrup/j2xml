@@ -174,55 +174,6 @@ namespace
      * @return bool
      */
     function jimport(string $path): bool { return true; }
-
-    // xmlrpc client classes (from the bundled phpxmlrpc library)
-    class xmlrpcval
-    {
-        public function __construct($val = -1, string $type = '') {}
-        public function scalarval() { return null; }
-        public function scalartyp(): string { return ''; }
-        public function structmem(string $name) { return null; }
-        public function structeach(): array { return []; }
-        public function structreset(): void {}
-        public function arraymem(int $id) { return null; }
-        public function arraysize(): int { return 0; }
-        public function serialize(): string { return ''; }
-    }
-
-    class xmlrpcresp
-    {
-        public function __construct($val = null, int $fcode = 0, string $fstr = '') {}
-        public function faultCode(): int { return 0; }
-        public function faultString(): string { return ''; }
-        public function value(): ?xmlrpcval { return null; }
-        public function serialize(): string { return ''; }
-    }
-
-    class xmlrpcmsg
-    {
-        public function __construct(string $method, array $params = []) {}
-        public function addParam(xmlrpcval $param): void {}
-        public function getParam(int $i): ?xmlrpcval { return null; }
-        public function serialize(): string { return ''; }
-        public function method(): string { return ''; }
-        public function params(): array { return []; }
-    }
-
-    class xmlrpc_client
-    {
-        public function __construct(string $path, string $server, int $port = 80) {}
-        public function send(xmlrpcmsg $msg, int $timeout = 0, string $method = ''): xmlrpcresp { return new xmlrpcresp(); }
-        public function setCredentials(string $user, string $password, string $authType = ''): void {}
-        public function setDebug(int $level): void {}
-    }
-
-    class xmlrpc_server
-    {
-        public function __construct(?array $dispatchMap = null, bool $serviceNow = true) {}
-        public function service(): void {}
-        public function addIntrospectionData(): void {}
-        public function serialize(): string { return ''; }
-    }
 }
 
 // ===========================================================================
@@ -302,6 +253,19 @@ namespace Joomla\CMS\Application
     {
         public function out(string $text = '', bool $nl = true): self { return $this; }
         public function in(): string { return ''; }
+        public function execute(): void {}
+    }
+}
+
+// ===========================================================================
+// Joomla\CMS\Application\Service\Provider  (DI service providers)
+// ===========================================================================
+
+namespace Joomla\CMS\Application\Service\Provider
+{
+    class CliApplication
+    {
+        public function __construct() {}
     }
 }
 
@@ -453,7 +417,7 @@ namespace Joomla\CMS\MVC\Controller
     class BaseController
     {
         public Input $input;
-        protected array $default_view = [];
+        protected $default_view = '';
         public $redirect = null;
 
         public function __construct(array $config = []) {}
@@ -467,6 +431,8 @@ namespace Joomla\CMS\MVC\Controller
         public function registerTask(string $name, string $method): void {}
         public function registerDefaultTask(string $method): void {}
         public function checkToken(string $method = 'post'): bool { return true; }
+        public function getName(): string { return ''; }
+        public function execute(string $task) {}
     }
 
     class AdminController extends BaseController {}
@@ -658,10 +624,10 @@ namespace Joomla\CMS\Date
 }
 
 // ===========================================================================
-// Joomla\CMS\Filesystem
+// Joomla\Filesystem  (Joomla 6 removed Joomla\CMS\Filesystem)
 // ===========================================================================
 
-namespace Joomla\CMS\Filesystem
+namespace Joomla\Filesystem
 {
     class File
     {
@@ -906,7 +872,7 @@ namespace Joomla\CMS\Response
 {
     class JsonResponse
     {
-        public function __construct($response, ?string $message = null, bool $error = false) {}
+        public function __construct($response = null, ?string $message = null, bool $error = false) {}
     }
 }
 
@@ -1054,7 +1020,7 @@ namespace Joomla\CMS\Layout
 
 namespace Joomla\Database
 {
-    class JDatabaseDriver implements DatabaseInterface
+    class DatabaseDriver implements DatabaseInterface
     {
         public function getQuery(bool $new = false): QueryInterface { return new class implements QueryInterface {}; }
         public function setQuery($query): self { return $this; }
@@ -1076,7 +1042,14 @@ namespace Joomla\Database
         public function truncateTable(string $table): void {}
     }
 
-    class JDatabaseExceptionExecuting extends \RuntimeException {}
+    class JDatabaseDriver extends DatabaseDriver {}
+
+    class ExecutionFailureException extends \RuntimeException {}
+}
+
+namespace Joomla\Database\Exception
+{
+    class ExecutionFailureException extends \RuntimeException {}
 }
 
 // ===========================================================================
@@ -1127,4 +1100,167 @@ namespace eshiol\J2xml\Table
     }
 
     class RuntimeException extends \RuntimeException {}
+}
+
+// ===========================================================================
+// Joomla\CMS\Extension  (for the new API component service provider)
+// ===========================================================================
+
+namespace Joomla\CMS\Extension
+{
+    class MVCComponent implements \Joomla\CMS\Extension\ComponentInterface
+    {
+        public function __construct(\Joomla\CMS\Dispatcher\ComponentDispatcherFactoryInterface $dispatcherFactory) {}
+        public function setMVCFactory(\Joomla\CMS\MVC\Factory\MVCFactoryInterface $factory): void {}
+    }
+
+    interface ComponentInterface {}
+
+    interface BootableExtensionInterface {}
+}
+
+// ===========================================================================
+// Joomla\CMS\MVC\Factory  (for the service provider)
+// ===========================================================================
+
+namespace Joomla\CMS\MVC\Factory
+{
+    interface MVCFactoryInterface {}
+
+    class MVCFactory implements \Joomla\CMS\MVC\Factory\MVCFactoryInterface
+    {
+        public function __construct(string $namespace, ?\Psr\Log\LoggerInterface $logger = null) {}
+    }
+}
+
+// ===========================================================================
+// Joomla\CMS\Dispatcher  (for the service provider)
+// ===========================================================================
+
+namespace Joomla\CMS\Dispatcher
+{
+    interface ComponentDispatcherFactoryInterface {}
+
+    class ComponentDispatcher
+    {
+        protected $input;
+        protected $app;
+
+        public function __construct(\Joomla\CMS\Application\CMSApplicationInterface $app, \Joomla\Input\Input $input) {}
+        protected function checkAccess(): void {}
+        public function dispatch(): void {}
+        protected function loadLanguage(): void {}
+    }
+}
+
+namespace Joomla\CMS\Extension\Service\Provider
+{
+    class MVCFactory
+    {
+        public function __construct(string $namespace) {}
+    }
+
+    class ComponentDispatcherFactory
+    {
+        public function __construct(string $namespace) {}
+    }
+}
+
+// ===========================================================================
+// Joomla\DI  (for the service provider)
+// ===========================================================================
+
+namespace Joomla\DI
+{
+    interface ServiceProviderInterface
+    {
+        public function register(\Joomla\DI\Container $container): void;
+    }
+
+    class Container
+    {
+        public function set(string $id, $value): void {}
+        public function get(string $id) {}
+        public function has(string $id): bool { return true; }
+        public function registerServiceProvider($provider): void {}
+        public function createChild(): \Joomla\DI\Container { return new self(); }
+    }
+}
+
+// ===========================================================================
+// Joomla\Router  (for the webservices plugin)
+// ===========================================================================
+
+namespace Joomla\Router
+{
+    class Route
+    {
+        public function __construct(array $methods, string $pattern, string $controller, array $vars = [], array $defaults = []) {}
+    }
+}
+
+// ===========================================================================
+// Joomla\CMS\Router  (for the webservices plugin — ApiRouter)
+// ===========================================================================
+
+namespace Joomla\CMS\Router
+{
+    class ApiRouter
+    {
+        public function addRoute(\Joomla\Router\Route $route): void {}
+        public function addRoutes(array $routes): void {}
+    }
+}
+
+// ===========================================================================
+// Joomla\Component\Contact\Administrator\Table  (Joomla core table)
+// ===========================================================================
+
+namespace Joomla\Component\Contact\Administrator\Table
+{
+    class ContactTable extends \Joomla\CMS\Table\Table
+    {
+        public function __construct($db) { parent::__construct('#__contact_details', 'id', $db); }
+    }
+}
+
+// ===========================================================================
+// Joomla\Component\Fields\Administrator\Table  (Joomla core table)
+// ===========================================================================
+
+namespace Joomla\Component\Fields\Administrator\Table
+{
+    class FieldTable extends \Joomla\CMS\Table\Table
+    {
+        public function __construct($db) { parent::__construct('#__fields', 'id', $db); }
+    }
+
+    class GroupTable extends \Joomla\CMS\Table\Table
+    {
+        public function __construct($db) { parent::__construct('#__fields_groups', 'id', $db); }
+    }
+}
+
+// ===========================================================================
+// Joomla\Component\Tags\Administrator\Table  (Joomla core table)
+// ===========================================================================
+
+namespace Joomla\Component\Tags\Administrator\Table
+{
+    class TagTable extends \Joomla\CMS\Table\Table
+    {
+        public function __construct($db) { parent::__construct('#__tags', 'id', $db); }
+    }
+}
+
+// ===========================================================================
+// Joomla\Component\Users\Administrator\Table  (Joomla core table)
+// ===========================================================================
+
+namespace Joomla\Component\Users\Administrator\Table
+{
+    class NoteTable extends \Joomla\CMS\Table\Table
+    {
+        public function __construct($db) { parent::__construct('#__user_notes', 'id', $db); }
+    }
 }

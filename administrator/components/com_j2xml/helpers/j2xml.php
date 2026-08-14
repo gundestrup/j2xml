@@ -17,7 +17,7 @@
  */
 
 // no direct access
-defined('_JEXEC') or die();
+defined('_JEXEC') or die;
 
 /**
  * Content component helper.

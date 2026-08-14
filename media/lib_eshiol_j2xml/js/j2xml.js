@@ -311,92 +311,67 @@ eshiol.j2xml.sendItem = function( options, params ){
 			} ).join( '&' ),
 			onSuccess: function onSuccess( resp ){
 				console.log( 'export.onSuccess' );
-				console.log( 'sending data via xmlrpc to ' + options.remote_url );
+				console.log( 'sending data via REST API to ' + options.remote_url );
 
 				var r = JSON.parse( resp );
-				p = params;
+				var p = Object.assign({}, params);
 				delete p['compression'];
+				delete p['token'];
 				console.log( p );
-				jQuery.xmlrpc( {
-					url: options.remote_url,
-					methodName: 'j2xml.importAjax',
-					params: [r.data, JSON.stringify( p )],
-					xhrFields: {
-						withCredentials: true
+
+				fetch( options.remote_url, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-Joomla-Token': options.token || ''
 					},
-					// beforeSend: function ( xhr ){
-						// Set the headers
-						// xhr.setRequestHeader( 'Authorization', 'Basic ' + btoa( username + ':' + password ) );
-						// xhr.setRequestHeader( 'Authorization', 'Barer ' + token );
-					// },
-					success: function( response, status, jqXHR ){
-						console.log( 'send.onSuccess' );
-						window.parent.jQuery( 'input:checkbox[name=\'checkall-toggle\']' ).prop( 'checked', false );
-						window.parent.jQuery( 'input:checkbox[name=\'cid\[\]\'][value=\'' + cid + '\']' ).prop( 'checked', false );
-						jQuery.each( response, function( index, messages ){
-							messages.forEach( function( item ){
-								console.log( item );
-								msg = new Object();
-								if( item.code in eshiol.j2xml.codes ){
-									t = eshiol.j2xml.codes[item.code];
-								}
-								else{
-									t = 'notice';
-								}
-								msg[t] = [item.message];
-								eshiol.renderMessages( msg, window.parent.document.getElementById( 'system-message-container' ) );
-							} );
+					body: JSON.stringify( {
+						data: r.data,
+						options: p
+					} )
+				} ).then( function( response ){
+					if( !response.ok ){
+						return response.json().then( function( err ){
+							throw err;
 						} );
-
-						eshiol.j2xml.sendItem( options, params );
-					},
-					error: function( jqXHR, status, error ){
-						msg = new Object();
-						if( jqXHR.status === 0 ){
-							msg['error'] = [Joomla.Text._( 'LIB_J2XML_ERROR_STATUS0' )];
-							eshiol.renderMessages( msg, window.parent.document.getElementById( 'system-message-container' ) );
-							window.parent.jQuery('#send-progress').remove();
-
-							return;
-						/*} else if( jqXHR.status == 404 ){
-							// 404 page error
-							msg['error'] = ['Requested page not found. [404]'];
-						} else if( jqXHR.status == 500 ){
-							// 500 Internal Server error
-							msg['error'] = ['Internal Server Error [500].'];
-						} else if( status === 'parsererror' ){
-							// Requested JSON parse
-							msg['error'] = ['Requested JSON parse failed.'];
-						} else if( status === 'timeout' ){
-							// Time out error
-							msg['error'] = ['Time out error.'];
-						} else if( status === 'abort' ){
-							// request aborte
-							msg['error'] = ['Ajax request aborted.'];
-						*/} else if( typeof error === 'object' ){
-							if( error.code in eshiol.j2xml.codes ){
-								t = eshiol.j2xml.codes[error.code];
-							}
-							else{
-								t = 'error';
-							}
-							msg[t] = [error.message];
-
-							if( error.code == 32 ){ // XMLRPC protocol disabled
-								eshiol.renderMessages( msg, window.parent.document.getElementById( 'system-message-container' ) );
-								window.parent.jQuery('#send-progress').remove();
-
-								return;
-							}
-						}
-						else{
-							msg['error'] = [Joomla.Text._( 'LIB_J2XML_ERROR_UNKNOWN' )];
-						}
-						eshiol.renderMessages( msg, window.parent.document.getElementById( 'system-message-container' ) );
-
-						eshiol.j2xml.sendItem( options, params );
 					}
-				});
+					return response.json();
+				} ).then( function( result ){
+					console.log( 'send.onSuccess' );
+					window.parent.jQuery( 'input:checkbox[name=\'checkall-toggle\']' ).prop( 'checked', false );
+					window.parent.jQuery( 'input:checkbox[name=\'cid\[\]\'][value=\'' + cid + '\']' ).prop( 'checked', false );
+
+					if( result.data && Array.isArray( result.data ) ){
+						result.data.forEach( function( item ){
+							console.log( item );
+							var msg = {};
+							var t;
+							if( item.code in eshiol.j2xml.codes ){
+								t = eshiol.j2xml.codes[item.code];
+							} else {
+								t = 'notice';
+							}
+							msg[t] = [item.message];
+							eshiol.renderMessages( msg, window.parent.document.getElementById( 'system-message-container' ) );
+						} );
+					} else if( result.messages ){
+						eshiol.renderMessages( result.messages, window.parent.document.getElementById( 'system-message-container' ) );
+					}
+
+					eshiol.j2xml.sendItem( options, params );
+				} ).catch( function( error ){
+					var msg = {};
+					if( error && error.errors && error.errors.title ){
+						msg['error'] = [error.errors.title];
+					} else if( error && error.message ){
+						msg['error'] = [error.message];
+					} else {
+						msg['error'] = [Joomla.Text._( 'LIB_J2XML_ERROR_UNKNOWN' )];
+					}
+					eshiol.renderMessages( msg, window.parent.document.getElementById( 'system-message-container' ) );
+
+					eshiol.j2xml.sendItem( options, params );
+				} );
 			},
 			onError: function onError( xhr ){
 				console.log( 'onError' );
@@ -452,11 +427,11 @@ eshiol.j2xml.send = function ( options ){
 		if( name.substr( 0, 5 ) == 'send_' ){
 			name = name.substr( 5 );
 		}
-		if( ['cid', 'remote_url'].indexOf( name ) == -1 ){
+		if( ['cid', 'remote_url', 'token'].indexOf( name ) == -1 ){
 			params[name] = input.val();
 		}
 	});
-//	['cid', 'remote_url'].forEach(function(element){
+//	['cid', 'remote_url', 'token'].forEach(function(element){
 //		delete params[element];
 //	});
 

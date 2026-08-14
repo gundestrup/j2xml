@@ -18,13 +18,7 @@
 namespace eshiol\J2xml;
 
 // no direct access
-defined('_JEXEC') or die('Restricted access.');
-
-// Import filesystem libraries.
-\JLoader::import('joomla.filesystem.file');
-\JLoader::import('joomla.log.log');
-\JLoader::import('eshiol.J2xml.Table');
-\JLoader::import('eshiol.J2xml.Version');
+defined('_JEXEC') or die;
 
 use eshiol\J2xml\Table\Category;
 use eshiol\J2xml\Table\Contact;
@@ -39,20 +33,6 @@ use eshiol\J2xml\Table\Usernote;
 use eshiol\J2xml\Table\Viewlevel;
 use eshiol\J2xml\Table\Weblink;
 use eshiol\J2xml\Version;
-
-\JLoader::import('eshiol.J2xml.Table.Category');
-\JLoader::import('eshiol.J2xml.Table.Contact');
-\JLoader::import('eshiol.J2xml.Table.Content');
-\JLoader::import('eshiol.J2xml.Table.Field');
-\JLoader::import('eshiol.J2xml.Table.Image');
-\JLoader::import('eshiol.J2xml.Table.Menu');
-\JLoader::import('eshiol.J2xml.Table.Menutype');
-\JLoader::import('eshiol.J2xml.Table.Module');
-\JLoader::import('eshiol.J2xml.Table.User');
-\JLoader::import('eshiol.J2xml.Table.Usernote');
-\JLoader::import('eshiol.J2xml.Table.Viewlevel');
-\JLoader::import('eshiol.J2xml.Table.Weblink');
-\JLoader::import('eshiol.J2xml.Version');
 
 /**
  *
@@ -80,20 +60,12 @@ class Exporter
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$db         = \Joomla\CMS\Factory::getDbo();
-		$version    = new \Joomla\CMS\Version();
 
 		$this->_option = (PHP_SAPI != 'cli') ? \Joomla\CMS\Factory::getApplication()->input->getCmd('option') : 'cli_' .
 				 strtolower(get_class(\Joomla\CMS\Application\CliApplication::getInstance()));
 
 		// Merge the default translation with the current translation
-		if ($version->isCompatible('3.2'))
-		{
-			$jlang = \Joomla\CMS\Factory::getApplication()->getLanguage();
-		}
-		else
-		{
-			$jlang = \Joomla\CMS\Factory::getLanguage();
-		}
+		$jlang = \Joomla\CMS\Factory::getApplication()->getLanguage();
 		$jlang->load('lib_j2xml', JPATH_SITE, 'en-GB', true);
 		$jlang->load('lib_j2xml', JPATH_SITE, $jlang->getDefault(), true);
 		$jlang->load('lib_j2xml', JPATH_SITE, null, true);
@@ -125,7 +97,7 @@ class Exporter
 				$n = $db->setQuery($query)->loadResult();
 			} while ($n > 0);
 		}
-		catch (\JDatabaseExceptionExecuting $e)
+		catch (\Joomla\Database\Exception\ExecutionFailureException $e)
 		{
 			// If the query fails we will go on
 		}

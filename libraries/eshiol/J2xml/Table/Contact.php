@@ -25,12 +25,6 @@ use eshiol\J2xml\Table\Tag;
 use eshiol\J2xml\Table\User;
 use Joomla\Component\Contact\Administrator\Table\ContactTable;
 
-\JLoader::import('eshiol.J2xml.Table.Category');
-\JLoader::import('eshiol.J2xml.Table.Image');
-\JLoader::import('eshiol.J2xml.Table.Table');
-\JLoader::import('eshiol.J2xml.Table.Tag');
-\JLoader::import('eshiol.J2xml.Table.User');
-
 /**
  *
  * Contact Table
@@ -42,12 +36,12 @@ class Contact extends Table
 	/**
 	 * Constructor
 	 *
-	 * @param \JDatabaseDriver $db
+	 * @param \Joomla\Database\DatabaseDriver $db
 	 *			A database connector object
 	 *
 	 * @since 15.9.261
 	 */
-	public function __construct (\JDatabaseDriver $db)
+	public function __construct (\Joomla\Database\DatabaseDriver $db)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -73,20 +67,16 @@ class Contact extends Table
 			->from($this->_db->quoteName('#__users'))
 			->where($this->_db->quoteName('id') . ' = ' . (int) $this->user_id);
 
-		$version = new \Joomla\CMS\Version();
-		if ($version->isCompatible('3.1'))
-		{
-			// $this->_aliases['tag']='SELECT t.path FROM #__tags t,
-			// #__contentitem_tag_map m WHERE type_alias = "com_contact.contact"
-			// AND t.id = m.tag_id AND m.content_item_id = '. (int)$this->id;
-			$this->_aliases['tag'] = (string) $this->_db->getQuery(true)
-				->select($this->_db->quoteName('t.path'))
-				->from($this->_db->quoteName('#__tags', 't'))
-				->from($this->_db->quoteName('#__contentitem_tag_map', 'm'))
-				->where($this->_db->quoteName('type_alias') . ' = ' . $this->_db->quote($this->type_alias))
-				->where($this->_db->quoteName('t.id') . ' = ' . $this->_db->quoteName('m.tag_id'))
-				->where($this->_db->quoteName('m.content_item_id') . ' = ' . $this->_db->quote((string) $this->id));
-		}
+		// $this->_aliases['tag']='SELECT t.path FROM #__tags t,
+		// #__contentitem_tag_map m WHERE type_alias = "com_contact.contact"
+		// AND t.id = m.tag_id AND m.content_item_id = '. (int)$this->id;
+		$this->_aliases['tag'] = (string) $this->_db->getQuery(true)
+			->select($this->_db->quoteName('t.path'))
+			->from($this->_db->quoteName('#__tags', 't'))
+			->from($this->_db->quoteName('#__contentitem_tag_map', 'm'))
+			->where($this->_db->quoteName('type_alias') . ' = ' . $this->_db->quote($this->type_alias))
+			->where($this->_db->quoteName('t.id') . ' = ' . $this->_db->quoteName('m.tag_id'))
+			->where($this->_db->quoteName('m.content_item_id') . ' = ' . $this->_db->quote((string) $this->id));
 
 		$query = $this->_db->getQuery(true);
 		$this->_aliases['association'] = (string) $query
@@ -162,15 +152,11 @@ class Contact extends Table
 
 		if (isset($options['tags']) && $options['tags'])
 		{
-			$version = new \Joomla\CMS\Version();
-			if($version->isCompatible('3.1'))
+			$htags = new \Joomla\CMS\Helper\TagsHelper();
+			$itemtags = $htags->getItemTags('com_contact.contact', $id);
+			foreach ($itemtags as $itemtag)
 			{
-				$htags = new \Joomla\CMS\Helper\TagsHelper();
-				$itemtags = $htags->getItemTags('com_contact.contact', $id);
-				foreach ($itemtags as $itemtag)
-				{
-					Tag::export($itemtag->tag_id, $xml, $options);
-				}
+				Tag::export($itemtag->tag_id, $xml, $options);
 			}
 		}
 
@@ -262,16 +248,9 @@ class Contact extends Table
 
 			if (!$data['id'] || ($import_contacts == 2))
 			{
-				\JLoader::register('ContactTable', JPATH_ADMINISTRATOR . '/components/com_contacts/Table/ContactTable.php');
-				if (class_exists('\Joomla\Component\Contact\Administrator\Table\ContactTable'))
-				{
-					$table = new ContactTable($db);
-				}
-				else
-				{ // backward compatibility
-					\Joomla\CMS\Table\Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_contacts/tables');
-					$table = \Joomla\CMS\Table\Table::getInstance('Contact', 'ContactTable');
-				}
+				$contactTableFile = JPATH_ADMINISTRATOR . '/components/com_contact/src/Table/ContactTable.php';
+				require_once $contactTableFile;
+				$table = new ContactTable($db);
 
 				if ($data['id'])
 				{
@@ -315,7 +294,6 @@ class Contact extends Table
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$db = \Joomla\CMS\Factory::getDbo();
-		$version = new \Joomla\CMS\Version();
 
 		$params->set('extension', 'com_contact');
 		parent::prepareData($record, $data, $params);
@@ -373,20 +351,17 @@ class Contact extends Table
     		}
 		}
 
-		if ($version->isCompatible('4'))
+		if (!isset($data['catid']))
 		{
-			if (!isset($data['catid']))
-			{
-				$data['catid'] = $params->get('com_contact_category_default');
-			}
-			if (!isset($data['metadesc']))
-			{
-				$data['metadesc'] = '';
-			}
-			if (!isset($data['metadata']))
-			{
-				$data['metadata'] = '<![CDATA[{"robots":"","rights":""}]]>';
-			}
+			$data['catid'] = $params->get('com_contact_category_default');
+		}
+		if (!isset($data['metadesc']))
+		{
+			$data['metadesc'] = '';
+		}
+		if (!isset($data['metadata']))
+		{
+			$data['metadata'] = '<![CDATA[{"robots":"","rights":""}]]>';
 		}
 	}
 }

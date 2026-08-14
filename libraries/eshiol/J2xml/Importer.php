@@ -18,7 +18,7 @@
 namespace eshiol\J2xml;
 
 // no direct access
-defined('_JEXEC') or die('Restricted access.');
+defined('_JEXEC') or die;
 
 use eshiol\J2xml\Table\Category;
 use eshiol\J2xml\Table\Contact;
@@ -35,29 +35,6 @@ use eshiol\J2xml\Table\Usernote;
 use eshiol\J2xml\Table\Viewlevel;
 use eshiol\J2xml\Table\Weblink;
 use eshiol\J2xml\Version;
-
-\JLoader::import('eshiol.J2xml.Table.Category');
-\JLoader::import('eshiol.J2xml.Table.Contact');
-\JLoader::import('eshiol.J2xml.Table.Content');
-\JLoader::import('eshiol.J2xml.Table.Field');
-\JLoader::import('eshiol.J2xml.Table.Fieldgroup');
-\JLoader::import('eshiol.J2xml.Table.Image');
-\JLoader::import('eshiol.J2xml.Table.Menu');
-\JLoader::import('eshiol.J2xml.Table.Menutype');
-\JLoader::import('eshiol.J2xml.Table.Module');
-\JLoader::import('eshiol.J2xml.Table.Tag');
-\JLoader::import('eshiol.J2xml.Table.User');
-\JLoader::import('eshiol.J2xml.Table.Usernote');
-\JLoader::import('eshiol.J2xml.Table.Viewlevel');
-\JLoader::import('eshiol.J2xml.Table.Weblink');
-\JLoader::import('eshiol.J2xml.Version');
-
-\Joomla\CMS\Table\Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_weblinks/tables');
-\Joomla\CMS\Table\Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_contact/tables');
-
-// \JLoader::import('joomla.filesystem.folder');
-\JLoader::import('joomla.filesystem.file');
-\JLoader::import('joomla.user.helper');
 
 /**
  *
@@ -84,18 +61,10 @@ class Importer
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$db         = \Joomla\CMS\Factory::getDbo();
-		$version    = new \Joomla\CMS\Version();
-		$serverType = $version->isCompatible('3.5') ? $db->getServerType() : 'mysql';
+		$serverType = $db->getServerType();
 
 		// Merge the default translation with the current translation
-		if ($version->isCompatible('3.2'))
-		{
-			$jlang = \Joomla\CMS\Factory::getApplication()->getLanguage();
-		}
-		else
-		{
-			$jlang = \Joomla\CMS\Factory::getLanguage();
-		}
+		$jlang = \Joomla\CMS\Factory::getApplication()->getLanguage();
 		$jlang->load('lib_j2xml', JPATH_SITE, 'en-GB', true);
 		$jlang->load('lib_j2xml', JPATH_SITE, $jlang->getDefault(), true);
 		$jlang->load('lib_j2xml', JPATH_SITE, null, true);
@@ -154,7 +123,7 @@ class Importer
 				$n = $db->setQuery($query)->loadResult();
 			} while ($n > 0);
 		}
-		catch (\JDatabaseExceptionExecuting $e)
+		catch (\Joomla\Database\Exception\ExecutionFailureException $e)
 		{
 			// If the query fails we will go on
 		}
@@ -188,15 +157,11 @@ class Importer
 			Viewlevel::import($xml, $params);
 		}
 
-		$version = new \Joomla\CMS\Version();
-		if ($version->isCompatible('3.7'))
+		$import_fields = $params->get('fields', 0);
+		if ($import_fields)
 		{
-			$import_fields = $params->get('fields', 0);
-			if ($import_fields)
-			{
-				Fieldgroup::import($xml, $params);
-				Field::import($xml, $params);
-			}
+			Fieldgroup::import($xml, $params);
+			Field::import($xml, $params);
 		}
 
 		$import_users = $params->get('users');
@@ -205,13 +170,10 @@ class Importer
 			User::import($xml, $params);
 		}
 
-		if ($version->isCompatible('3.1'))
+		$import_tags = $params->get('tags', 1);
+		if ($import_tags)
 		{
-			$import_tags = $params->get('tags', 1);
-			if ($import_tags)
-			{
-				Tag::import($xml, $params);
-			}
+			Tag::import($xml, $params);
 		}
 
 		$import_content = $params->get('content');

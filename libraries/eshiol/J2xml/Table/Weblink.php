@@ -19,7 +19,6 @@ namespace eshiol\J2xml\Table;
 defined('JPATH_PLATFORM') or define('JPATH_PLATFORM', JPATH_LIBRARIES);
 
 use eshiol\J2xml\Table\Table;
-\JLoader::import('eshiol.J2xml.Table.Table');
 
 /**
  *
@@ -32,12 +31,12 @@ class Weblink extends Table
 	/**
 	 * Constructor
 	 *
-	 * @param \JDatabaseDriver $db
+	 * @param \Joomla\Database\DatabaseDriver $db
 	 *			A database connector object
 	 *
 	 * @since 1.5.3beta3.38
 	 */
-	public function __construct (\JDatabaseDriver $db)
+	public function __construct (\Joomla\Database\DatabaseDriver $db)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -54,21 +53,17 @@ class Weblink extends Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$version = new \Joomla\CMS\Version();
-		if ($version->isCompatible('3.1'))
-		{
-			// $this->_aliases['tag']='SELECT t.path FROM #__tags t,
-			// #__contentitem_tag_map m WHERE type_alias =
-			// "com_weblinks.weblink" AND t.id = m.tag_id AND m.content_item_id
-			// = '. (int)$this->id;
-			$this->_aliases['tag'] = (string) $this->_db->getQuery(true)
-				->select($this->_db->quoteName('t.path'))
-				->from($this->_db->quoteName('#__tags', 't'))
-				->from($this->_db->quoteName('#__contentitem_tag_map', 'm'))
-				->where($this->_db->quoteName('type_alias') . ' = ' . $this->_db->quote('com_weblinks.weblink'))
-				->where($this->_db->quoteName('t.id') . ' = ' . $this->_db->quoteName('m.tag_id'))
-				->where($this->_db->quoteName('m.content_item_id') . ' = ' . $this->_db->quote((string) $this->id));
-		}
+		// $this->_aliases['tag']='SELECT t.path FROM #__tags t,
+		// #__contentitem_tag_map m WHERE type_alias =
+		// "com_weblinks.weblink" AND t.id = m.tag_id AND m.content_item_id
+		// = '. (int)$this->id;
+		$this->_aliases['tag'] = (string) $this->_db->getQuery(true)
+			->select($this->_db->quoteName('t.path'))
+			->from($this->_db->quoteName('#__tags', 't'))
+			->from($this->_db->quoteName('#__contentitem_tag_map', 'm'))
+			->where($this->_db->quoteName('type_alias') . ' = ' . $this->_db->quote('com_weblinks.weblink'))
+			->where($this->_db->quoteName('t.id') . ' = ' . $this->_db->quoteName('m.tag_id'))
+			->where($this->_db->quoteName('m.content_item_id') . ' = ' . $this->_db->quote((string) $this->id));
 
 		$query = $this->_db->getQuery(true);
 		$this->_aliases['association'] = (string) $query

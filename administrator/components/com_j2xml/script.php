@@ -15,7 +15,7 @@
  * is derivative of works licensed under the GNU General Public License
  * or other free or open source software licenses.
  */
-defined('_JEXEC') or die();
+defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
@@ -36,7 +36,7 @@ class Com_J2xmlInstallerScript
 	/**
 	 * Database object.
 	 *
-	 * @var    JDatabaseDriver
+	 * @var    \Joomla\Database\DatabaseDriver
 	 * @since  3.9.232
 	 */
 	protected $db;
@@ -132,6 +132,25 @@ class Com_J2xmlInstallerScript
 	 */
 	function postflight($type, $parent)
 	{
+		// Add token column to #__j2xml_websites if the table exists
+		// (created by J2XML Pro).
+		$db = \Joomla\CMS\Factory::getDbo();
+		$tables = $db->getTableList();
+		$prefix = $db->getPrefix();
+		$tableName = $prefix . 'j2xml_websites';
+
+		if (in_array($tableName, $tables))
+		{
+			$columns = $db->getTableColumns('#__j2xml_websites');
+			if (!isset($columns['token']))
+			{
+				$db->setQuery(
+					'ALTER TABLE ' . $db->quoteName('#__j2xml_websites')
+					. ' ADD COLUMN ' . $db->quoteName('token') . ' TEXT NULL AFTER '
+					. $db->quoteName('password')
+				)->execute();
+			}
+		}
 	}
 
 	/**
@@ -161,12 +180,11 @@ class Com_J2xmlInstallerScript
 
 		Factory::getLanguage()->load('com_j2xml', JPATH_ADMINISTRATOR);
 
-		jimport('joomla.filesystem.file');
 		foreach ($files as $file)
 		{
-		    if (\Joomla\CMS\Filesystem\File::exists(JPATH_ROOT . $file))
+		    if (\Joomla\Filesystem\File::exists(JPATH_ROOT . $file))
 			{
-				if (\Joomla\CMS\Filesystem\File::delete(JPATH_ROOT . $file))
+				if (\Joomla\Filesystem\File::delete(JPATH_ROOT . $file))
 				{
 					Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('COM_J2XML_FILE_DELETED', $file));
 				}
@@ -177,12 +195,11 @@ class Com_J2xmlInstallerScript
 			}
 		}
 
-		jimport('joomla.filesystem.folder');
 		foreach ($folders as $folder)
 		{
-		    if (\Joomla\CMS\Filesystem\Folder::exists(JPATH_ROOT . $folder))
+		    if (\Joomla\Filesystem\Folder::exists(JPATH_ROOT . $folder))
 			{
-				if (\Joomla\CMS\Filesystem\Folder::delete(JPATH_ROOT . $folder))
+				if (\Joomla\Filesystem\Folder::delete(JPATH_ROOT . $folder))
 				{
 					Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('COM_J2XML_FOLDER_DELETED', $folder));
 				}

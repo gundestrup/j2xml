@@ -5,11 +5,12 @@
 	<author>Helios Ciancio</author>
 	<authorUrl>www.eshiol.it</authorUrl>
 	<authorEmail>info (at) eshiol (dot) it</authorEmail>
-	<copyright><![CDATA[(C) 2010 - 2023 Helios Ciancio <info (at) eshiol (dot) it> (https://www.eshiol.it). All Rights Reserved.]]></copyright>
+	<copyright><![CDATA[(C) 2010 - 2026 Helios Ciancio <info (at) eshiol (dot) it> (https://www.eshiol.it). All Rights Reserved.]]></copyright>
 	<license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3</license>
 	<version>__DEPLOY_VERSION__</version>
 	<description>COM_J2XML_XML_DESCRIPTION</description>
 	<scriptfile>script.php</scriptfile>
+	<namespace path="src">Joomla\Component\J2xml</namespace>
 	<install>
 		<sql>
 			<file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
@@ -30,25 +31,24 @@
 	</update>
 	<files folder="site">
 		<filename>j2xml.php</filename>
-		<folder>controllers</folder>
-		<folder>helpers</folder>
 	</files>
+	<api>
+		<files folder="api">
+			<folder>src</folder>
+		</files>
+	</api>
 	<administration>
 		<!-- Administration Menu Section -->
 		<menu>com_j2xml</menu>
 		<!-- Administration Main File Copy Section -->
-		<!-- Note the folder attribute: This attribute describes the folder
-			 to copy FROM in the package to install therefore files copied
-			 in this section are copied from /admin/ in the package -->
 		<files folder="admin">
-			<filename>j2xml.php</filename>
 			<filename>access.xml</filename>
 			<filename>config.xml</filename>
-			<filename>controller.php</filename>
-			<folder>controllers</folder>
-			<folder>models</folder>
+			<folder>forms</folder>
 			<folder>sql</folder>
 			<folder>views</folder>
+			<folder>services</folder>
+			<folder>src</folder>
 		</files>
 		<languages folder="admin/language">
 			<language tag="en-GB">en-GB/en-GB.com_j2xml.ini</language>

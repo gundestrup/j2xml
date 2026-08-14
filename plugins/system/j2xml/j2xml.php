@@ -17,12 +17,15 @@
  */
 
 // no direct access
-defined('_JEXEC') or die('Restricted access.');
+defined('_JEXEC') or die;
 
-JLoader::import('eshiol.J2xml.Exporter');
-JLoader::import('eshiol.J2xml.Sender');
+// Register the eshiol\J2xml namespace for PSR-0 autoloading.
+if (!class_exists('eshiol\\J2xml\\Exporter'))
+{
+	\JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
+}
 
-JLoader::register('eshiol\\J2xml\\Helper\\Joomla', __DIR__ . '/src/J2xml/Helper/Joomla.php');
+\JLoader::register('eshiol\\J2xml\\Helper\\Joomla', __DIR__ . '/src/J2xml/Helper/Joomla.php');
 
 /**
  *
@@ -81,40 +84,10 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 		}
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
-		$version = new \Joomla\CMS\Version();
-
-		if (!$version->isCompatible('4'))
-		{
-			// overwrite original Joomla
-			$loader = require JPATH_LIBRARIES . '/vendor/autoload.php';
-
-			// update class maps
-			$classMap = $loader->getClassMap();
-			if ($version->isCompatible('3.8'))
-			{
-				$classMap['Joomla\CMS\Layout\FileLayout'] = __DIR__ . '/src/joomla/src/Layout/FileLayout.php';
-			}
-			else
-			{
-				$classMap['JLayoutFile'] = __DIR__ . '/src/joomla/cms/layout/file.php';
-			}
-			$loader->addClassMap($classMap);
-		}
-
 		// Only render in backend
-		if ($version->isCompatible('3.7'))
+		if (!$this->app->isClient('administrator'))
 		{
-			if (!$this->app->isClient('administrator'))
-			{
-				return;
-			}
-		}
-		else
-		{
-			if (!$this->app->isAdmin())
-			{
-				return;
-			}
+			return;
 		}
 
 		// Only render if J2XML is installed and enabled
@@ -152,21 +125,9 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 		}
 
 		// Only render in backend
-		$version = new \Joomla\CMS\Version();
-
-		if ($version->isCompatible('3.7'))
+		if (!$this->app->isClient('administrator'))
 		{
-			if (!$this->app->isClient('administrator'))
-			{
-				return;
-			}
-		}
-		else
-		{
-			if (!$this->app->isAdmin())
-			{
-				return;
-			}
+			return;
 		}
 
 		// Only render if J2XML is installed and enabled
@@ -219,98 +180,77 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 		}
 
 		// Only render if J2XML view exists and J2XML Library is loaded
-        if (!\Joomla\CMS\Filesystem\File::exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/' . $contentType . '/view.raw.php'))
+		if (!class_exists('eshiol\\J2xml\\Exporter') || !method_exists('eshiol\\J2xml\\Exporter', $contentType))
 		{
 			return true;
 		}
 
-		if (\Joomla\CMS\Filesystem\File::exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/' . $contentType . '.php'))
+		if (file_exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/' . $contentType . '.php'))
 		{
-			if (class_exists('eshiol\\J2xml\\Exporter') && method_exists('eshiol\\J2xml\\Exporter', $contentType))
+			$bar = \Joomla\CMS\Toolbar\Toolbar::getInstance('toolbar');
+
+			$buttonClass = 'button-download btn btn-sm';
+
+			foreach ($bar->getItems() as $button)
 			{
-				$bar = \Joomla\CMS\Toolbar\Toolbar::getInstance('toolbar');
-
-				$version = new \Joomla\CMS\Version();
-				if ($version->isCompatible('4'))
+				if (gettype($button) != 'array')
 				{
-					$buttonClass = 'button-download btn btn-sm';
-
-					foreach ($bar->getItems() as $button)
+					if ($button->getName() == 'status-group')
 					{
-						if (gettype($button) != 'array')
-						{
-							if ($button->getName() == 'status-group')
-							{
-								$bar = $button->getChildToolbar();
-								$buttonClass = 'button-download dropdown-item';
-								break;
-							}
-						}
+						$bar = $button->getChildToolbar();
+						$buttonClass = 'button-download dropdown-item';
+						break;
 					}
-					$iconExport = 'icon-download';
-					$iconSend = 'icon-out';
-					$layout = new JLayoutFile('joomla4.toolbar.modal');
 				}
-				else
-				{
-					$buttonClass = 'btn btn-small';
-					$iconExport = 'download';
-					$iconSend = 'out';
-					$layout = new JLayoutFile('joomla.toolbar.modal');
-				}
+			}
+			$iconExport = 'icon-download';
+			$iconSend = 'icon-out';
+			$layout = new JLayoutFile('joomla4.toolbar.modal');
 
-				$layout->addIncludePath(JPATH_PLUGINS . '/system/j2xml/layouts');
-				$selector = 'j2xmlExport';
+			$layout->addIncludePath(JPATH_PLUGINS . '/system/j2xml/layouts');
+			$selector = 'j2xmlExport';
+			$dHtml	= $layout->render(
+				array(
+					'selector' => $selector,
+					'icon'	   => $iconExport,
+					'text'	   => \Joomla\CMS\Language\Text::_('JTOOLBAR_EXPORT'),
+					'title'	   => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_EXPORT_' . strtoupper($contentType)),
+					'class'	   => $buttonClass,
+					'doTask'   => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=export&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
+					'ok'	   => \Joomla\CMS\Language\Text::_('JTOOLBAR_EXPORT'),
+					'onclick'  => 'var cids=new Array();jQuery(\'input:checkbox[name=\\\'cid\[\]\\\']:checked\').each( function(){cids.push(jQuery(this).val());});jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#jform_cid\').val(cids);'
+			));
+
+			$bar->appendButton('Custom', $dHtml, 'download');
+
+			// Check if the J2XML webservices plugin is enabled (REST API).
+			$query = $db->getQuery(true)
+				->select($db->quoteName('extension_id'))
+				->from($db->quoteName('#__extensions'))
+				->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+				->where($db->quoteName('folder') . ' = ' . $db->quote('webservices'))
+				->where($db->quoteName('element') . ' = ' . $db->quote('j2xml'));
+			\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
+
+			if ($db->setQuery($query)->loadResult())
+			{
+				\Joomla\CMS\Language\Text::script('LIB_J2XML_ERROR_UNKNOWN');
+
+				$layout->addIncludePath(JPATH_PLUGINS . '/system/j2xml/layout');
+				$selector = 'j2xmlSend';
 				$dHtml	= $layout->render(
 					array(
-						'selector' => $selector,
-						'icon'	   => $iconExport,
-						'text'	   => \Joomla\CMS\Language\Text::_('JTOOLBAR_EXPORT'),
-						'title'	   => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_EXPORT_' . strtoupper($contentType)),
-						'class'	   => $buttonClass,
-						'doTask'   => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=export&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
-						'ok'	   => \Joomla\CMS\Language\Text::_('JTOOLBAR_EXPORT'),
-						'onclick'  => 'var cids=new Array();jQuery(\'input:checkbox[name=\\\'cid\[\]\\\']:checked\').each( function(){cids.push(jQuery(this).val());});jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#jform_cid\').val(cids);'
-				));
-
-				$bar->appendButton('Custom', $dHtml, 'download');
-
-				if ($version->isCompatible('3.9'))
-				{
-					$lib_xmlrpc = 'eshiol/phpxmlrpc';
-				}
-				else
-				{
-					$lib_xmlrpc = 'phpxmlrpc';
-				}
-
-				$query = $db->getQuery(true)
-					->select($db->quoteName('extension_id'))
-					->from($db->quoteName('#__extensions'))
-					->where($db->quoteName('type') . ' = ' . $db->quote('library'))
-					->where($db->quoteName('element') . ' = ' . $db->quote($lib_xmlrpc));
-				\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
-
-				if ($db->setQuery($query)->loadResult() && \Joomla\CMS\Helper\LibraryHelper::isEnabled($lib_xmlrpc))
-				{
-					\Joomla\CMS\Language\Text::script('LIB_J2XML_ERROR_UNKNOWN');
-
-					$layout->addIncludePath(JPATH_PLUGINS . '/system/j2xml/layout');
-					$selector = 'j2xmlSend';
-					$dHtml	= $layout->render(
-						array(
-							'selector'       => $selector,
-							'icon'	         => $iconSend,
-							'text'	         => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
-							'title'	         => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_SEND_' . strtoupper($contentType)),
-							'class'	         => $buttonClass,
-							'doTask'         => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=send&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
-							'ok'	         => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
-							'onclick'        => 'var cids=new Array();jQuery(\'input:checkbox[name=\\\'cid\[\]\\\']:checked\').each( function(){cids.push(jQuery(this).val());});jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#jform_cid\').val(cids);',
-							'formValidation' => true
-						));
-					$bar->appendButton('Custom', $dHtml, 'send');
-				}
+						'selector'       => $selector,
+						'icon'	         => $iconSend,
+						'text'	         => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
+						'title'	         => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_SEND_' . strtoupper($contentType)),
+						'class'	         => $buttonClass,
+						'doTask'         => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=send&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
+						'ok'	         => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
+						'onclick'        => 'var cids=new Array();jQuery(\'input:checkbox[name=\\\'cid\[\]\\\']:checked\').each( function(){cids.push(jQuery(this).val());});jQuery(\'#' . $selector . 'Modal iframe\').contents().find(\'#jform_cid\').val(cids);',
+						'formValidation' => true
+					));
+				$bar->appendButton('Custom', $dHtml, 'send');
 			}
 		}
 
@@ -330,15 +270,9 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 	 */
 	public function onBeforeCompileHead()
 	{
-		// $version = new \Joomla\CMS\Version();
-		$version = new Joomla\CMS\Version();
-
-		if ($version->isCompatible( '4' ))
-		{
-			// Use our own jQuery and fontawesome instead of the debug bar shipped version
-			$assetManager = $this->app->getDocument()->getWebAssetManager();
-			$assetManager->useScript('core')->useScript('jquery');
-		}
+		// Use our own jQuery and fontawesome instead of the debug bar shipped version
+		$assetManager = $this->app->getDocument()->getWebAssetManager();
+		$assetManager->useScript('core')->useScript('jquery');
 	}
 
 }

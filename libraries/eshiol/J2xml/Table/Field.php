@@ -23,9 +23,6 @@ use eshiol\J2xml\Table\Fieldgroup;
 use eshiol\J2xml\Table\Table;
 use Joomla\Component\Fields\Administrator\Table\FieldTable;
 
-\JLoader::import('eshiol.J2xml.Table.Category');
-\JLoader::import('eshiol.J2xml.Table.Fieldgroup');
-\JLoader::import('eshiol.J2xml.Table.Table');
 
 /**
  *
@@ -38,12 +35,12 @@ class Field extends Table
 	/**
 	 * Constructor
 	 *
-	 * @param \JDatabaseDriver $db
+	 * @param \Joomla\Database\DatabaseDriver $db
 	 *			A database connector object
 	 *
 	 * @since 17.6.299
 	 */
-	public function __construct (\JDatabaseDriver $db)
+	public function __construct (\Joomla\Database\DatabaseDriver $db)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -83,8 +80,7 @@ class Field extends Table
 			->where($this->_db->quoteName('c.id') . ' = ' . $this->_db->quoteName('fc.category_id'))
 			->where($this->_db->quoteName('fc.field_id') . ' = ' . (int) $this->id);
 
-		$version = new \Joomla\CMS\Version();
-		if (($this->type == 'subform') && $version->isCompatible('4'))
+		if ($this->type == 'subform')
 		{
 			$query = $this->_db->getQuery(true)
 				->select($this->_db->quoteName('id'))
@@ -154,16 +150,7 @@ class Field extends Table
 
 			if (!$field || ($import_fields == 2))
 			{
-				\JLoader::register('FieldTable', JPATH_ADMINISTRATOR . '/components/com_fields/Table/FieldTable.php');
-				if (class_exists('\Joomla\Component\Fields\Administrator\Table\FieldTable'))
-				{
-					$table = new FieldTable($db);
-				}
-				else
-				{ // backward compatibility
-					\Joomla\CMS\Table\Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_fields/tables');
-					$table = \Joomla\CMS\Table\Table::getInstance('Field', 'FieldsTable');
-				}
+				$table = new FieldTable($db);
 
 				if (!$field)
 				{ // new field
@@ -210,14 +197,18 @@ class Field extends Table
 			$data['description'] = '';
 		}
 
+		if (!isset($data['params']))
+		{
+			$data['params'] = '{}';
+		}
+
 		if (isset($data['modified_time']) && ($data['modified_time'] != \Joomla\CMS\Factory::getDbo()->getNullDate()))
 		{
 			$data['modified_time'] = self::fixDate($data['modified_time']);
 		}
 
 		$db = \Joomla\CMS\Factory::getDbo();
-		$version = new \Joomla\CMS\Version();
-		if (($data['type'] == 'subform') && $version->isCompatible('4'))
+		if ($data['type'] == 'subform')
 		{
 			$query = $db->getQuery(true)
 				->select($db->quoteName('id'))

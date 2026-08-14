@@ -96,7 +96,7 @@ get_csrf_token() {
     local url="$1"
     local page
     page=$(curl -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" "$url" 2>/dev/null)
-    echo "$page" | sed -n 's/.*"csrf.token":"\([a-f0-9]\{32\}\)".*/\1/p' | head -1
+    echo "$page" | grep -o '"csrf\.token"[[:space:]]*:[[:space:]]*"[a-f0-9]\{32\}"' | sed 's/.*"\([a-f0-9]\{32\}\)"/\1/' | head -1
 }
 
 # =============================================================================
@@ -224,18 +224,17 @@ echo \$r->fetch_row()[0];
 }
 
 # =============================================================================
-# Helper: Enable XMLRPC protocol in J2XML component config
+# Helper: Enable REST API in J2XML component config
 # =============================================================================
-enable_xmlrpc() {
+enable_api() {
     local container="$1"
     local db="$2"
     docker exec "$container" php -r "
 \$m = new mysqli('mysql', 'joomla', 'joomlapass', '${db}');
-// Update com_j2xml params to enable xmlrpc
 \$r = \$m->query(\"SELECT params FROM joom_extensions WHERE element='com_j2xml' AND type='component'\");
 \$row = \$r->fetch_assoc();
 \$params = json_decode(\$row['params'] ?? '{}', true);
-\$params['xmlrpc'] = '1';
+\$params['api'] = '1';
 \$params['debug'] = '0';
 \$paramsJson = json_encode(\$params);
 \$stmt = \$m->prepare(\"UPDATE joom_extensions SET params=? WHERE element='com_j2xml' AND type='component'\");
@@ -246,15 +245,28 @@ echo \$stmt->affected_rows;
 }
 
 # =============================================================================
-# Helper: Enable basicauth plugin
+# Helper: Generate a Joomla API token for a user
 # =============================================================================
-enable_basicauth() {
+gen_api_token() {
     local container="$1"
     local db="$2"
+    local userId="$3"
     docker exec "$container" php -r "
 \$m = new mysqli('mysql', 'joomla', 'joomlapass', '${db}');
-\$m->query(\"UPDATE joom_extensions SET enabled=1 WHERE element='basicauth' AND type='plugin' AND folder='system'\");
-echo \$m->affected_rows;
+\$m->query(\"DELETE FROM joom_user_profiles WHERE profile_key LIKE 'joomlatoken%' AND user_id=${userId}\");
+\$seed = random_bytes(32);
+\$seedB64 = base64_encode(\$seed);
+\$config = file_get_contents('/var/www/html/configuration.php');
+preg_match('/\\\$secret\\s*=\\s*\\'([^\\']+)\\'/', \$config, \$matches);
+\$secret = \$matches[1];
+\$hmac = hash_hmac('sha256', \$seed, \$secret);
+\$tokenString = base64_encode('sha256:' . ${userId} . ':' . \$hmac);
+\$stmt = \$m->prepare(\"INSERT INTO joom_user_profiles (user_id, profile_key, profile_value, ordering) VALUES (${userId}, 'joomlatoken.token', ?, 1)\");
+\$stmt->bind_param('s', \$seedB64);
+\$stmt->execute();
+\$stmt2 = \$m->prepare(\"INSERT INTO joom_user_profiles (user_id, profile_key, profile_value, ordering) VALUES (${userId}, 'joomlatoken.enabled', '1', 2)\");
+\$stmt2->execute();
+echo \$tokenString;
 " 2>/dev/null
 }
 
@@ -473,98 +485,61 @@ if [ -f /tmp/j2xml-export-after-import-j5.xml ]; then
 fi
 
 # =============================================================================
-# Phase 6: Test Send (XML-RPC) from Joomla 5 to Joomla 6
+# Phase 6: Test Send (REST API) from Joomla 5 to Joomla 6
 # =============================================================================
-header "Phase 6: Test Send feature (XML-RPC J5 → J6)"
+header "Phase 6: Test Send feature (REST API J5 → J6)"
 
-info "Enabling XMLRPC protocol on Joomla 6 (target)..."
-ENABLED=$(enable_xmlrpc "$J6_CONTAINER" "joomla6")
-info "XMLRPC enabled on J6: $ENABLED rows updated"
+info "Enabling REST API on Joomla 6 (target)..."
+ENABLED=$(enable_api "$J6_CONTAINER" "joomla6")
+info "API enabled on J6: $ENABLED rows updated"
 
-info "Enabling basicauth plugin on Joomla 6..."
-ENABLED=$(enable_basicauth "$J6_CONTAINER" "joomla6")
-info "Basicauth enabled on J6: $ENABLED rows updated"
+info "Enabling webservices plugin on Joomla 6..."
+docker exec "$J6_CONTAINER" php -r "\$m=new mysqli('mysql','joomla','joomlapass','joomla6');\$m->query(\"UPDATE joom_extensions SET enabled=1 WHERE element='j2xml' AND folder='webservices'\");echo \$m->affected_rows;" 2>/dev/null
 
-# Test XML-RPC endpoint is reachable
-info "Testing XML-RPC endpoint on Joomla 6..."
-XMLRPC_URL="$JOOMLA6_URL/index.php?option=com_j2xml&task=services.import&format=xmlrpc"
-XMLRPC_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$XMLRPC_URL" 2>/dev/null)
-if [ "$XMLRPC_CODE" != "404" ]; then
-    pass "Send: XML-RPC endpoint reachable on Joomla 6 (HTTP $XMLRPC_CODE)"
+# Generate an API token for the Joomla 6 admin user
+info "Generating API token on Joomla 6..."
+J6_ADMIN_ID=$(docker exec "$J6_CONTAINER" php -r "\$m=new mysqli('mysql','joomla','joomlapass','joomla6');\$r=\$m->query(\"SELECT id FROM joom_users WHERE username='admin'\");echo \$r->fetch_row()[0];" 2>/dev/null)
+J6_TOKEN=$(gen_api_token "$J6_CONTAINER" "joomla6" "$J6_ADMIN_ID")
+info "Token generated for user ID $J6_ADMIN_ID"
+
+# Test REST API endpoint is reachable
+info "Testing REST API endpoint on Joomla 6..."
+REST_URL="$JOOMLA6_URL/api/index.php/v1/j2xml/import"
+REST_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$REST_URL" \
+    -H "Content-Type: application/xml" \
+    -H "X-Joomla-Token: $J6_TOKEN" \
+    -d '<?xml version="1.0"?><j2xml version="21.12.0"></j2xml>' \
+    2>/dev/null)
+if [ "$REST_CODE" != "404" ] && [ "$REST_CODE" != "000" ]; then
+    pass "Send: REST API endpoint reachable on Joomla 6 (HTTP $REST_CODE)"
 else
-    fail "Send: XML-RPC endpoint not found on Joomla 6 (HTTP 404)"
+    fail "Send: REST API endpoint not found on Joomla 6 (HTTP $REST_CODE)"
 fi
 
-# Send an XML-RPC request with article data
-info "Sending article from Joomla 5 to Joomla 6 via XML-RPC..."
+# Send an article via REST API
+info "Sending article from Joomla 5 to Joomla 6 via REST API..."
 ARTICLE_XML=$(cat "$FIXTURES_DIR/articles-j3.xml")
 
-# Build XML-RPC request
-XMLRPC_REQUEST="<?xml version=\"1.0\"?>
-<methodCall>
-  <methodName>j2xml.import</methodName>
-  <params>
-    <param>
-      <value><base64>$(echo "$ARTICLE_XML" | base64)</base64></value>
-    </param>
-    <param>
-      <value><string>admin</string></value>
-    </param>
-    <param>
-      <value><string>AdminAdmin123!</string></value>
-    </param>
-  </params>
-</methodCall>"
-
-# Send the XML-RPC request
-XMLRPC_RESPONSE=$(curl -s -X POST "$XMLRPC_URL" \
-    -H "Content-Type: text/xml" \
-    -d "$XMLRPC_REQUEST" \
+REST_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$REST_URL" \
+    -H "Content-Type: application/xml" \
+    -H "X-Joomla-Token: $J6_TOKEN" \
+    -d "$ARTICLE_XML" \
     2>/dev/null)
+REST_HTTP_CODE=$(echo "$REST_RESPONSE" | tail -1)
+REST_BODY=$(echo "$REST_RESPONSE" | head -n -1)
 
-if echo "$XMLRPC_RESPONSE" | grep -q "methodResponse\|array\|string" 2>/dev/null; then
-    pass "Send: XML-RPC response received from Joomla 6"
+if [ "$REST_HTTP_CODE" = "200" ]; then
+    pass "Send: REST API response received from Joomla 6 (HTTP $REST_HTTP_CODE)"
     # Check if articles were actually imported into J6
     J6_ARTICLES=$(db_count "$J6_CONTAINER" "joomla6" "joom_content")
     if [ "$J6_ARTICLES" -ge 3 ] 2>/dev/null; then
-        pass "Send: $J6_ARTICLES articles in Joomla 6 after XML-RPC send"
+        pass "Send: $J6_ARTICLES articles in Joomla 6 after REST API send"
     else
         fail "Send: Only $J6_ARTICLES articles in Joomla 6 after send (expected 3+)"
     fi
 else
-    fail "Send: No valid XML-RPC response from Joomla 6"
-    # Try XML-RPC importAjax method (no auth required)
-    info "Trying j2xml.importAjax method (no auth)..."
-    AJAX_REQUEST="<?xml version=\"1.0\"?>
-<methodCall>
-  <methodName>j2xml.importAjax</methodName>
-  <params>
-    <param>
-      <value><string><![CDATA[$ARTICLE_XML]]></string></value>
-    </param>
-    <param>
-      <value><string>{}</string></value>
-    </param>
-  </params>
-</methodCall>"
-
-    AJAX_RESPONSE=$(curl -s -X POST "$XMLRPC_URL" \
-        -H "Content-Type: text/xml" \
-        -d "$AJAX_REQUEST" \
-        2>/dev/null)
-
-    if echo "$AJAX_RESPONSE" | grep -q "methodResponse" 2>/dev/null; then
-        pass "Send: XML-RPC importAjax response received from Joomla 6"
-        J6_ARTICLES=$(db_count "$J6_CONTAINER" "joomla6" "joom_content")
-        if [ "$J6_ARTICLES" -ge 3 ] 2>/dev/null; then
-            pass "Send: $J6_ARTICLES articles in Joomla 6 after importAjax"
-        else
-            fail "Send: Only $J6_ARTICLES articles in Joomla 6 after importAjax (expected 3+)"
-        fi
-    else
-        fail "Send: importAjax also failed"
-        echo "$AJAX_RESPONSE" | head -20
-    fi
+    fail "Send: REST API send failed (HTTP $REST_HTTP_CODE)"
+    echo "$REST_BODY" | head -20
 fi
 
 # =============================================================================

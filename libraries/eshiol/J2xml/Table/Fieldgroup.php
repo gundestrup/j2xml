@@ -22,8 +22,6 @@ use eshiol\J2xml\Table\Table;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\Component\Fields\Administrator\Table\GroupTable;
 
-\JLoader::import('eshiol.J2xml.Table.Table');
-
 
 /**
  *
@@ -48,7 +46,7 @@ class Fieldgroup extends Table
 	 *
 	 * @since 19.2.323
 	 */
-	public function __construct (\JDatabaseDriver $db)
+	public function __construct (\Joomla\Database\DatabaseDriver $db)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -98,16 +96,7 @@ class Fieldgroup extends Table
 
 			if (!$fieldgroup )
 			{
-				\JLoader::register('GroupTable', JPATH_ADMINISTRATOR . '/components/com_fields/Table/GroupTable.php');
-				if (class_exists('\Joomla\Component\Fields\Administrator\Table\GroupTable'))
-				{
-					$table = new GroupTable($db);
-				}
-				else
-				{ // backward compatibility
-					\Joomla\CMS\Table\Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_fields/tables');
-					$table = \Joomla\CMS\Table\Table::getInstance('Group', 'FieldsTable');
-				}
+				$table = new GroupTable($db);
 
 				$data['id'] = null;
 

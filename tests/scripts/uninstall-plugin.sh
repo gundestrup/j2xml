@@ -110,7 +110,7 @@ sleep 2
 # Check if any J2XML extensions remain
 REMAINING_CHECK=$(docker exec "$CONTAINER" php -r '
 $mysqli = new mysqli("mysql", "joomla", "joomlapass", "'"$DB"'");
-$result = $mysqli->query("SELECT extension_id, type, element FROM joom_extensions WHERE element IN (\"com_j2xml\",\"eshiol/J2xml\",\"eshiol/phpxmlrpc\",\"pkg_j2xml\",\"basicauth\",\"j2xml\") OR name LIKE \"%J2XML%\" OR name LIKE \"%eshiol%\" OR name LIKE \"%XML-RPC%php%\"");
+$result = $mysqli->query("SELECT extension_id, type, element FROM joom_extensions WHERE element IN (\"com_j2xml\",\"eshiol/J2xml\",\"pkg_j2xml\",\"j2xml\") OR name LIKE \"%J2XML%\" OR name LIKE \"%eshiol%\"");
 $ids = [];
 while ($row = $result->fetch_assoc()) {
     echo $row["extension_id"] . ":" . $row["type"] . ":" . $row["element"] . "\n";
@@ -148,7 +148,7 @@ echo "[uninstall] Verifying removal from database..."
 REMAINING_COUNT=$(docker exec "$CONTAINER" php -r '
 $mysqli = new mysqli("mysql", "joomla", "joomlapass", "'"$DB"'");
 if ($mysqli->connect_errno) { echo "0"; exit(0); }
-$result = $mysqli->query("SELECT COUNT(*) as cnt FROM joom_extensions WHERE element IN (\"com_j2xml\",\"eshiol/J2xml\",\"eshiol/phpxmlrpc\",\"pkg_j2xml\",\"basicauth\",\"j2xml\") OR name LIKE \"%J2XML%\" OR name LIKE \"%eshiol%\" OR name LIKE \"%XML-RPC%php%\"");
+$result = $mysqli->query("SELECT COUNT(*) as cnt FROM joom_extensions WHERE element IN (\"com_j2xml\",\"eshiol/J2xml\",\"pkg_j2xml\",\"j2xml\") OR name LIKE \"%J2XML%\" OR name LIKE \"%eshiol%\"");
 $row = $result->fetch_assoc();
 echo $row["cnt"];
 ' 2>/dev/null || echo "0")
@@ -159,7 +159,7 @@ echo "[uninstall] Extensions remaining in DB: $REMAINING_COUNT"
 if [ "${REMAINING_COUNT:-0}" -gt 0 ]; then
     docker exec "$CONTAINER" php -r '
 $mysqli = new mysqli("mysql", "joomla", "joomlapass", "'"$DB"'");
-$result = $mysqli->query("SELECT type, element, name FROM joom_extensions WHERE element IN (\"com_j2xml\",\"eshiol/J2xml\",\"eshiol/phpxmlrpc\",\"pkg_j2xml\",\"basicauth\",\"j2xml\") OR name LIKE \"%J2XML%\" OR name LIKE \"%eshiol%\" OR name LIKE \"%XML-RPC%php%\"");
+$result = $mysqli->query("SELECT type, element, name FROM joom_extensions WHERE element IN (\"com_j2xml\",\"eshiol/J2xml\",\"pkg_j2xml\",\"j2xml\") OR name LIKE \"%J2XML%\" OR name LIKE \"%eshiol%\"");
 while ($row = $result->fetch_assoc()) {
     echo "  REMAINS: " . $row["type"] . " / " . $row["element"] . " / " . $row["name"] . PHP_EOL;
 }
@@ -174,9 +174,8 @@ for path in \
     "/var/www/html/administrator/components/com_j2xml" \
     "/var/www/html/components/com_j2xml" \
     "/var/www/html/libraries/eshiol/J2xml" \
-    "/var/www/html/libraries/eshiol/phpxmlrpc" \
     "/var/www/html/plugins/system/j2xml" \
-    "/var/www/html/plugins/system/basicauth"; do
+    "/var/www/html/plugins/webservices/j2xml"; do
     if docker exec "$CONTAINER" test -e "$path" 2>/dev/null; then
         echo "  FILE_REMAINS: $path"
         FILES_REMAINING=$((FILES_REMAINING + 1))

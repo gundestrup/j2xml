@@ -16,17 +16,13 @@
  */
 
 // no direct access
-defined('_JEXEC') or die();
+defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 
 \Joomla\CMS\HTML\HTMLHelper::_('bootstrap.tooltip');
 
-$version = new \Joomla\CMS\Version();
-if ($version->isCompatible('3.8'))
-{
-	\Joomla\CMS\HTML\HTMLHelper::_('jquery.token');
-}
+\Joomla\CMS\HTML\HTMLHelper::_('jquery.token');
 
 \Joomla\CMS\Language\Text::script('COM_J2XML_IMPORTING');
 \Joomla\CMS\Language\Text::script('COM_J2XML_PACKAGEIMPORTER_UPLOAD_ERROR_UNKNOWN');
@@ -364,17 +360,27 @@ $document->addStyleDeclaration(
 CSS
 );
 
-$version = new \Joomla\CMS\Version();
-if ($version->isCompatible('3.7'))
+$max = strtoupper(trim((string) ini_get('upload_max_filesize')));
+if ($max !== '' && $max !== '0')
 {
-	$maxSize = \Joomla\CMS\Filesystem\FilesystemHelper::fileUploadMaxSize();
+	$unit = substr($max, -1);
+	$value = (int) $max;
+	switch ($unit)
+	{
+		case 'G': $value *= 1024;
+		case 'M': $value *= 1024;
+		case 'K': $value *= 1024;
+	}
+	$maxSize = $value;
 }
-if ($version->isCompatible('4'))
+else
 {
-	$document->addScriptOptions('progressBarContainerClass', 'progress');
-	$document->addScriptOptions('progressBarClass', 'progress-bar progress-bar-striped progress-bar-animated bg');
-	$document->addScriptOptions('progressBarErrorClass', 'progress-bar progress-bar-striped progress-bar-animated bg-error');
+	$maxSize = 0;
 }
+
+$document->addScriptOptions('progressBarContainerClass', 'progress');
+$document->addScriptOptions('progressBarClass', 'progress-bar progress-bar-striped progress-bar-animated bg');
+$document->addScriptOptions('progressBarErrorClass', 'progress-bar progress-bar-striped progress-bar-animated bg-error');
 ?>
 <legend><?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_UPLOAD_IMPORT_DATA'); ?></legend>
 
@@ -385,8 +391,8 @@ if ($version->isCompatible('4'))
 				<span id="upload-icon" class="icon-upload" aria-hidden="true"></span>
 			</p>
 			<div class="upload-progress">
-				<div class="progress<?php echo $version->isCompatible('4') ? '' : ' progress-striped active'; ?>">
-					<div class="<?php echo $version->isCompatible('4') ? 'progress-bar progress-bar-striped progress-bar-animated bg-success' : 'bar bar-success'; ?>"
+				<div class="progress">
+					<div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
 						style="width:0"
 						role="progressbar"
 						aria-valuenow="0"
@@ -421,11 +427,9 @@ if ($version->isCompatible('4'))
 						<?php echo \Joomla\CMS\Language\Text::_('COM_J2XML_PACKAGEIMPORTER_SELECT_FILE'); ?>
 					</button>
 				</p>
-				<?php if ($version->isCompatible('3.7')) : ?>
-					<p>
-						<?php echo \Joomla\CMS\Language\Text::sprintf('JGLOBAL_MAXIMUM_UPLOAD_SIZE_LIMIT', $maxSize); ?>
-					</p>
-				<?php endif; ?>
+				<p>
+					<?php echo \Joomla\CMS\Language\Text::sprintf('JGLOBAL_MAXIMUM_UPLOAD_SIZE_LIMIT', $maxSize); ?>
+				</p>
 			</div>
 		</div>
 	</div>
