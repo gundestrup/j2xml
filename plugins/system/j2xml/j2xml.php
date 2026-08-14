@@ -183,7 +183,8 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 			return true;
 		}
 
-		if (file_exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/' . $contentType . '.php'))
+		if (file_exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/' . $contentType . '.php')
+			|| file_exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/default.php'))
 		{
 			$bar = \Joomla\CMS\Toolbar\Toolbar::getInstance('toolbar');
 
