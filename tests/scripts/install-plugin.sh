@@ -147,40 +147,61 @@ fi
 # Step 5: Verify extensions are registered in the database
 echo "[install] Verifying installation in database..."
 
-# Get DB credentials from environment or defaults
-if [ -n "${J2XML_DB:-}" ]; then
-    DB="$J2XML_DB"
-elif [ "$VERSION" = "5" ]; then
-    DB="${JOOMLA5_DB:-joomla5}"
-else
-    DB="${JOOMLA6_DB:-joomla6}"
-fi
+# Use Joomla's configuration inside the container to query extensions.
+# This is database-agnostic (works with both MySQL and PostgreSQL).
+# We write the PHP script to a temp file to avoid shell quoting issues.
+VERIFY_SCRIPT=$(mktemp)
+cat > "$VERIFY_SCRIPT" <<'PHPEOF'
+<?php
+require "/var/www/html/configuration.php";
+$c = new JConfig();
+$prefix = $c->dbprefix;
+$dbtype = $c->dbtype ?? "mysqli";
+$host = $c->host;
+$user = $c->user;
+$pass = $c->password;
+$db   = $c->db;
 
-VERIFY=$(docker exec "$CONTAINER" php -r "
-\$mysqli = new mysqli('mysql', 'joomla', 'joomlapass', '${DB}');
-if (\$mysqli->connect_errno) { echo 'FAIL: DB connect\n'; exit(1); }
-
-// Find extensions table
-\$result = \$mysqli->query(\"SHOW TABLES LIKE '%extensions'\");
-\$extTable = null;
-while (\$row = \$result->fetch_row()) {
-    if (strpos(\$row[0], 'action_logs') === false && strpos(\$row[0], 'update_sites') === false) {
-        \$extTable = \$row[0]; break;
+if (strpos($dbtype, "pgsql") !== false || strpos($dbtype, "postgres") !== false) {
+    $conn = pg_connect("host=$host dbname=$db user=$user password=$pass");
+    if (!$conn) { echo "FAIL: PG connect\n"; exit(1); }
+    $table = pg_escape_string($conn, $prefix . "extensions");
+    $sql = "SELECT type, element, name, enabled FROM \"$table\" WHERE element IN ($1,$2,$3,$4) OR name LIKE $5 OR name LIKE $6 OR name LIKE $7 ORDER BY type, element";
+    $result = pg_query_params($conn, $sql, ["com_j2xml","eshiol/J2xml","pkg_j2xml","j2xml","%J2XML%","%eshiol%","%webservices%j2xml%"]);
+    $count = 0;
+    $lines = "";
+    while ($row = pg_fetch_assoc($result)) {
+        $lines .= "  " . $row["type"] . " / " . $row["element"] . " (enabled=" . $row["enabled"] . ")\n";
+        $count++;
     }
+    echo $lines;
+    echo "COUNT:" . $count . "\n";
+} else {
+    $mysqli = new mysqli($host, $user, $pass, $db);
+    if ($mysqli->connect_errno) { echo "FAIL: DB connect\n"; exit(1); }
+    $result = $mysqli->query("SHOW TABLES LIKE '%extensions'");
+    $extTable = null;
+    while ($row = $result->fetch_row()) {
+        if (strpos($row[0], "action_logs") === false && strpos($row[0], "update_sites") === false) {
+            $extTable = $row[0]; break;
+        }
+    }
+    if (!$extTable) { echo "FAIL: no extensions table\n"; exit(1); }
+    $result = $mysqli->query("SELECT type, element, name, enabled FROM `$extTable` WHERE element IN ('com_j2xml','eshiol/J2xml','pkg_j2xml','j2xml') OR name LIKE '%J2XML%' OR name LIKE '%eshiol%' OR name LIKE '%webservices%j2xml%' ORDER BY type, element");
+    $count = 0;
+    $lines = "";
+    while ($row = $result->fetch_assoc()) {
+        $lines .= "  " . $row["type"] . " / " . $row["element"] . " (enabled=" . $row["enabled"] . ")\n";
+        $count++;
+    }
+    echo $lines;
+    echo "COUNT:" . $count . "\n";
 }
-if (!\$extTable) { echo 'FAIL: no extensions table\n'; exit(1); }
+PHPEOF
 
-// Check for J2XML extensions (libraries use eshiol/J2xml as element)
-\$result = \$mysqli->query(\"SELECT type, element, name, enabled FROM \`\$extTable\` WHERE element IN ('com_j2xml','eshiol/J2xml','pkg_j2xml','j2xml') OR name LIKE '%J2XML%' OR name LIKE '%eshiol%' OR name LIKE '%webservices%j2xml%' ORDER BY type, element\");
-\$count = 0;
-\$lines = '';
-while (\$row = \$result->fetch_assoc()) {
-    \$lines .= '  ' . \$row['type'] . ' / ' . \$row['element'] . ' (enabled=' . \$row['enabled'] . \")\\n\";
-    \$count++;
-}
-echo \$lines;
-echo 'COUNT:' . \$count . \"\\n\";
-" 2>&1)
+VERIFY=$(docker cp "$VERIFY_SCRIPT" "$CONTAINER:/tmp/j2xml-verify.php" 2>/dev/null && \
+    docker exec "$CONTAINER" php /tmp/j2xml-verify.php 2>&1)
+rm -f "$VERIFY_SCRIPT"
 
 echo "$VERIFY"
 
