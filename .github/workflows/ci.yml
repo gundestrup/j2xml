@@ -54,8 +54,10 @@ jobs:
     needs: php-quality
     steps:
       - uses: actions/checkout@v5
-      - name: Start official Joomla images with MySQL
-        run: docker compose -f tests/docker/docker-compose.yml up -d
+      - name: Install zip for build script
+        run: sudo apt-get update && sudo apt-get install -y zip
+      - name: Start Joomla and MySQL containers
+        run: docker compose -f tests/docker/docker-compose.yml up -d mysql joomla5 joomla6
       - name: Run Joomla integration suite
         run: bash tests/scripts/run-all-tests.sh
       - name: Collect container logs
@@ -71,7 +73,9 @@ jobs:
     needs: php-quality
     steps:
       - uses: actions/checkout@v5
-      - name: Start official Joomla images with PostgreSQL
+      - name: Install zip for build script
+        run: sudo apt-get update && sudo apt-get install -y zip
+      - name: Start Joomla and PostgreSQL containers
         run: docker compose -f tests/docker/docker-compose.postgresql.yml up -d
       - name: Run PostgreSQL integration smoke tests
         run: bash tests/scripts/run-postgresql-smoke.sh

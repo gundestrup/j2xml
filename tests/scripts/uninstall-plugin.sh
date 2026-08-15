@@ -13,12 +13,12 @@ set -euo pipefail
 VERSION="${1:?Usage: uninstall-plugin.sh <5|6>}"
 
 if [ "$VERSION" = "5" ]; then
-    CONTAINER="j2xml-joomla5"
-    JOOMLA_URL="http://localhost:8085"
+    CONTAINER="${J2XML_CONTAINER:-j2xml-joomla5}"
+    JOOMLA_URL="${J2XML_URL:-http://localhost:8085}"
     DB="${JOOMLA5_DB:-joomla5}"
 elif [ "$VERSION" = "6" ]; then
-    CONTAINER="j2xml-joomla6"
-    JOOMLA_URL="http://localhost:8086"
+    CONTAINER="${J2XML_CONTAINER:-j2xml-joomla6}"
+    JOOMLA_URL="${J2XML_URL:-http://localhost:8086}"
     DB="${JOOMLA6_DB:-joomla6}"
 else
     echo "Invalid version: $VERSION"
