@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **PHP 8.3 fatal: `utf8_encode()` removed** — replaced all 5 occurrences in `phpxmlrpc/src/Server.php`, `Request.php`, `Encoder.php`, `Helper/Charset.php` with `mb_convert_encoding($data, 'UTF-8', 'ISO-8859-1')`
 - **PHP 8.4 deprecated: non-canonical casts** — `(boolean)` → `(bool)` in `libraries/eshiol/J2xml/Table/Table.php`; `(integer)` → `(int)` and `(double)` → `(float)` in `phpxmlrpc/src/Server.php`, `Value.php`, `Helper/XMLParser.php`
 - **PHP 8.4 deprecated: `case` with semicolon** — changed `case 'array[]';` to `case 'array[]':` in `phpxmlrpc/src/Wrapper.php`
+- **Library manifest namespace path doubling** — `<namespace path="eshiol/J2xml">` caused Joomla's `JNamespacePsr4Map` to generate a doubled autoload path (`JPATH_LIBRARIES/eshiol/J2xml/eshiol/J2xml`), preventing class autoloading and causing HTTP 500 on every export/import; fixed by changing `path` to `""` (relative to library root)
+- **Import error handling** — `ImportModel::import()` now wraps `$importer->import()` in try/catch to log database-specific errors (e.g. PostgreSQL vs MySQL syntax differences) and show a user-friendly message instead of a raw HTTP 500
 
 ### Added
 - **Docker-based integration test suite** — `tests/docker/` with Joomla 5 + 6 containers (PHP 8.4, MySQL 8.0); `tests/scripts/run-all-tests.sh` verifies issues #72, #71, #70 and Joomla 6 compatibility
@@ -67,15 +69,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`JoomlaInstaller` moved** from `admin.js` to `lib_eshiol_j2xml/js/j2xml.js` to fix backwards dependency
 - **Bootstrap 5 modal asset** explicitly loaded in `default.php` and `default_package.php` templates
 - **Component manifest** — `version` attribute updated to `5.0`; added `<minimumJoomla>5.0</minimumJoomla>` and `<minimumPhp>8.1</minimumPhp>`
-- **Library manifest** — added `<namespace path="eshiol/J2xml">eshiol\J2xml</namespace>` for automatic PSR-4 autoloading
+- **Library manifest** — added `<namespace path="">eshiol\J2xml</namespace>` for automatic PSR-4 autoloading (path is relative to the library root, so empty string maps to `JPATH_LIBRARIES/eshiol/J2xml`)
 - **Copyright years** updated from 2010-2023 to 2010-2026 across all PHP, XML, INI, JS, and CSS files
 - **phpxmlrpc vendored library upgraded from 4.10.1 to 4.11.5** (latest stable, Nov 2025) — replaced all files in `libraries/eshiol/phpxmlrpc/src/` and `lib/`; preserved J2XML-specific `Log/Logger/XmlrpcLogger.php`; re-applied `utf8_encode()` → `mb_convert_encoding()` patches on top of 4.11.5
+- **`Table::getInstance()` → `new Usergroup($db)`** — replaced in `libraries/eshiol/J2xml/Table/Table.php`
+- **`$app->input` → `$app->getInput()`** — 24 occurrences across 12 files (Exporter, Importer, ImportModel, ExportModel, SendModel, ExportController, ImportController admin + API, AbstractRawView, default_package template, system plugin, CLI, site component)
+- **`JFactory::getDbo()` → container-based `DatabaseInterface`** — replaced in test scripts
+- **`Factory::$database` → container registration** — replaced in `tests/scripts/bootstrap.php`
+- **`@see JModelLegacy` → `@see \Joomla\CMS\MVC\Model\BaseModel`** — updated PHPDoc in ExportModel and SendModel
+- **`JLoader::registerNamespace()` calls removed** — 6 workaround calls removed from classmap.php, system plugin, dispatcher, CLI, site component, and test script; Joomla's manifest-based autoloading now handles PSR-4 registration correctly after the namespace path fix
 
 ### Note
 - Verified clean lint on PHP 8.4.24 and PHP 8.5.9 (0 errors, 0 deprecations)
 - PHPStan passes with 0 errors
-- All 26 integration tests pass on Joomla 5.4.7 and Joomla 6.1.2
-- See `README.TODO.deprecated.md` for remaining deprecated patterns scheduled for future removal
+- All 82 integration tests pass on Joomla 5.4.7 and Joomla 6.1.2
+- See `README.TODO.deprecated.md` for remaining deprecated patterns scheduled for future removal (7 entries)
 
 ---
 
