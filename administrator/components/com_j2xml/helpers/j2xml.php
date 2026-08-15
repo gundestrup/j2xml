@@ -73,7 +73,7 @@ class J2xmlHelper
 
 	public static function copyright ()
 	{
-		if ($xml = \Joomla\CMS\Factory::getXML(JPATH_ADMINISTRATOR . "/components/com_j2xml" . '/j2xml.xml'))
+		if ($xml = simplexml_load_file(JPATH_ADMINISTRATOR . "/components/com_j2xml/j2xml.xml"))
 		{
 			return '<div class="clearfix"> </div>' . '<div style="text-align:center;font-size:xx-small">' . Text::_($xml->name) . ' ' . $xml->version .
 					 ' ' . str_replace('(C)', '&copy;', $xml->copyright) . '</div>';

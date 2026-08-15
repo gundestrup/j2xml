@@ -19,8 +19,9 @@ as XML, and can push/pull that content between Joomla! instances over XML-RPC.
   (The upstream `eshiol/j2xml` targets Joomla 3.x/4.x; this fork drops
   older PHP/Joomla support to focus on modern versions.)
 - **Package name (Joomla):** `pkg_j2xml` (currently versioned as **3.9**).
-- **Language:** PHP (no JS build pipeline, no `composer.json` / `package.json`
-  in the repo — dependencies are vendored as Joomla libraries).
+- **Language:** PHP (no runtime JS build pipeline; Composer is used for
+  development-only PHPUnit/PHPStan tooling, while runtime dependencies remain
+  vendored as Joomla libraries).
 
 The package is composed of several Joomla extensions that are bundled together
 by `administrator/manifests/packages/pkg_j2xml.xml`:
@@ -104,9 +105,9 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
 - **Joomla framework access:** every entry file starts with
   `defined('_JEXEC') or die('Restricted access.');` (or `die()` in CLI).
   Preserve this guard in any new PHP file that is loaded by Joomla.
-- **Class loading:** use `\JLoader::import('eshiol.J2xml.…')` and
-  `jimport('eshiol.J2xml.Version')` patterns already in use. Do **not**
-  introduce Composer autoloading.
+- **Class loading:** use the existing Joomla namespace registration and
+  namespaced classes. Do **not** introduce Composer autoloading for runtime
+  extension code; Composer is development-only in this repository.
 - **Logging:** use `\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(...))`
   with the `plg_system_j2xml` / `com_j2xml` category. The debug logger writes
   to `eshiol.log.php` by default (configurable via component/plugin params).
@@ -228,9 +229,11 @@ The hook is version-controlled in `scripts/git-hooks/` and symlinked into
 
 ## 5. Testing
 
-Integration tests run in **Docker** against live Joomla 5 and 6 instances
-with PHP 8.4 and MySQL 8.0. The test suite (`tests/scripts/run-all-tests.sh`)
-verifies the three import bugs fixed in this fork:
+Integration tests run in **Docker** against official Joomla 5 and 6 images.
+The primary suite uses MySQL; `tests/scripts/run-postgresql-smoke.sh` also
+exercises installation, import, and export against PostgreSQL. The test suite
+(`tests/scripts/run-all-tests.sh`) verifies the three import bugs fixed in this
+fork:
 
 - **Issue #72** — Import no longer returns HTTP 500 on Joomla 5.2+
 - **Issue #71** — Articles import correctly from J3 XML format to J5
@@ -241,6 +244,7 @@ verifies the three import bugs fixed in this fork:
 
 - Docker Desktop (or Docker Engine + Docker Compose)
 - `curl` (pre-installed on macOS / most Linux distros)
+- Composer for PHPUnit/PHPStan unit and static checks
 
 ### Running the tests
 
@@ -252,6 +256,17 @@ docker compose up -d
 # Wait for Joomla to finish installing, then run all tests
 cd ../..
 bash tests/scripts/run-all-tests.sh
+
+# PostgreSQL smoke matrix
+cd tests/docker
+docker compose -f docker-compose.postgresql.yml up -d
+cd ../..
+bash tests/scripts/run-postgresql-smoke.sh
+
+# Unit and static checks
+composer install
+vendor/bin/phpunit --configuration phpunit.xml.dist
+vendor/bin/phpstan analyse --no-progress --memory-limit=1G
 ```
 
 The script will:
@@ -265,10 +280,10 @@ The script will:
 ### Test output
 
 ```
-  Passed: 8
+  Passed: 79
   Failed: 0
   Skipped: 0
-  Total:  8
+  Total:  79
 ```
 
 ### Stopping the test environment
@@ -294,7 +309,7 @@ When making changes beyond the automated tests:
 - Manually install the package on a clean **Joomla 5 and 6** instance
   (PHP 8.4+).
 - Exercise the affected path through the **com_j2xml admin UI**
-  (export → import → send via XML-RPC) and through `cli/j2xml.php`.
+  (export → import → send via the Joomla REST API) and through `cli/j2xml.php`.
 - Check the Joomla debug log (`eshiol.log.php`) for new
   `JLogEntry` warnings.
 - Verify both **MySQL** and **PostgreSQL** if you touched SQL.
@@ -362,7 +377,9 @@ If you add a feature, consider whether it needs a new SQL update file under
 
 ## 8. Things to Avoid
 
-- Do **not** introduce Composer, npm, webpack, or any build toolchain.
+- Do **not** introduce Composer autoloading, npm, webpack, or a runtime build
+  toolchain. Composer development dependencies for tests and static analysis
+  are supported.
 - Do **not** remove the `defined('_JEXEC') or die(...)` guards.
 - Do **not** replace `JLoader::import` / `jimport` with PSR-4 autoloading
   unless doing a coordinated refactor across the whole library.
@@ -406,8 +423,9 @@ cd tests/docker && docker compose up -d && cd ../..
 bash tests/scripts/run-all-tests.sh
 ```
 
-There is **no `make`, `npm`, or `composer`** command to run.
-The pre-commit hook handles linting + static analysis automatically.
+There is no `make`, npm, or runtime build command. Composer is used for
+PHPUnit and PHPStan development tooling. The pre-commit hook handles linting +
+static analysis automatically.
 For integration testing, see §5 (Docker-based test suite).
 
 ---

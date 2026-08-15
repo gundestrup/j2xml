@@ -22,7 +22,7 @@ namespace eshiol\J2xml\Table;
  * Menu Table
  *
  */
-class Menu extends \eshiol\J2XML\Table\Table
+class Menu extends \eshiol\J2xml\Table\Table
 {
 
 	/**
@@ -172,7 +172,6 @@ class Menu extends \eshiol\J2XML\Table\Table
 			$db->setQuery($query);
 			$menu = $db->loadObject();
 
-			$import_menus = 2;
 			if (!$menu || ($import_menus == 2))
 			{
 				$table = new Menu($db);

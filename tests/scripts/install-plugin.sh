@@ -16,11 +16,11 @@ VERSION="${1:?Usage: install-plugin.sh <5|6> [zip_path]}"
 ZIP_PATH="${2:-$(cd "$(dirname "$0")/../.." && pwd)/build/pkg_j2xml.zip}"
 
 if [ "$VERSION" = "5" ]; then
-    CONTAINER="j2xml-joomla5"
-    JOOMLA_URL="http://localhost:8085"
+    CONTAINER="${J2XML_CONTAINER:-j2xml-joomla5}"
+    JOOMLA_URL="${J2XML_URL:-http://localhost:8085}"
 elif [ "$VERSION" = "6" ]; then
-    CONTAINER="j2xml-joomla6"
-    JOOMLA_URL="http://localhost:8086"
+    CONTAINER="${J2XML_CONTAINER:-j2xml-joomla6}"
+    JOOMLA_URL="${J2XML_URL:-http://localhost:8086}"
 else
     echo "Invalid version: $VERSION"
     exit 1
@@ -148,7 +148,9 @@ fi
 echo "[install] Verifying installation in database..."
 
 # Get DB credentials from environment or defaults
-if [ "$VERSION" = "5" ]; then
+if [ -n "${J2XML_DB:-}" ]; then
+    DB="$J2XML_DB"
+elif [ "$VERSION" = "5" ]; then
     DB="${JOOMLA5_DB:-joomla5}"
 else
     DB="${JOOMLA6_DB:-joomla6}"

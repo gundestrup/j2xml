@@ -82,7 +82,7 @@ Factory::getApplication()->getLanguage()->load('com_j2xml.sys');
 					<?php Factory::getApplication()->enqueueMessage(Text::_('COM_J2XML_NO_INSTALLATION_PLUGINS_FOUND'), 'warning'); ?>
 				<?php endif; ?>
 
-				<?php if ($this->ftp) : ?>
+				<?php if (!empty($this->ftp)) : ?>
 					<?php echo HTMLHelper::_($ui . '.addTab', 'myTab', 'ftp', Text::_('COM_J2XML_MSG_DESCFTPTITLE')); ?>
 					<?php echo $this->loadTemplate('ftp'); ?>
 					<?php echo HTMLHelper::_($ui . '.endTab'); ?>

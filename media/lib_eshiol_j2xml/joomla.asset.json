@@ -8,22 +8,22 @@
         {
             "name": "lib_eshiol_j2xml.base64",
             "type": "script",
-            "uri": "js/base64.js"
+            "uri": "lib_eshiol_j2xml/base64.js"
         },
         {
             "name": "lib_eshiol_j2xml.version_compare",
             "type": "script",
-            "uri": "js/version_compare.js"
+            "uri": "lib_eshiol_j2xml/version_compare.js"
         },
         {
             "name": "lib_eshiol_j2xml.pako_inflate",
             "type": "script",
-            "uri": "js/pako_inflate.js"
+            "uri": "lib_eshiol_j2xml/pako_inflate.js"
         },
         {
             "name": "lib_eshiol_j2xml.j2xml",
             "type": "script",
-            "uri": "js/j2xml.js",
+            "uri": "lib_eshiol_j2xml/j2xml.js",
             "dependencies": [
                 "lib_eshiol_j2xml.base64",
                 "lib_eshiol_j2xml.version_compare"

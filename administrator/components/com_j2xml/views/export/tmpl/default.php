@@ -37,7 +37,7 @@ $wa->useScript('showon')
 	id="adminForm" method="post" name="adminForm" autocomplete="off"
 	class="form-horizontal">
 
-	<?php echo LayoutHelper::render('j2xml.fieldsets', ['form' => $this->form, 'tabSetId' => $tabSetId, 'ui' => $ui], JPATH_ADMINISTRATOR . "/components/com_j2xml"); ?>
+	<?php echo LayoutHelper::render('j2xml.fieldsets', ['form' => $this->form, 'tabSetId' => $tabSetId, 'ui' => $ui, 'layout' => $layout], JPATH_ADMINISTRATOR . "/components/com_j2xml"); ?>
 
 	<button class="hidden" id="j2xmlExportOkBtn" type="button"
 		data-j2xml-task="export-submit">

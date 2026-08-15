@@ -101,6 +101,32 @@
     <group>2</group>
     <group>3</group>
   </user>
+  <user>
+    <id>52</id>
+    <name>Fixture Super User</name>
+    <username>fixturesuperuser</username>
+    <email>fixturesuperuser@example.com</email>
+    <password></password>
+    <block>0</block>
+    <sendEmail>0</sendEmail>
+    <registerDate>2024-03-01 10:00:00</registerDate>
+    <lastvisitDate>0000-00-00 00:00:00</lastvisitDate>
+    <activation>0</activation>
+    <params></params>
+    <group>8</group>
+  </user>
+  <usernote>
+    <id>1904</id>
+    <user_id>fixtureuser1</user_id>
+    <catid>1</catid>
+    <subject>J2XML User Note Setting</subject>
+    <body><![CDATA[<p>Dedicated user note import test.</p>]]></body>
+    <state>1</state>
+    <created_user_id>1</created_user_id>
+    <created_time>2024-03-01 10:00:00</created_time>
+    <modified_user_id>1</modified_user_id>
+    <modified_time>2024-03-01 10:00:00</modified_time>
+  </usernote>
 
   <!-- Articles (Content) -->
   <content>
@@ -143,6 +169,27 @@
     <featured>1</featured>
     <hits>0</hits>
     <publish_up>2024-02-01 14:00:00</publish_up>
+    <publish_down>0000-00-00 00:00:00</publish_down>
+    <access>1</access>
+  </content>
+  <content>
+    <id>903</id>
+    <title>Fixture Keep ID Article</title>
+    <alias>fixture-keep-id-article</alias>
+    <introtext><![CDATA[<p>Article used to verify keep_id and keep_data settings.</p>]]></introtext>
+    <fulltext><![CDATA[]]></fulltext>
+    <state>1</state>
+    <catid>10</catid>
+    <created>2024-03-01 10:00:00</created>
+    <created_by>50</created_by>
+    <modified>2024-03-01 10:00:00</modified>
+    <modified_by>50</modified_by>
+    <metakey>keep-id, test</metakey>
+    <metadesc>Article used by import settings tests.</metadesc>
+    <language>*</language>
+    <featured>0</featured>
+    <hits>0</hits>
+    <publish_up>2024-03-01 10:00:00</publish_up>
     <publish_down>0000-00-00 00:00:00</publish_down>
     <access>1</access>
   </content>

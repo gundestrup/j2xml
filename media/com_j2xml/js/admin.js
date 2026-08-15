@@ -17,6 +17,7 @@
 'use strict';
 
 // URL import form submission
+if (typeof Joomla !== 'undefined') {
 Joomla.submitbutton4 = function () {
     const form = document.getElementById('adminForm');
 
@@ -41,6 +42,7 @@ Joomla.submitbuttonpackage = function () {
         form.submit();
     }
 };
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     // Position the loading overlay

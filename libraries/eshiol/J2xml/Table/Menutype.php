@@ -22,7 +22,7 @@ namespace eshiol\J2xml\Table;
  * Menutype Table
  *
  */
-class Menutype extends \eshiol\J2XML\Table\Table
+class Menutype extends \eshiol\J2xml\Table\Table
 {
 
 	/**

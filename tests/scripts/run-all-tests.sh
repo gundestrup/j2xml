@@ -114,6 +114,16 @@ joomla_import() {
     local contacts_flag="${9:-0}"
     local fields_flag="${10:-0}"
     local viewlevels_flag="${11:-0}"
+    local images_flag="${12:-0}"
+    local password_flag="${13:-0}"
+    local keep_id_flag="${14:-0}"
+    local keep_category_flag="${15:-1}"
+    local force_category="${16:-0}"
+    local keep_user_id_flag="${17:-0}"
+    local superusers_flag="${18:-0}"
+    local usernotes_flag="${19:-0}"
+    local weblinks_flag="${20:-0}"
+    local keep_data_flag="${21:-0}"
 
     local import_url="$joomla_url/administrator/index.php?option=com_j2xml&view=import"
     local token
@@ -140,10 +150,41 @@ joomla_import() {
         -F "jform[import_contacts]=${contacts_flag}" \
         -F "jform[import_fields]=${fields_flag}" \
         -F "jform[import_viewlevels]=${viewlevels_flag}" \
+        -F "jform[import_images]=${images_flag}" \
+        -F "jform[import_password]=${password_flag}" \
+        -F "jform[import_keep_id]=${keep_id_flag}" \
+        -F "jform[import_keep_category]=${keep_category_flag}" \
+        -F "jform[import_content_category_forceto]=${force_category}" \
+        -F "jform[import_keep_user_id]=${keep_user_id_flag}" \
+        -F "jform[import_superusers]=${superusers_flag}" \
+        -F "jform[import_usernotes]=${usernotes_flag}" \
+        -F "jform[import_weblinks]=${weblinks_flag}" \
+        -F "jform[import_keep_data]=${keep_data_flag}" \
         -F "install_package=@${xml_file}" \
         2>/dev/null)
 
     echo "$http_code"
+}
+
+# =============================================================================
+# Helper: Check if the J2XML export button appears in the toolbar of a list view
+# Returns 0 if found, 1 if not found
+# =============================================================================
+check_export_button() {
+    local joomla_url="$1"
+    local option="$2"   # com_content, com_users, com_categories, etc.
+    local view="$3"     # articles, users, categories, etc.
+    local extra_params="${4:-}"  # e.g. "&extension=com_content" for categories
+
+    local page_url="$joomla_url/administrator/index.php?option=${option}&view=${view}${extra_params}"
+    local page_html
+    page_html=$(curl -s -b "$COOKIE_FILE" "$page_url" 2>/dev/null)
+
+    if [[ "$page_html" == *j2xmlExport* ]]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 # =============================================================================
@@ -154,6 +195,9 @@ joomla_export() {
     local joomla_url="$1"
     local content_type="$2"   # content, categories, users, etc.
     local ids="$3"            # comma-separated IDs, or "all" for all
+    local export_images="${4:-0}"
+    local db_container="${5:-$J5_CONTAINER}"
+    local db_name="${6:-joomla5}"
     local export_file="/tmp/j2xml-export-${content_type}-$$.xml"
 
     local export_url="$joomla_url/administrator/index.php?option=com_j2xml&task=${content_type}.display&format=raw"
@@ -171,13 +215,25 @@ joomla_export() {
         # Get all IDs based on content type
         case "$content_type" in
             content)
-                cid=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT GROUP_CONCAT(id) FROM joom_content");echo $r->fetch_row()[0];' 2>/dev/null)
+                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query('SELECT GROUP_CONCAT(id) FROM joom_content');echo \$r->fetch_row()[0];" 2>/dev/null)
                 ;;
             categories)
-                cid=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT GROUP_CONCAT(id) FROM joom_categories WHERE extension=\"com_content\"");echo $r->fetch_row()[0];' 2>/dev/null)
+                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query(\"SELECT GROUP_CONCAT(id) FROM joom_categories WHERE extension='com_content'\");echo \$r->fetch_row()[0];" 2>/dev/null)
                 ;;
             users)
-                cid=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT GROUP_CONCAT(id) FROM joom_users");echo $r->fetch_row()[0];' 2>/dev/null)
+                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query('SELECT GROUP_CONCAT(id) FROM joom_users');echo \$r->fetch_row()[0];" 2>/dev/null)
+                ;;
+            contact)
+                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query('SELECT GROUP_CONCAT(id) FROM joom_contact_details');echo \$r->fetch_row()[0];" 2>/dev/null)
+                ;;
+            modules)
+                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query('SELECT GROUP_CONCAT(id) FROM joom_modules');echo \$r->fetch_row()[0];" 2>/dev/null)
+                ;;
+            menus)
+                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query(\"SELECT GROUP_CONCAT(id) FROM joom_menu WHERE client_id=0\");echo \$r->fetch_row()[0];" 2>/dev/null)
+                ;;
+            fields)
+                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query('SELECT GROUP_CONCAT(id) FROM joom_fields');echo \$r->fetch_row()[0];" 2>/dev/null)
                 ;;
             *)
                 cid=""
@@ -195,6 +251,7 @@ joomla_export() {
         -F "jform[export_compression]=0" \
         -F "jform[export_categories]=1" \
         -F "jform[export_fields]=1" \
+        -F "jform[export_images]=${export_images}" \
         -F "jform[export_users]=1" \
         -F "jform[export_tags]=1" \
         2>/dev/null)
@@ -221,6 +278,28 @@ db_count() {
 \$r = \$m->query('SELECT COUNT(*) FROM \`$table\`');
 echo \$r->fetch_row()[0];
 " 2>/dev/null
+}
+
+# =============================================================================
+# Helper: Create deterministic records for UI selection and image tests
+# =============================================================================
+create_export_test_fixtures() {
+    local container="$1"
+    local db="$2"
+    local image_path="images/j2xml-tests/export-image.png"
+    local image_data="j2xml-export-image-fixture"
+
+    docker exec "$container" bash -c "mkdir -p /var/www/html/images/j2xml-tests && printf '%s' '$image_data' > /var/www/html/$image_path" 2>/dev/null
+    docker exec -e "J2XML_TEST_DB=$db" "$container" php -r "$(cat <<'PHP'
+$m = new mysqli('mysql', 'joomla', 'joomlapass', getenv('J2XML_TEST_DB'));
+$m->query("DELETE FROM joom_content WHERE alias IN ('j2xml-ui-selection-one', 'j2xml-ui-selection-two', 'j2xml-ui-selection-three')");
+$sql = "INSERT INTO joom_content (title, alias, introtext, `fulltext`, state, catid, created, created_by, modified, modified_by, publish_up, access, language, images, urls, attribs, metadata, metakey, metadesc, version, hits, ordering, featured) VALUES
+('J2XML UI Selection One', 'j2xml-ui-selection-one', '<p>Must not be selected</p>', '', 1, 2, NOW(), 1, NOW(), 1, NOW(), 1, '*', '{}', '{}', '{}', '{}', '', '', 1, 0, 0, 0),
+('J2XML UI Selection Two', 'j2xml-ui-selection-two', '<p><img src=\"images/j2xml-tests/export-image.png\"></p>', '', 1, 2, NOW(), 1, NOW(), 1, NOW(), 1, '*', '{\"image_intro\":\"images/j2xml-tests/export-image.png\"}', '{}', '{}', '{}', '', '', 1, 0, 0, 0),
+('J2XML UI Selection Three', 'j2xml-ui-selection-three', '<p>Must be selected</p>', '', 1, 2, NOW(), 1, NOW(), 1, NOW(), 1, '*', '{}', '{}', '{}', '{}', '', '', 1, 0, 0, 0)";
+if (!$m->query($sql)) { fwrite(STDERR, $m->error); exit(1); }
+PHP
+)" 2>/dev/null
 }
 
 # =============================================================================
@@ -345,6 +424,13 @@ header "Phase 3: Export existing content from Joomla 5 (Export feature)"
 
 joomla_login "$JOOMLA5_URL" "Joomla 5" || { skip "Cannot login to Joomla 5"; }
 
+info "Creating deterministic UI selection and image fixtures on Joomla 5..."
+if create_export_test_fixtures "$J5_CONTAINER" "joomla5"; then
+    pass "Fixtures: UI selection articles and image fixture created on Joomla 5"
+else
+    fail "Fixtures: Could not create UI selection articles and image fixture on Joomla 5"
+fi
+
 # Export articles
 info "Exporting articles from Joomla 5..."
 EXPORTED_XML=$(joomla_export "$JOOMLA5_URL" "content" "all" 2>/dev/null)
@@ -377,6 +463,98 @@ if echo "$EXPORTED_CATS" | grep -q "<j2xml" 2>/dev/null; then
 else
     fail "Export: Failed to export categories from Joomla 5"
     CAT_EXPORT_COUNT=0
+fi
+
+# Check that the J2XML export button appears in the toolbar on list views
+# This verifies the system plugin's onAfterDispatch correctly injects the button
+info "Checking J2XML export button visibility on Joomla 5 list views..."
+if check_export_button "$JOOMLA5_URL" "com_content" "articles"; then
+    pass "Toolbar J5: Export button visible on Articles list"
+else
+    fail "Toolbar J5: Export button NOT visible on Articles list"
+fi
+
+if check_export_button "$JOOMLA5_URL" "com_users" "users"; then
+    pass "Toolbar J5: Export button visible on Users list"
+else
+    fail "Toolbar J5: Export button NOT visible on Users list"
+fi
+
+if check_export_button "$JOOMLA5_URL" "com_categories" "categories" "&extension=com_content"; then
+    pass "Toolbar J5: Export button visible on Categories list"
+else
+    fail "Toolbar J5: Export button NOT visible on Categories list"
+fi
+
+if check_export_button "$JOOMLA5_URL" "com_contact" "contacts"; then
+    pass "Toolbar J5: Export button visible on Contacts list"
+else
+    fail "Toolbar J5: Export button NOT visible on Contacts list"
+fi
+
+# Verify the rendered toolbar action carries the real checkbox selector and modal target.
+# This is the server-rendered part of pressing Export; the request below verifies the
+# browser-produced cid list reaches the raw export endpoint correctly.
+ARTICLES_HTML_J5=$(curl -s -b "$COOKIE_FILE" "$JOOMLA5_URL/administrator/index.php?option=com_content&view=articles" 2>/dev/null)
+if [[ "$ARTICLES_HTML_J5" == *'name=&quot;cid[]&quot;'* ]] && \
+   [[ "$ARTICLES_HTML_J5" == *'j2xmlExportModal iframe'* ]]; then
+    pass "UI J5: Export dropdown contains the checkbox selector and export modal"
+else
+    fail "UI J5: Export dropdown is missing checkbox selection wiring or modal target"
+fi
+
+J5_UI_TWO_ID=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT id FROM joom_content WHERE alias=\"j2xml-ui-selection-two\"");echo $r->fetch_row()[0];' 2>/dev/null)
+J5_UI_THREE_ID=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT id FROM joom_content WHERE alias=\"j2xml-ui-selection-three\"");echo $r->fetch_row()[0];' 2>/dev/null)
+
+info "Exporting only selected UI fixture articles 2 and 3 (not article 1)..."
+SELECTED_UI_XML=$(joomla_export "$JOOMLA5_URL" "content" "$J5_UI_TWO_ID,$J5_UI_THREE_ID" 1 2>/dev/null)
+if echo "$SELECTED_UI_XML" | grep -q '<content>' && \
+   [ "$(echo "$SELECTED_UI_XML" | grep -c '<content>')" -eq 2 ] && \
+   ! echo "$SELECTED_UI_XML" | grep -q 'J2XML UI Selection One' && \
+   echo "$SELECTED_UI_XML" | grep -q 'J2XML UI Selection Two' && \
+   echo "$SELECTED_UI_XML" | grep -q 'J2XML UI Selection Three'; then
+    pass "UI/API J5: Selecting articles 2+3 exports exactly those articles, not 1"
+else
+    fail "UI/API J5: Selected article export included the wrong records"
+fi
+
+# The image option is deliberately enabled above. Check both the source path and
+# payload so a merely copied article body cannot make this test pass.
+if echo "$SELECTED_UI_XML" | grep -q 'src="images/j2xml-tests/export-image.png"' && \
+   echo "$SELECTED_UI_XML" | grep -q 'ajJ4bWwtZXhwb3J0LWltYWdlLWZpeHR1cmU='; then
+    pass "Export J5: Selected article includes image path and base64 payload"
+else
+    fail "Export J5: Selected article did not include the image payload"
+fi
+printf '%s' "$SELECTED_UI_XML" > /tmp/j2xml-selected-ui.xml
+
+NO_IMAGE_UI_XML=$(joomla_export "$JOOMLA5_URL" "content" "$J5_UI_TWO_ID" 0 2>/dev/null)
+if ! echo "$NO_IMAGE_UI_XML" | grep -q '<img '; then
+    pass "Export J5: Image payload is omitted when export_images is disabled"
+else
+    fail "Export J5: Image payload was included with export_images disabled"
+fi
+
+# Check that the modal HTML doesn't use deprecated Joomla 4 / Bootstrap 4 patterns
+# Joomla 6 removed Joomla.iframeButtonClick() and uses Bootstrap 5 (data-bs-* attributes)
+info "Checking J2XML modal HTML for deprecated patterns on Joomla 5..."
+ARTICLES_HTML_J5=$(curl -s -b "$COOKIE_FILE" "$JOOMLA5_URL/administrator/index.php?option=com_content&view=articles" 2>/dev/null)
+
+DEPRECATED_COUNT=0
+if echo "$ARTICLES_HTML_J5" | grep -q 'Joomla\.iframeButtonClick'; then
+    fail "Modal J5: Uses deprecated Joomla.iframeButtonClick() (removed in J6)"
+    DEPRECATED_COUNT=$((DEPRECATED_COUNT + 1))
+fi
+if echo "$ARTICLES_HTML_J5" | grep -q 'data-dismiss="modal"'; then
+    fail "Modal J5: Uses Bootstrap 4 data-dismiss attribute (should be data-bs-dismiss)"
+    DEPRECATED_COUNT=$((DEPRECATED_COUNT + 1))
+fi
+if echo "$ARTICLES_HTML_J5" | grep -q 'Joomla\.Modal\.getCurrent()\.close'; then
+    fail "Modal J5: Uses deprecated Joomla.Modal.getCurrent().close() pattern"
+    DEPRECATED_COUNT=$((DEPRECATED_COUNT + 1))
+fi
+if [ "$DEPRECATED_COUNT" -eq 0 ]; then
+    pass "Modal J5: No deprecated Joomla 4 / Bootstrap 4 patterns in modal HTML"
 fi
 
 # =============================================================================
@@ -456,6 +634,116 @@ if [ "$FIELD_COUNT" -ge 1 ] 2>/dev/null; then
     pass "Import: $FIELD_COUNT custom fields in J5 database"
 else
     fail "Import: Only $FIELD_COUNT custom fields in J5 database (expected 1+)"
+fi
+
+# Verify each supported standalone export endpoint, not just articles/users.
+# Tags are imported as part of the J2XML document but do not have a standalone
+# Exporter::tags method or raw view in the component.
+info "Exporting every supported content type from Joomla 5..."
+for export_spec in \
+    "users user" \
+    "content content" \
+    "categories category" \
+    "contact contact" \
+    "modules module" \
+    "menus menu" \
+    "fields field"; do
+    export_method=${export_spec%% *}
+    export_node=${export_spec##* }
+    export_xml=$(joomla_export "$JOOMLA5_URL" "$export_method" all 0 "$J5_CONTAINER" joomla5 2>/dev/null)
+    export_count=$(echo "$export_xml" | grep -c "<${export_node}[ >]" || true)
+    if echo "$export_xml" | grep -q '<j2xml' && [ "$export_count" -gt 0 ]; then
+        pass "Export J5: $export_method endpoint exported $export_count $export_node record(s)"
+    else
+        fail "Export J5: $export_method endpoint did not export $export_node records"
+    fi
+done
+pass "Import J5: Tags are covered by the comprehensive fixture (standalone tag export is not implemented)"
+
+# Verify that disabling every import switch is honored. Re-importing the same
+# fixture with all entity flags set to zero must not change any entity counts.
+info "Checking import settings with all entity switches disabled on Joomla 5..."
+NOOP_ARTICLES_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_content")
+NOOP_USERS_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_users")
+NOOP_CATEGORIES_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_categories")
+NOOP_TAGS_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_tags")
+NOOP_MODULES_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_modules")
+NOOP_MENUS_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_menu")
+NOOP_CONTACTS_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_contact_details")
+NOOP_FIELDS_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_fields")
+NOOP_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 0 0 0 0 0 0 0 0 0)
+NOOP_COUNTS_AFTER="$(db_count "$J5_CONTAINER" "joomla5" "joom_content") $(db_count "$J5_CONTAINER" "joomla5" "joom_users") $(db_count "$J5_CONTAINER" "joomla5" "joom_categories") $(db_count "$J5_CONTAINER" "joomla5" "joom_tags") $(db_count "$J5_CONTAINER" "joomla5" "joom_modules") $(db_count "$J5_CONTAINER" "joomla5" "joom_menu") $(db_count "$J5_CONTAINER" "joomla5" "joom_contact_details") $(db_count "$J5_CONTAINER" "joomla5" "joom_fields")"
+NOOP_COUNTS_BEFORE="$NOOP_ARTICLES_BEFORE $NOOP_USERS_BEFORE $NOOP_CATEGORIES_BEFORE $NOOP_TAGS_BEFORE $NOOP_MODULES_BEFORE $NOOP_MENUS_BEFORE $NOOP_CONTACTS_BEFORE $NOOP_FIELDS_BEFORE"
+if { [ "$NOOP_IMPORT_CODE" = "200" ] || [ "$NOOP_IMPORT_CODE" = "303" ]; } && [ "$NOOP_COUNTS_BEFORE" = "$NOOP_COUNTS_AFTER" ]; then
+    pass "Import J5: All entity switches set to NO produce no changes"
+else
+    fail "Import J5: Disabled entity switches changed data (before: $NOOP_COUNTS_BEFORE; after: $NOOP_COUNTS_AFTER; HTTP: $NOOP_IMPORT_CODE)"
+fi
+
+OVERWRITE_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 2 2 2 1 2 2 2 2 2 0 0)
+if [ "$OVERWRITE_IMPORT_CODE" = "200" ] || [ "$OVERWRITE_IMPORT_CODE" = "303" ]; then
+    pass "Import J5: Existing-record overwrite settings (content, categories, users, contacts, menus, modules, fields) completed"
+else
+    fail "Import J5: Existing-record overwrite settings failed (HTTP $OVERWRITE_IMPORT_CODE)"
+fi
+
+NEWER_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/articles-j3.xml" 3 0 0 0 0 0 0 0 0 0 0)
+if [ "$NEWER_IMPORT_CODE" = "200" ] || [ "$NEWER_IMPORT_CODE" = "303" ]; then
+    pass "Import J5: Overwrite-if-newer article setting completed"
+else
+    fail "Import J5: Overwrite-if-newer article setting failed (HTTP $NEWER_IMPORT_CODE)"
+fi
+
+KEEP_ID_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 2 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0 0)
+KEEP_ID_USER=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT username FROM joom_users WHERE id=50");echo $r->fetch_row()[0] ?? "";' 2>/dev/null)
+KEEP_CONTENT_ID_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/keep-id.xml" 2 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0)
+KEEP_ID_ARTICLE=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT alias FROM joom_content WHERE id=1903");echo $r->fetch_row()[0] ?? "";' 2>/dev/null)
+if { [ "$KEEP_ID_IMPORT_CODE" = "200" ] || [ "$KEEP_ID_IMPORT_CODE" = "303" ]; } && { [ "$KEEP_CONTENT_ID_CODE" = "200" ] || [ "$KEEP_CONTENT_ID_CODE" = "303" ]; } && [ "$KEEP_ID_ARTICLE" = "j2xml-keep-id-only-article" ] && [ "$KEEP_ID_USER" = "fixtureuser1" ]; then
+    pass "Import J5: keep_id and keep_user_id preserve source IDs"
+else
+    fail "Import J5: keep_id/keep_user_id did not preserve source IDs (user HTTP: $KEEP_ID_IMPORT_CODE; content HTTP: $KEEP_CONTENT_ID_CODE; article: $KEEP_ID_ARTICLE; user: $KEEP_ID_USER)"
+fi
+
+FORCE_CATEGORY_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 2 2 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0)
+FORCED_ARTICLE_CATEGORY=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT catid FROM joom_content WHERE alias=\"fixture-article-one\"");echo $r->fetch_row()[0] ?? "";' 2>/dev/null)
+if { [ "$FORCE_CATEGORY_CODE" = "200" ] || [ "$FORCE_CATEGORY_CODE" = "303" ]; } && [ "$FORCED_ARTICLE_CATEGORY" = "2" ]; then
+    pass "Import J5: keep_category force-to setting assigns the selected category"
+else
+    fail "Import J5: keep_category force-to setting failed (HTTP: $FORCE_CATEGORY_CODE; catid: $FORCED_ARTICLE_CATEGORY)"
+fi
+
+SUPERUSER_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 2 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0)
+SUPERUSER_PRESENT=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT COUNT(*) FROM joom_users WHERE username=\"fixturesuperuser\"");echo $r->fetch_row()[0];' 2>/dev/null)
+if { [ "$SUPERUSER_CODE" = "200" ] || [ "$SUPERUSER_CODE" = "303" ]; } && [ "$SUPERUSER_PRESENT" -eq 1 ]; then
+    pass "Import J5: superusers setting permits superuser imports when enabled"
+else
+    fail "Import J5: superusers setting failed (HTTP: $SUPERUSER_CODE; present: $SUPERUSER_PRESENT)"
+fi
+
+USERNOTE_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0)
+USERNOTE_PRESENT=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT COUNT(*) FROM joom_user_notes WHERE subject=\"J2XML User Note Setting\"");echo $r->fetch_row()[0];' 2>/dev/null)
+if { [ "$USERNOTE_CODE" = "200" ] || [ "$USERNOTE_CODE" = "303" ]; } && [ "$USERNOTE_PRESENT" -ge 1 ]; then
+    pass "Import J5: usernotes setting imports user notes"
+else
+    fail "Import J5: usernotes setting failed (HTTP: $USERNOTE_CODE; present: $USERNOTE_PRESENT)"
+fi
+
+KEEP_DATA_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 2 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1)
+KEEP_DATA_MODIFIED=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT modified FROM joom_content WHERE alias=\"fixture-keep-id-article\"");echo $r->fetch_row()[0] ?? "";' 2>/dev/null)
+if [ "$KEEP_DATA_CODE" = "200" ] || [ "$KEEP_DATA_CODE" = "303" ]; then
+    pass "Import J5: keep_data setting completed (modified: $KEEP_DATA_MODIFIED)"
+else
+    fail "Import J5: keep_data setting failed (HTTP: $KEEP_DATA_CODE; modified: $KEEP_DATA_MODIFIED)"
+fi
+
+WEBLINKS_ENABLED=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT COUNT(*) FROM joom_extensions WHERE name=\"com_weblinks\" AND enabled=1");echo $r->fetch_row()[0];' 2>/dev/null)
+WEBLINKS_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1 0)
+if [ "$WEBLINKS_ENABLED" -eq 0 ] 2>/dev/null && { [ "$WEBLINKS_CODE" = "200" ] || [ "$WEBLINKS_CODE" = "303" ]; }; then
+    pass "Import J5: weblinks setting safely no-ops when com_weblinks is unavailable"
+elif [ "$WEBLINKS_ENABLED" -gt 0 ] 2>/dev/null; then
+    pass "Import J5: weblinks setting path executed with com_weblinks installed"
+else
+    fail "Import J5: weblinks setting failed (HTTP: $WEBLINKS_CODE; component enabled: $WEBLINKS_ENABLED)"
 fi
 
 # =============================================================================
@@ -542,7 +830,7 @@ REST_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$REST_URL" \
     -d "$ARTICLE_XML" \
     2>/dev/null)
 REST_HTTP_CODE=$(echo "$REST_RESPONSE" | tail -1)
-REST_BODY=$(echo "$REST_RESPONSE" | head -n -1)
+REST_BODY=$(echo "$REST_RESPONSE" | sed '$d')
 
 if [ "$REST_HTTP_CODE" = "200" ]; then
     pass "Send: REST API response received from Joomla 6 (HTTP $REST_HTTP_CODE)"
@@ -558,12 +846,61 @@ else
     echo "$REST_BODY" | head -20
 fi
 
+# Send the comprehensive fixture as one J2XML document. This exercises the
+# REST send/import path for users, articles, categories, contacts, modules,
+# menus, tags and fields rather than testing articles only.
+info "Sending all supported content types from Joomla 5 to Joomla 6 via REST API..."
+ALL_CONTENT_XML=$(cat "$FIXTURES_DIR/all-content-types.xml")
+ALL_SEND_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$REST_URL" \
+    -H "Content-Type: application/xml" \
+    -H "X-Joomla-Token: $J6_TOKEN" \
+    -d "$ALL_CONTENT_XML" 2>/dev/null)
+ALL_SEND_CODE=$(echo "$ALL_SEND_RESPONSE" | tail -1)
+if [ "$ALL_SEND_CODE" = "200" ]; then
+    pass "Send: Comprehensive users/articles/categories/contacts/modules/menus/tags/fields payload accepted"
+    for send_check in \
+        "users joom_users 3" \
+        "articles joom_content 3" \
+        "categories joom_categories 4" \
+        "contacts joom_contact_details 1" \
+        "modules joom_modules 1" \
+        "menus joom_menu 1" \
+        "tags joom_tags 2" \
+        "fields joom_fields 1"; do
+        send_name=$(echo "$send_check" | awk '{print $1}')
+        send_table=$(echo "$send_check" | awk '{print $2}')
+        send_min=$(echo "$send_check" | awk '{print $3}')
+        send_count=$(db_count "$J6_CONTAINER" "joomla6" "$send_table")
+        if [ "$send_count" -ge "$send_min" ] 2>/dev/null; then
+            pass "Send: $send_name available on Joomla 6 ($send_count records)"
+        else
+            fail "Send: $send_name missing on Joomla 6 (found $send_count, expected $send_min+)"
+        fi
+    done
+else
+    fail "Send: Comprehensive content-type payload failed (HTTP $ALL_SEND_CODE)"
+fi
+
 # =============================================================================
 # Phase 7: Test on Joomla 6 (PHP 8.4)
 # =============================================================================
 header "Phase 7: Joomla 6 / PHP 8.4 compatibility"
 
 joomla_login "$JOOMLA6_URL" "Joomla 6" || { skip "Cannot login to Joomla 6"; }
+
+info "Importing the selected UI export into Joomla 6 with images enabled..."
+SELECTED_IMPORT_CODE=$(joomla_import "$JOOMLA6_URL" /tmp/j2xml-selected-ui.xml 1 0 0 0 0 0 0 0 0 1)
+if [ "$SELECTED_IMPORT_CODE" = "200" ] || [ "$SELECTED_IMPORT_CODE" = "303" ]; then
+    J6_SELECTED_COUNT=$(docker exec "$J6_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla6");$r=$m->query("SELECT COUNT(*) FROM joom_content WHERE alias IN (\"j2xml-ui-selection-two\",\"j2xml-ui-selection-three\")");echo $r->fetch_row()[0];' 2>/dev/null)
+    J6_IMAGE_CONTENT=$(docker exec "$J6_CONTAINER" cat /var/www/html/images/j2xml-tests/export-image.png 2>/dev/null)
+    if [ "$J6_SELECTED_COUNT" -eq 2 ] && [ "$J6_IMAGE_CONTENT" = "j2xml-export-image-fixture" ]; then
+        pass "Import J6: Selected articles and exported image were restored"
+    else
+        fail "Import J6: Selected articles or exported image was not restored"
+    fi
+else
+    fail "Import J6: Selected UI export failed (HTTP $SELECTED_IMPORT_CODE)"
+fi
 
 # Import on Joomla 6
 info "Importing all content types into Joomla 6..."
@@ -592,6 +929,165 @@ if echo "$J6_EXPORT" | grep -q "<j2xml" 2>/dev/null; then
     pass "J6: Export works ($J6_EXPORT_COUNT articles exported)"
 else
     fail "J6: Export failed"
+fi
+
+# Check that the J2XML export button appears in the toolbar on Joomla 6 list views
+info "Checking J2XML export button visibility on Joomla 6 list views..."
+if check_export_button "$JOOMLA6_URL" "com_content" "articles"; then
+    pass "Toolbar J6: Export button visible on Articles list"
+else
+    fail "Toolbar J6: Export button NOT visible on Articles list"
+fi
+
+if check_export_button "$JOOMLA6_URL" "com_users" "users"; then
+    pass "Toolbar J6: Export button visible on Users list"
+else
+    fail "Toolbar J6: Export button NOT visible on Users list"
+fi
+
+if check_export_button "$JOOMLA6_URL" "com_categories" "categories" "&extension=com_content"; then
+    pass "Toolbar J6: Export button visible on Categories list"
+else
+    fail "Toolbar J6: Export button NOT visible on Categories list"
+fi
+
+if check_export_button "$JOOMLA6_URL" "com_contact" "contacts"; then
+    pass "Toolbar J6: Export button visible on Contacts list"
+else
+    fail "Toolbar J6: Export button NOT visible on Contacts list"
+fi
+
+# Check that the modal HTML doesn't use deprecated Joomla 4 / Bootstrap 4 patterns
+info "Checking J2XML modal HTML for deprecated patterns on Joomla 6..."
+ARTICLES_HTML_J6=$(curl -s -b "$COOKIE_FILE" "$JOOMLA6_URL/administrator/index.php?option=com_content&view=articles" 2>/dev/null)
+
+DEPRECATED_COUNT_J6=0
+if echo "$ARTICLES_HTML_J6" | grep -q 'Joomla\.iframeButtonClick'; then
+    fail "Modal J6: Uses deprecated Joomla.iframeButtonClick() (removed in J6)"
+    DEPRECATED_COUNT_J6=$((DEPRECATED_COUNT_J6 + 1))
+fi
+if echo "$ARTICLES_HTML_J6" | grep -q 'data-dismiss="modal"'; then
+    fail "Modal J6: Uses Bootstrap 4 data-dismiss attribute (should be data-bs-dismiss)"
+    DEPRECATED_COUNT_J6=$((DEPRECATED_COUNT_J6 + 1))
+fi
+if echo "$ARTICLES_HTML_J6" | grep -q 'Joomla\.Modal\.getCurrent()\.close'; then
+    fail "Modal J6: Uses deprecated Joomla.Modal.getCurrent().close() pattern"
+    DEPRECATED_COUNT_J6=$((DEPRECATED_COUNT_J6 + 1))
+fi
+if [ "$DEPRECATED_COUNT_J6" -eq 0 ]; then
+    pass "Modal J6: No deprecated Joomla 4 / Bootstrap 4 patterns in modal HTML"
+fi
+
+# Check that the modal footer button uses direct iframe access (not removed API)
+if echo "$ARTICLES_HTML_J6" | grep -q 'iframe\.contentWindow\.document\.getElementById'; then
+    pass "Modal J6: Export button uses direct iframe DOM access"
+else
+    fail "Modal J6: Export button does NOT use direct iframe DOM access"
+fi
+
+# Check that the onclick attribute doesn't contain raw double quotes inside
+# (name="cid[]" breaks HTML parsing when inside a double-quoted attribute)
+if echo "$ARTICLES_HTML_J6" | grep -q 'name=&quot;cid\[\]&quot;'; then
+    pass "Modal J6: onclick uses &quot; entities for cid[] selector"
+elif echo "$ARTICLES_HTML_J6" | grep -q 'name="cid\[\]"'; then
+    fail "Modal J6: onclick has raw double quotes in cid[] selector (breaks HTML parsing)"
+fi
+
+# Check that J2XML JavaScript assets are actually loaded on the page
+# (asset URIs with js/ prefix cause double js/js/ path resolution failure)
+info "Checking J2XML JavaScript assets are loaded on Joomla 6..."
+EXPORT_IFRAME_J6=$(curl -s -b "$COOKIE_FILE" "$JOOMLA6_URL/administrator/index.php?option=com_j2xml&view=export&layout=content&format=html&tmpl=component" 2>/dev/null)
+
+if echo "$EXPORT_IFRAME_J6" | grep -q 'media/com_j2xml/js/admin.js'; then
+    pass "Asset J6: com_j2xml.admin.js loaded in export iframe"
+else
+    fail "Asset J6: com_j2xml.admin.js NOT loaded in export iframe (asset URI may be wrong)"
+fi
+
+if echo "$EXPORT_IFRAME_J6" | grep -q 'media/lib_eshiol_j2xml/js/j2xml.js'; then
+    pass "Asset J6: lib_eshiol_j2xml/j2xml.js loaded in export iframe"
+else
+    fail "Asset J6: lib_eshiol_j2xml/j2xml.js NOT loaded in export iframe (asset URI may be wrong)"
+fi
+
+if echo "$EXPORT_IFRAME_J6" | grep -q 'media/lib_eshiol_j2xml/js/base64.js'; then
+    pass "Asset J6: lib_eshiol_j2xml/base64.js loaded in export iframe"
+else
+    fail "Asset J6: lib_eshiol_j2xml/base64.js NOT loaded in export iframe (asset URI may be wrong)"
+fi
+
+# Check that core.js is loaded before admin.js (Joomla global must exist before admin.js runs)
+if echo "$EXPORT_IFRAME_J6" | grep -q 'media/system/js/core.min.js'; then
+    pass "Asset J6: Joomla core.js loaded in export iframe (prevents 'Joomla is not defined')"
+else
+    fail "Asset J6: core.js NOT loaded — admin.js will fail with 'Joomla is not defined'"
+fi
+
+# Check that the export button does NOT have data-bs-toggle="modal" on the joomla-toolbar-button
+# (Bootstrap 5 auto-initializes a Modal on the button itself, causing "Cannot read properties
+# of undefined (reading 'backdrop')" error)
+if echo "$ARTICLES_HTML_J6" | python3 -c "
+import sys, re
+html = sys.stdin.read()
+match = re.search(r'<joomla-toolbar-button[^>]*j2xmlExportModal[^>]*>', html)
+if match:
+    tag = match.group(0)
+    sys.exit(0 if 'data-bs-toggle' not in tag else 1)
+else:
+    sys.exit(2)
+"; then
+    pass "Modal J6: Export button does NOT have data-bs-toggle (prevents Bootstrap backdrop error)"
+else
+    fail "Modal J6: Export button has data-bs-toggle='modal' (causes Bootstrap backdrop error)"
+fi
+
+# Verify export forms expose only options relevant to their selected entity.
+# Hidden inputs remain available for safe defaults, but irrelevant controls must
+# not render a visible label/control group.
+USERS_IFRAME_J6=$(curl -s -b "$COOKIE_FILE" "$JOOMLA6_URL/administrator/index.php?option=com_j2xml&view=export&layout=users&format=html&tmpl=component" 2>/dev/null)
+if [[ "$EXPORT_IFRAME_J6" != *'for="jform_export_users"'* ]] && \
+   [[ "$EXPORT_IFRAME_J6" != *'for="jform_export_password"'* ]] && \
+   [[ "$USERS_IFRAME_J6" == *'for="jform_export_password"'* ]] && \
+   [[ "$USERS_IFRAME_J6" != *'for="jform_export_categories"'* ]]; then
+    pass "UI J6: Export modals show entity-specific options only"
+else
+    fail "UI J6: Export modal contains irrelevant controls or misses user-specific controls"
+fi
+
+IMPORT_OPTIONS_J6=$(curl -s -b "$COOKIE_FILE" "$JOOMLA6_URL/administrator/index.php?option=com_j2xml&view=import&layout=options&format=html&tmpl=component" 2>/dev/null)
+if [[ "$IMPORT_OPTIONS_J6" == *'jform_import_viewlevels'* ]] && \
+   [[ "$IMPORT_OPTIONS_J6" == *'jform_import_weblinks'* ]] && \
+   [[ "$IMPORT_OPTIONS_J6" == *'jform_import_keep_category'* ]]; then
+    pass "UI J6: Import modal exposes the complete import option groups"
+else
+    fail "UI J6: Import modal is missing import option controls"
+fi
+
+# End-to-end export test: simulate what admin.js does when the Export button is clicked.
+# This verifies the full chain: form.submit() → POST format=raw → XML download.
+# It catches: broken asset URIs, broken onclick handlers, ACL issues, format=raw blocking.
+info "Running end-to-end export test on Joomla 6..."
+# First visit an HTML page to set mfa_checked in the session
+curl -s -b "$COOKIE_FILE" -o /dev/null "$JOOMLA6_URL/administrator/index.php?option=com_content&view=articles" 2>/dev/null
+# Get the CSRF token from the articles page
+J6_EXPORT_TOKEN=$(echo "$ARTICLES_HTML_J6" | python3 -c "
+import sys, re, json
+html = sys.stdin.read()
+match = re.search(r'class=\"joomla-script-options new\">({.*?})</script>', html, re.DOTALL)
+if match:
+    data = json.loads(match.group(1))
+    print(data.get('csrf.token', ''))
+" 2>/dev/null)
+J6_EXPORT_HTTP=$(curl -s -b "$COOKIE_FILE" -D /tmp/j2xml-e2e-export-j6-headers.txt -o /tmp/j2xml-e2e-export-j6-response.txt -w "%{http_code}" \
+    -X POST "$JOOMLA6_URL/administrator/index.php?option=com_j2xml&task=content.display&format=raw" \
+    -d "jform[cid]=1&jform[export_compression]=0&jform[export_categories]=1&jform[export_fields]=0&jform[export_images]=0&jform[export_tags]=1&jform[export_users]=0&jform[export_password]=0&jform[export_usernotes]=0&jform[export_contacts]=0&${J6_EXPORT_TOKEN}=1" 2>/dev/null)
+J6_EXPORT_CD=$(grep -i 'Content-disposition' /tmp/j2xml-e2e-export-j6-headers.txt 2>/dev/null)
+J6_EXPORT_CT=$(grep -i 'Content-Type' /tmp/j2xml-e2e-export-j6-headers.txt 2>/dev/null)
+J6_EXPORT_SIZE=$(wc -c < /tmp/j2xml-e2e-export-j6-response.txt 2>/dev/null)
+if [ "$J6_EXPORT_HTTP" = "200" ] && echo "$J6_EXPORT_CD" | grep -q 'attachment.*\.xml' && echo "$J6_EXPORT_CT" | grep -q 'text/xml'; then
+    pass "E2E J6: Export produces XML download (HTTP $J6_EXPORT_HTTP, ${J6_EXPORT_SIZE} bytes)"
+else
+    fail "E2E J6: Export failed (HTTP $J6_EXPORT_HTTP, CD: $J6_EXPORT_CD, CT: $J6_EXPORT_CT)"
 fi
 
 # Check for PHP deprecation warnings

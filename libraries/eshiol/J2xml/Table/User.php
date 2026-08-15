@@ -173,6 +173,7 @@ class User extends Table
 
 		$import_users = $params->get('users', 1);
 		$import_superusers = $params->get('superusers', 0);
+		$import_password = $params->get('password', 0);
 		if (!$import_users)
 			return;
 
@@ -222,18 +223,29 @@ class User extends Table
 				continue;
 			}
 
-			if (isset($data['password']))
+			$existingUserId = $db->setQuery(
+					$db->getQuery(true)
+						->select($db->quoteName('id'))
+						->from($db->quoteName('#__users'))
+						->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
+				->loadResult();
+
+			if ($import_password && isset($data['password']))
 			{
 				$data['password_crypted'] = $data['password'];
 				$data['password2'] = $data['password'] = \Joomla\CMS\Language\Text::_('LIB_J2XML_PASSWORD_NOT_AVAILABLE');
 			}
-			elseif (isset($data['password_clear']))
+			elseif ($import_password && isset($data['password_clear']))
 			{
 				$data['password'] = $data['password2'] = $data['password_clear'];
 			}
-			else
+			elseif (!$existingUserId)
 			{
 				$data['password'] = $data['password2'] = \Joomla\CMS\User\UserHelper::genRandomPassword();
+			}
+			else
+			{
+				unset($data['password'], $data['password2'], $data['password_clear'], $data['password_crypted']);
 			}
 
 			$userId = $data['id'];

@@ -135,7 +135,7 @@ class Importer
 	 *
 	 * @param \SimpleXMLElement $xml
 	 *			xml
-	 * @param \JRegistry $options
+	 * @param \Joomla\Registry\Registry $options
 	 *			An optional associative array of settings.
 	 *			@option boolean 'import_content' import articles
 	 *			@option int 'default_category'
@@ -177,6 +177,11 @@ class Importer
 		}
 
 		$import_content = $params->get('content');
+		$import_categories = $params->get('categories', 1);
+		if ($import_categories && !$import_content)
+		{
+			Category::import($xml, $params);
+		}
 		if ($import_content)
 		{
 			Content::import($xml, $params);

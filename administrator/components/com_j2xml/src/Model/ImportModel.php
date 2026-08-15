@@ -127,11 +127,36 @@ class ImportModel extends FormModel
 
 		Log::add(new LogEntry('package: ' . print_r($package, true), Log::DEBUG, 'com_j2xml'));
 
-		$data = new \stdClass();
+		if (!is_array($package) || empty($package['packagefile']) || !is_file($package['packagefile']))
+		{
+			$app->setUserState('com_j2xml.message', Text::_('COM_J2XML_MSG_IMPORT_WARNXMLUPLOADERROR'));
 
-		if (!($data->content = implode(gzfile($package['packagefile'])))) {
-			$data->content = file_get_contents($package['packagefile']);
+			return false;
 		}
+
+		$data = new \stdClass();
+		$rawData = file_get_contents($package['packagefile']);
+
+		if ($rawData === false)
+		{
+			$app->setUserState('com_j2xml.message', Text::_('COM_J2XML_MSG_IMPORT_WARNXMLUPLOADERROR'));
+
+			return false;
+		}
+
+		if (substr($rawData, 0, 2) === "\x1f\x8b")
+		{
+			$rawData = gzdecode($rawData);
+		}
+
+		if ($rawData === false)
+		{
+			$app->setUserState('com_j2xml.message', Text::_('COM_J2XML_MSG_IMPORT_WARNXMLUPLOADERROR'));
+
+			return false;
+		}
+
+		$data->content = $rawData;
 		Log::add(new LogEntry('data: ' . $data->content, Log::DEBUG, 'com_j2xml'));
 
 		$jform = Factory::getApplication()->input->post->get('jform', [], 'array');
@@ -148,6 +173,8 @@ class ImportModel extends FormModel
 		$params->set('content', $fparams->get('import_content', $cparams->get('import_content', 1)));
 		$params->set('fields', $fparams->get('import_fields', $cparams->get('import_fields', 0)));
 		$params->set('images', $fparams->get('import_images', $cparams->get('import_images', 0)));
+		$params->set('menus', $fparams->get('import_menus', $cparams->get('import_menus', 1)));
+		$params->set('modules', $fparams->get('import_modules', $cparams->get('import_modules', 1)));
 		$params->set('keep_category', $fparams->get('import_keep_category', $cparams->get('import_keep_category', 1)));
 		if ($params->get('keep_category') == 2)
 		{
@@ -155,6 +182,7 @@ class ImportModel extends FormModel
 		}
 		$params->set('keep_id', $fparams->get('import_keep_id', $cparams->get('import_keep_id', 0)));
 		$params->set('keep_user_id', $fparams->get('import_keep_user_id', $cparams->get('import_keep_user_id', 0)));
+		$params->set('password', $fparams->get('import_password', $cparams->get('import_password', 0)));
 		$params->set('tags', $fparams->get('import_tags', $cparams->get('import_tags', 1)));
 		$params->set('superusers', $fparams->get('import_superusers', $cparams->get('import_superusers', 0)));
 		$params->set('usernotes', $fparams->get('import_usernotes', $cparams->get('import_usernotes', 0)));
@@ -218,7 +246,10 @@ class ImportModel extends FormModel
 
 				$importer->import($xml, $params);
 
-				InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
+				if (in_array($installType, ['upload', 'url'], true))
+				{
+					InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
+				}
 			}
 			else
 			{
@@ -227,14 +258,17 @@ class ImportModel extends FormModel
 			}
 		}
 
-		// Cleanup the install files.
-		if (!is_file($package['packagefile']))
+		// Cleanup temporary upload/URL install files, but never a user-provided directory.
+		if (in_array($installType, ['upload', 'url'], true))
 		{
-			$config = Factory::getApplication()->getConfig();
-			$package['packagefile'] = $config->get('tmp_path') . '/' . $package['packagefile'];
-		}
+			if (!is_file($package['packagefile']))
+			{
+				$config = Factory::getApplication()->getConfig();
+				$package['packagefile'] = $config->get('tmp_path') . '/' . $package['packagefile'];
+			}
 
-		InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
+			InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
+		}
 
 		// Clear the cached extension data and menu cache
 		//$this->cleanCache('com_content', 0);
@@ -347,7 +381,15 @@ class ImportModel extends FormModel
 			return false;
 		}
 
-		$package['packagefile'] = null;
+		$files = glob($p_dir . '/*.xml');
+		if (!$files)
+		{
+			$app->enqueueMessage(Text::_('COM_J2XML_MSG_INSTALL_PLEASE_ENTER_A_PACKAGE_DIRECTORY'), 'warning');
+
+			return false;
+		}
+
+		$package['packagefile'] = $files[0];
 		$package['extractdir'] = null;
 		$package['dir'] = $p_dir;
 

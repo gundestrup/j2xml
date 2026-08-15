@@ -51,8 +51,7 @@ $validate = !empty($formValidation) ? ' form-validation' : '';
 ?>
 
 <joomla-toolbar-button<?php echo $id; ?> onclick="document.getElementById('<?php echo $selector; ?>Modal').open();
-	document.body.appendChild(document.getElementById('<?php echo $selector; ?>Modal'));"
-	data-toggle="modal">
+	document.body.appendChild(document.getElementById('<?php echo $selector; ?>Modal'));">
 <<?php echo $tagName; ?>
 	class="<?php echo $class ?? ''; ?>"
 	<?php echo $htmlAttributes ?? ''; ?>
@@ -73,11 +72,11 @@ echo HTMLHelper::_('bootstrap.renderModal',
 		'modalWidth'  => '40',
 		'height'	  => '310px',
 		'closeButton' => true,
-		'footer'	  => '<button class="btn btn-secondary" data-dismiss="modal" type="button"'
-					. ' onclick="window.parent.Joomla.Modal.getCurrent().close();">'
+		'footer'	  => '<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">'
 					. $cancel . '</button>'
 					.'<joomla-toolbar-button' . $validate
-					. ' onclick="' . $onclick . 'Joomla.iframeButtonClick({iframeSelector: \'#' . $selector . 'Modal\', buttonSelector: \'#' . $selector . 'OkBtn\'})">'
+					. ' onclick="' . $onclick . 'var iframe=document.querySelector(\'#' . $selector . 'Modal iframe\');if(iframe&&iframe.contentWindow){iframe.contentWindow.document.getElementById(\'' . $selector . 'OkBtn\').click();}"'
+					. '>'
 					. '<button class="btn btn-success" type="button">'
 					. $ok . '</button>'
 					.'</joomla-toolbar-button>'

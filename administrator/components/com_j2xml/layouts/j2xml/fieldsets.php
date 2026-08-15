@@ -25,6 +25,29 @@ use Joomla\CMS\Layout\LayoutHelper;
 
 extract($displayData);
 
+$relevantFields = [
+	'content'    => ['export_compression', 'export_categories', 'export_fields', 'export_images', 'export_tags'],
+	'categories' => ['export_compression', 'export_users', 'export_images', 'export_tags'],
+	'users'      => ['export_compression', 'export_password', 'export_usernotes', 'export_contacts', 'export_fields'],
+	'contact'    => ['export_compression', 'export_users', 'export_images', 'export_tags', 'export_categories'],
+	'fields'     => ['export_compression', 'export_users', 'export_categories'],
+	'menus'      => ['export_compression', 'export_categories', 'export_fields', 'export_images', 'export_tags'],
+	'modules'    => ['export_compression'],
+	'viewlevels' => ['export_compression'],
+	'usernotes'  => ['export_compression', 'export_users', 'export_images', 'export_categories'],
+	'weblinks'   => ['export_compression', 'export_users', 'export_images', 'export_tags', 'export_categories'],
+];
+$allowedFields = $relevantFields[$layout] ?? null;
+$fieldKey = static function ($field): string {
+	if (preg_match('/\\[([^\\]]+)\\]$/', $field->name, $matches))
+	{
+		return $matches[1];
+	}
+
+	return $field->name;
+};
+$fieldInputName = static fn($field): string => str_contains($field->name, '[') ? $field->name : 'jform[' . $field->name . ']';
+
 /** @var \Joomla\CMS\Form\Form $form */
 /** @var string $tabSetId */
 /** @var string $ui */
@@ -40,10 +63,24 @@ foreach ($fieldsets as $name => $fieldSet)
 		continue;
 	}
 
+	$fields = $form->getFieldset($name);
+	$visibleFields = array_filter($fields, static fn($field) => !$field->hidden && ($allowedFields === null || in_array($fieldKey($field), $allowedFields, true)));
+	if (!$visibleFields)
+	{
+		foreach ($fields as $field)
+		{
+			if ($field->hidden || ($allowedFields !== null && !in_array($fieldKey($field), $allowedFields, true)))
+			{
+				echo $fieldKey($field) === 'cid' ? $field->input : '<input type="hidden" name="' . htmlspecialchars($fieldInputName($field), ENT_QUOTES, 'UTF-8') . '" value="0">';
+			}
+		}
+		continue;
+	}
+
 	$label = empty($fieldSet->label) ? 'COM_J2XML_' . $name . '_FIELDSET_LABEL' : $fieldSet->label;
 	echo HTMLHelper::_($ui . '.addTab', $tabSetId, $name, Text::_($label));
 
-	foreach ($form->getFieldset($name) as $field)
+	foreach ($fields as $field)
 	{
 		$dataShowOn = '';
 		$groupClass = $field->type === 'Spacer' ? ' field-spacer' : '';
@@ -53,9 +90,9 @@ foreach ($fieldsets as $name => $fieldSet)
 			$dataShowOn = ' data-showon=\'' . json_encode(FormHelper::parseShowOnConditions($field->showon, $field->formControl, $field->group)) . '\'';
 		}
 
-		if ($field->hidden)
+		if ($field->hidden || ($allowedFields !== null && !in_array($fieldKey($field), $allowedFields, true)))
 		{
-			echo $field->input;
+			echo $fieldKey($field) === 'cid' ? $field->input : '<input type="hidden" name="' . htmlspecialchars($fieldInputName($field), ENT_QUOTES, 'UTF-8') . '" value="0">';
 		}
 		else
 		{

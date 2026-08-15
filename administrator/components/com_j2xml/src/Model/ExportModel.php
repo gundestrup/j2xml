@@ -94,16 +94,10 @@ class ExportModel extends FormModel
 				if ($layout != 'users')
 				{
 					$form->loadFile('export_users');
-					/* if ($layout == 'contact')
-					{
-						$form->setFieldAttribute('export_contacts', 'type', 'hidden');
-					} */
 				}
-				/* else
-				{
-					$form->setFieldAttribute('export_users', 'type', 'hidden');
-				} */
 			}
+
+
 
 			if ($loadData)
 			{
@@ -115,7 +109,7 @@ class ExportModel extends FormModel
 				$data = [];
 			}
 
-			// Allow for additional modification of the form, and events to be triggered.
+			// Allow for additional modification of the form to be triggered.
 			// We pass the data because plugins may require it.
 			$this->preprocessForm($form, $data);
 

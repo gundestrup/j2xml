@@ -1,0 +1,72 @@
+# PostgreSQL integration environment using the official Joomla images.
+services:
+  postgres:
+    image: postgres:16
+    container_name: j2xml-postgres
+    environment:
+      POSTGRES_DB: joomla5
+      POSTGRES_USER: joomla
+      POSTGRES_PASSWORD: joomlapass
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U joomla -d joomla5"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  postgres-init:
+    image: postgres:16
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: joomlapass
+    entrypoint: ["bash", "-c"]
+    command: >-
+      "psql -h postgres -U joomla -d joomla5 -c 'CREATE DATABASE joomla6' || true"
+
+  joomla5:
+    image: joomla:5.4.7-php8.3-apache
+    container_name: j2xml-joomla5-pg
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    environment:
+      JOOMLA_DB_TYPE: pgsql
+      JOOMLA_DB_HOST: postgres
+      JOOMLA_DB_USER: joomla
+      JOOMLA_DB_PASSWORD: joomlapass
+      JOOMLA_DB_NAME: joomla5
+      JOOMLA_SITE_NAME: "J2XML PostgreSQL Test J5"
+      JOOMLA_ADMIN_USER: Admin
+      JOOMLA_ADMIN_USERNAME: admin
+      JOOMLA_ADMIN_PASSWORD: AdminAdmin123!
+      JOOMLA_ADMIN_EMAIL: admin@example.com
+    ports:
+      - "8185:80"
+
+  joomla6:
+    image: joomla:6.1.2-php8.4-apache
+    container_name: j2xml-joomla6-pg
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    environment:
+      JOOMLA_DB_TYPE: pgsql
+      JOOMLA_DB_HOST: postgres
+      JOOMLA_DB_USER: joomla
+      JOOMLA_DB_PASSWORD: joomlapass
+      JOOMLA_DB_NAME: joomla6
+      JOOMLA_SITE_NAME: "J2XML PostgreSQL Test J6"
+      JOOMLA_ADMIN_USER: Admin
+      JOOMLA_ADMIN_USERNAME: admin
+      JOOMLA_ADMIN_PASSWORD: AdminAdmin123!
+      JOOMLA_ADMIN_EMAIL: admin@example.com
+    ports:
+      - "8186:80"
+
+volumes:
+  postgres-data:

@@ -74,8 +74,7 @@
 			type="list"
 			label="COM_J2XML_CONFIG_CONTACTS_LABEL"
 			description="COM_J2XML_CONFIG_IMPORT_CONTACTS_DESC"
-			default="0"
-			showon="import_users:1,2">
+			default="0">
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>
 			<option value="2">COM_J2XML_YES_OVERWRITE_IF_EXISTS</option>
@@ -89,6 +88,46 @@
 			<option value="0">JNO</option>
 			<option	value="1">COM_J2XML_YES_IF_NOT_EXISTS</option>
 			<option	value="2">COM_J2XML_YES_OVERWRITE_IF_EXISTS</option>
+		</field>
+		<field
+			name="import_menus"
+			type="list"
+			default="1"
+			label="COM_J2XML_CONFIG_MENUS_LABEL"
+			description="COM_J2XML_CONFIG_IMPORT_MENUS_DESC">
+			<option value="0">JNO</option>
+			<option value="1">COM_J2XML_YES_IF_NOT_EXISTS</option>
+			<option value="2">COM_J2XML_YES_OVERWRITE_IF_EXISTS</option>
+		</field>
+		<field
+			name="import_modules"
+			type="list"
+			default="1"
+			label="COM_J2XML_CONFIG_MODULES_LABEL"
+			description="COM_J2XML_CONFIG_IMPORT_MODULES_DESC">
+			<option value="0">JNO</option>
+			<option value="1">COM_J2XML_YES_IF_NOT_EXISTS</option>
+			<option value="2">COM_J2XML_YES_OVERWRITE_IF_EXISTS</option>
+		</field>
+		<field
+			name="import_viewlevels"
+			type="list"
+			default="1"
+			label="COM_J2XML_CONFIG_VIEWLEVELS_LABEL"
+			description="COM_J2XML_CONFIG_IMPORT_VIEWLEVELS_DESC">
+			<option value="0">JNO</option>
+			<option value="1">COM_J2XML_YES_IF_NOT_EXISTS</option>
+			<option value="2">COM_J2XML_YES_OVERWRITE_IF_EXISTS</option>
+		</field>
+		<field
+			name="import_weblinks"
+			type="list"
+			default="0"
+			label="COM_J2XML_CONFIG_WEBLINKS_LABEL"
+			description="COM_J2XML_CONFIG_IMPORT_WEBLINKS_DESC">
+			<option value="0">JNO</option>
+			<option value="1">COM_J2XML_YES_IF_NOT_EXISTS</option>
+			<option value="2">COM_J2XML_YES_OVERWRITE_IF_EXISTS</option>
 		</field>
 	</fieldset>
 	<fieldset name="users">

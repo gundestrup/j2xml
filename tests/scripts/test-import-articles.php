@@ -17,7 +17,7 @@ echo "PHP: " . PHP_VERSION . "\n";
 echo "Joomla: " . (new \Joomla\CMS\Version())->getShortVersion() . "\n";
 
 // Count articles before
-$db = \Joomla\CMS\Factory::getDbo();
+$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 $query = $db->getQuery(true)->select('COUNT(*)')->from($db->quoteName('#__content'));
 $before = (int) $db->setQuery($query)->loadResult();
 echo "Articles before: $before\n";

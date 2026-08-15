@@ -356,7 +356,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 *			the object to be imported
 	 * @param array $data
 	 *			the array to be imported
-	 * @param \JRegistry $params
+	 * @param \Joomla\Registry\Registry $params
 	 *			the parameters of the conversation
 	 *
 	 * @throws
@@ -864,7 +864,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 *
 	 * @param \SimpleXMLElement $xml
 	 *			xml
-	 * @param \JRegistry $params
+	 * @param \Joomla\Registry\Registry $params
 	 *			@option int 'fields' 0: No | 1: Yes, if not exists | 2: Yes,
 	 *			overwrite if exists
 	 *			@option string 'context'

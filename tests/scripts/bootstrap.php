@@ -60,5 +60,5 @@ if (!class_exists('JDatabaseDriver')) {
  * Helper to get the database
  */
 function getDb() {
-    return Joomla\CMS\Factory::getDbo();
+    return Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 }

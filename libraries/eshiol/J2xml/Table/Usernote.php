@@ -136,7 +136,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 		$users = json_decode($params->get('imported_users', '[]'), true);
 		foreach ($users as $user_id => $overwrite)
 		{
-			$username = \Joomla\CMS\Factory::getUser($user_id)->username;
+			$username = \Joomla\CMS\Factory::getContainer()->get(\Joomla\CMS\User\UserFactoryInterface::class)->loadUserById($user_id)->username;
 			$path = "//j2xml/usernote[user_id='{$username}']";
 */
 			$path = "//j2xml/usernote[user_id!='']";

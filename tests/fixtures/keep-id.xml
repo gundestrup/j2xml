@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<j2xml version="21.12.0">
+  <content>
+    <id>1903</id>
+    <title>J2XML Keep ID Only Article</title>
+    <alias>j2xml-keep-id-only-article</alias>
+    <introtext><![CDATA[<p>Dedicated keep ID test article.</p>]]></introtext>
+    <fulltext><![CDATA[]]></fulltext>
+    <state>1</state>
+    <catid>2</catid>
+    <created>2024-04-01 10:00:00</created>
+    <created_by>1</created_by>
+    <modified>2024-04-01 10:00:00</modified>
+    <modified_by>1</modified_by>
+    <metakey>keep-id</metakey>
+    <metadesc>Dedicated keep ID test.</metadesc>
+    <language>*</language>
+    <featured>0</featured>
+    <hits>0</hits>
+    <publish_up>2024-04-01 10:00:00</publish_up>
+    <publish_down>0000-00-00 00:00:00</publish_down>
+    <access>1</access>
+  </content>
+</j2xml>

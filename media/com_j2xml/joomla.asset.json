@@ -8,22 +8,22 @@
         {
             "name": "com_j2xml.base64",
             "type": "script",
-            "uri": "lib_eshiol_j2xml/js/base64.js"
+            "uri": "lib_eshiol_j2xml/base64.js"
         },
         {
             "name": "com_j2xml.version_compare",
             "type": "script",
-            "uri": "lib_eshiol_j2xml/js/version_compare.js"
+            "uri": "lib_eshiol_j2xml/version_compare.js"
         },
         {
             "name": "com_j2xml.pako_inflate",
             "type": "script",
-            "uri": "lib_eshiol_j2xml/js/pako_inflate.js"
+            "uri": "lib_eshiol_j2xml/pako_inflate.js"
         },
         {
             "name": "com_j2xml.library",
             "type": "script",
-            "uri": "lib_eshiol_j2xml/js/j2xml.js",
+            "uri": "lib_eshiol_j2xml/j2xml.js",
             "dependencies": [
                 "com_j2xml.base64",
                 "com_j2xml.version_compare"
@@ -32,7 +32,7 @@
         {
             "name": "com_j2xml.j2xml",
             "type": "script",
-            "uri": "js/j2xml.js",
+            "uri": "com_j2xml/j2xml.js",
             "dependencies": [
                 "com_j2xml.library",
                 "com_j2xml.pako_inflate"
@@ -41,15 +41,16 @@
         {
             "name": "com_j2xml.admin",
             "type": "script",
-            "uri": "js/admin.js",
+            "uri": "com_j2xml/admin.js",
             "dependencies": [
+                "core",
                 "com_j2xml.j2xml"
             ]
         },
         {
             "name": "com_j2xml.import",
             "type": "script",
-            "uri": "js/import.js",
+            "uri": "com_j2xml/import.js",
             "dependencies": [
                 "com_j2xml.j2xml",
                 "com_j2xml.pako_inflate"
@@ -58,12 +59,12 @@
         {
             "name": "com_j2xml.admin",
             "type": "style",
-            "uri": "css/admin.css"
+            "uri": "com_j2xml/admin.css"
         },
         {
             "name": "com_j2xml.import",
             "type": "style",
-            "uri": "css/import.css"
+            "uri": "com_j2xml/import.css"
         }
     ]
 }

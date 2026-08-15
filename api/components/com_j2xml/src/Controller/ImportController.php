@@ -147,6 +147,8 @@ class ImportController extends BaseController
 		$params->set('content', $fparams->get('content', $cparams->get('content', 1)));
 		$params->set('fields', $fparams->get('fields', $cparams->get('fields', 1)));
 		$params->set('images', $fparams->get('images', $cparams->get('images', 1)));
+		$params->set('menus', $fparams->get('menus', $cparams->get('menus', 1)));
+		$params->set('modules', $fparams->get('modules', $cparams->get('modules', 1)));
 		$params->set('keep_category', $fparams->get('keep_category', $cparams->get('keep_category', 1)));
 		if ($params->get('keep_category') == 2)
 		{

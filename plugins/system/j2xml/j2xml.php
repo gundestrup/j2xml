@@ -217,7 +217,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 					'class'	   => $buttonClass,
 					'doTask'   => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=export&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
 					'ok'	   => \Joomla\CMS\Language\Text::_('JTOOLBAR_EXPORT'),
-					'onclick'  => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name="cid[]"]:checked\').forEach(function(cb){cids.push(cb.value);});document.querySelector(\'#' . $selector . 'Modal iframe\').contentWindow.document.getElementById(\'jform_cid\').value=cids;'
+					'onclick'  => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name=&quot;cid[]&quot;]:checked\').forEach(function(cb){cids.push(cb.value);});document.querySelector(\'#' . $selector . 'Modal iframe\').contentWindow.document.getElementById(\'jform_cid\').value=cids;'
 				]);
 
 			$bar->appendButton('Custom', $dHtml, 'download');
@@ -245,7 +245,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 						'class'	         => $buttonClass,
 						'doTask'         => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=send&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
 						'ok'	         => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
-						'onclick'        => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name="cid[]"]:checked\').forEach(function(cb){cids.push(cb.value);});document.querySelector(\'#' . $selector . 'Modal iframe\').contentWindow.document.getElementById(\'jform_cid\').value=cids;',
+						'onclick'        => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name=&quot;cid[]&quot;]:checked\').forEach(function(cb){cids.push(cb.value);});document.querySelector(\'#' . $selector . 'Modal iframe\').contentWindow.document.getElementById(\'jform_cid\').value=cids;',
 						'formValidation' => true
 					]);
 				$bar->appendButton('Custom', $dHtml, 'send');
