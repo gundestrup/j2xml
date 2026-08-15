@@ -36,65 +36,7 @@ verification.  The deprecated API still works in Joomla 5 and 6.
 
 ---
 
-## 2. `Table::getInstance()`
-
-|| | |
-|---|---|---|
-| **Deprecated in** | Joomla 5.0 |
-| **Removed in** | Joomla 6.0 (scheduled) |
-| **Priority** | Low |
-
-**File**
-- `libraries/eshiol/J2xml/Table/Table.php:602`
-
-**Current code**
-```php
-$u = \Joomla\CMS\Table\Table::getInstance('Usergroup');
-```
-
-**Recommended replacement**
-```php
-$u = new \Joomla\CMS\Table\Usergroup($db);
-```
-
-**Why deferred**
-Single active occurrence in a static method; needs a `$db` instance which is
-already available via the container in that method.  Other occurrences in
-`Category.php:173` and `Viewlevel.php:194` are already commented out and
-show the replacement.
-
----
-
-## 3. `JLoader::registerNamespace()` (manual PSR-4 registration)
-
-|| | |
-|---|---|---|
-| **Deprecated in** | Not deprecated, but redundant when library manifest declares `<namespace>` |
-| **Priority** | Low |
-
-**Files (6 occurrences)**
-- `plugins/system/j2xml/j2xml.php:25`
-- `libraries/eshiol/J2xml/classmap.php:23`
-- `cli/j2xml.php:58`
-- `components/com_j2xml/j2xml.php:24`
-- `administrator/components/com_j2xml/src/Dispatcher/Dispatcher.php:77`
-- `tests/scripts/test-import-articles.php:13`
-
-**Current code**
-```php
-\JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
-```
-
-**Recommended replacement**
-The library manifest (`administrator/manifests/libraries/eshiol/j2xml.xml`)
-now declares `<namespace path="eshiol/J2xml">eshiol\J2xml</namespace>`, so
-Joomla's autoloader handles PSR-4 registration automatically.  The manual
-`registerNamespace()` calls can be removed once verified in a real
-installation.
-
----
-
-## 4. `triggerEvent()` (soft-deprecated event dispatch)
+## 2. `triggerEvent()` (soft-deprecated event dispatch)
 
 || | |
 |---|---|---|
@@ -138,7 +80,7 @@ need proper event classes.  `triggerEvent()` still works in Joomla 5/6.
 
 ---
 
-## 5. `$table->getError()` / `$user->getError()`
+## 3. `$table->getError()` / `$user->getError()`
 
 || | |
 |---|---|---|
@@ -183,7 +125,7 @@ exception-based error handling doesn't break the import flow.
 
 ---
 
-## 6. Underscore-prefixed properties (`$_option`, `$_user`, etc.)
+## 4. Underscore-prefixed properties (`$_option`, `$_user`, etc.)
 
 || | |
 |---|---|---|
@@ -194,7 +136,6 @@ exception-based error handling doesn't break the import flow.
 - `libraries/eshiol/J2xml/Exporter.php` — `$_image_path`, `$_admin`, `$_option`
 - `libraries/eshiol/J2xml/Importer.php` — `$_nullDate`, `$_user`, `$_user_id`, `$_now`, `$_option`, `$_usergroups`
 - `libraries/eshiol/J2xml/Table/Table.php` — `$_excluded`, `$_aliases`, `$_jsonEncode`
-- `administrator/components/com_j2xml/src/Model/ImportModel.php` — `$_context` (already renamed to `$context`)
 
 **Recommended replacement**
 Rename to camelCase without leading underscore:
@@ -209,7 +150,7 @@ rename but large diff; should be done in a dedicated refactor commit.
 
 ---
 
-## 7. Missing native type declarations on properties and methods
+## 5. Missing native type declarations on properties and methods
 
 || | |
 |---|---|---|
@@ -235,7 +176,7 @@ base class signatures.
 
 ---
 
-## 8. `script.php` — class-based installer instead of `InstallerScriptInterface`
+## 6. `script.php` — class-based installer instead of `InstallerScriptInterface`
 
 || | |
 |---|---|---|
@@ -272,93 +213,33 @@ thorough testing on a real installation.
 
 ---
 
-## 9. `Factory::getDbo()` in test scripts (mostly resolved)
+## 7. `Factory::$user` static property in test bootstrap
 
 || | |
 |---|---|---|
 | **Deprecated in** | Joomla 5.0 |
+| **Removed in** | Joomla 6.0+ (container-based injection recommended) |
 | **Priority** | Low (test code only) |
-| **Status** | Mostly resolved |
 
-**Remaining file**
-- `tests/scripts/test-export-import-roundtrip.sh:50` — inline PHP heredoc uses `JFactory::getDbo()`
-
-**Already migrated**
-- `tests/scripts/bootstrap.php:63` — now uses `Factory::getContainer()->get(DatabaseInterface::class)`
-- `tests/scripts/test-import-articles.php:20` — now uses `Factory::getContainer()->get(DatabaseInterface::class)`
-
-**Recommended replacement**
-```php
-Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class)
-```
-
-**Why deferred**
-Test scripts only; not shipped in the package.  The remaining occurrence
-is inside an inline PHP heredoc in a shell script.
-
----
-
-## 10. `$app->input` property access (deprecated)
-
-|| | |
-|---|---|---|
-| **Deprecated in** | Joomla 5.0 (soft deprecation) |
-| **Removed in** | Joomla 6.0+ (`getInput()` recommended) |
-| **Priority** | Medium |
-
-**Files (14 occurrences across 7 files)**
-- `libraries/eshiol/J2xml/Exporter.php:79` — `$app->input->getCmd('option')`
-- `libraries/eshiol/J2xml/Importer.php:96` — `$app->input->getCmd('option')`
-- `administrator/components/com_j2xml/src/Model/ImportModel.php` — 4 calls (lines 99, 291, 370, 411)
-- `administrator/components/com_j2xml/src/Controller/ExportController.php` — 2 calls (lines 57, 91)
-- `administrator/components/com_j2xml/src/Controller/ImportController.php` — 2 calls (lines 52, 87)
-- `administrator/components/com_j2xml/src/View/AbstractRawView.php:66`
-- `api/components/com_j2xml/src/Controller/ImportController.php` — 3 calls (lines 95, 105, 139)
+**File**
+- `tests/scripts/bootstrap.php:52` — `Joomla\CMS\Factory::$user = $user;`
 
 **Current code**
 ```php
-$this->_option = (PHP_SAPI != 'cli') ? $app->input->getCmd('option') : 'cli_' . ...;
+Joomla\CMS\Factory::$user = $user;
 ```
 
 **Recommended replacement**
-```php
-$this->_option = (PHP_SAPI != 'cli') ? $app->getInput()->getCmd('option') : 'cli_' . ...;
-```
+Register the user via the application's identity or a `UserFactory` in the
+DI container.  However, in a minimal CLI bootstrap without a full
+application/session, `Factory::$user` is the only mechanism that works
+reliably — the container-based replacement requires an application identity
+(set via `IdentityAware::setIdentity()`), which is not available here.
 
 **Why deferred**
-The `CMSApplicationInterface` already declares `getInput(): Input` as the
-preferred accessor.  The `$app->input` property is deprecated since
-Joomla 5.0 and may be removed in Joomla 6.0+.  The Exporter and Importer
-already receive the application via constructor injection; switching from
-`$app->input` to `$app->getInput()` is a mechanical change but touches 14
-call sites across 7 files.
-
----
-
-## 11. `@see JModelLegacy` PHPDoc references
-
-|| | |
-|---|---|---|
-| **Deprecated in** | Not deprecated (stale documentation) |
-| **Priority** | Low (documentation only) |
-
-**Files**
-- `administrator/components/com_j2xml/src/Model/ExportModel.php:49`
-- `administrator/components/com_j2xml/src/Model/SendModel.php:49`
-
-**Current code**
-```php
- * @see JModelLegacy
-```
-
-**Recommended replacement**
-```php
- * @see \Joomla\CMS\MVC\Model\BaseModel
-```
-
-**Why deferred**
-PHPDoc only; no runtime impact.  `JModelLegacy` is a legacy alias for
-`Joomla\CMS\MVC\Model\BaseModel`.
+Test bootstrap only; not shipped in the package.  The static property
+still works in Joomla 5/6 but is deprecated and may be removed in
+Joomla 6.0+.  No direct CLI-compatible replacement exists yet.
 
 ---
 
@@ -367,13 +248,9 @@ PHPDoc only; no runtime impact.  `JModelLegacy` is a legacy alias for
 | # | Pattern | Occurrences | Priority | Target version |
 |---|---------|-------------|----------|----------------|
 | 1 | `bootstrap.renderModal` | 2 | Medium | 4.1 |
-| 2 | `Table::getInstance()` | 1 | Low | 4.1 |
-| 3 | `JLoader::registerNamespace()` | 6 | Low | 4.1 |
-| 4 | `triggerEvent()` | 18 | Low | 5.0 |
-| 5 | `->getError()` | 15 | Low | 5.0 |
-| 6 | Underscore-prefixed properties | 100+ | Low | 5.0 |
-| 7 | Missing native types | 20+ | Low | 5.0 |
-| 8 | `script.php` class-based installer | 1 | Low | 5.0 |
-| 9 | `Factory::getDbo()` in tests | 1 | Low | 4.1 |
-| 10 | `$app->input` property access | 14 | Medium | 5.0 |
-| 11 | `@see JModelLegacy` PHPDoc | 2 | Low | 4.1 |
+| 2 | `triggerEvent()` | 18 | Low | 5.0 |
+| 3 | `->getError()` | 15 | Low | 5.0 |
+| 4 | Underscore-prefixed properties | 100+ | Low | 5.0 |
+| 5 | Missing native types | 20+ | Low | 5.0 |
+| 6 | `script.php` class-based installer | 1 | Low | 5.0 |
+| 7 | `Factory::$user` in test bootstrap | 1 | Low | 4.1 |

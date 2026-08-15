@@ -54,7 +54,7 @@ class ExportController extends BaseController
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
 		$app = $this->app;
-		$jform = $app->input->post->get('jform', [], 'array');
+		$jform = $app->getInput()->post->get('jform', [], 'array');
 		$data = [];
 		foreach ($jform as $k => $v)
 		{
@@ -88,7 +88,7 @@ class ExportController extends BaseController
 		}
 
 		$app = $this->app;
-		$data = $app->input->post->getArray();
+		$data = $app->getInput()->post->getArray();
 		$app->setUserState('com_j2xml.send.data', $data);
 		Log::add(new LogEntry('setUserState(\'com_j2xml.send.data\'): ' . print_r($data, true), Log::DEBUG, 'com_j2xml'));
 

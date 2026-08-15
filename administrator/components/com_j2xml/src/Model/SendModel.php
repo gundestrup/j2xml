@@ -46,14 +46,14 @@ class SendModel extends FormModel
 	 * @param array $config
 	 *			An optional associative array of configuration settings.
 	 *
-	 * @see JModelLegacy
+	 * @see \Joomla\CMS\MVC\Model\BaseModel
 	 * @since 3.9.0
 	 */
 	public function __construct($config = [])
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$layout = \Joomla\CMS\Factory::getApplication()->input->get('layout', 'default');
+		$layout = \Joomla\CMS\Factory::getApplication()->getInput()->get('layout', 'default');
 		if ($layout != 'default')
 		{
 			$this->context .= '.' . $layout;
@@ -85,7 +85,7 @@ class SendModel extends FormModel
 				'load_data' => false
 			]);
 
-			$layout = \Joomla\CMS\Factory::getApplication()->input->get('layout', 'default');
+			$layout = \Joomla\CMS\Factory::getApplication()->getInput()->get('layout', 'default');
 			if ($layout != 'default')
 			{
 				$form->loadFile('send_' . $layout);

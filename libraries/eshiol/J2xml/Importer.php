@@ -93,7 +93,7 @@ class Importer
 		$this->_nullDate = $db->getNullDate();
 		$this->_user_id  = $this->_user->get('id');
 		$this->_now      = (new \Joomla\CMS\Date\Date("now"))->format("%Y-%m-%d-%H-%M-%S");
-		$this->_option   = (PHP_SAPI != 'cli') ? $app->input->getCmd('option') : 'cli_' .
+		$this->_option   = (PHP_SAPI != 'cli') ? $app->getInput()->getCmd('option') : 'cli_' .
 				 strtolower(get_class($app));
 
 		try {

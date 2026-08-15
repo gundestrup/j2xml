@@ -96,7 +96,7 @@ class ImportModel extends FormModel
 
 		$package = null;
 
-		$installType = $app->input->getWord('installtype');
+		$installType = $app->getInput()->getWord('installtype');
 
 		if ($package === null)
 		{
@@ -158,7 +158,7 @@ class ImportModel extends FormModel
 		$data->content = $rawData;
 		Log::add(new LogEntry('data: ' . $data->content, Log::DEBUG, 'com_j2xml'));
 
-		$jform = \Joomla\CMS\Factory::getApplication()->input->post->get('jform', [], 'array');
+		$jform = \Joomla\CMS\Factory::getApplication()->getInput()->post->get('jform', [], 'array');
 
 		$fparams = new \Joomla\Registry\Registry($jform);
 		Log::add(new LogEntry('jform: ' . print_r($fparams->toArray(), true), Log::DEBUG, 'com_j2xml'));
@@ -288,7 +288,7 @@ class ImportModel extends FormModel
 
 		// Get the uploaded file information.
 		$app = \Joomla\CMS\Factory::getApplication();
-		$input	= $app->input;
+		$input	= $app->getInput();
 
 		// Do not change the filter type 'raw'. We need this to let files containing PHP code to upload. See JInputFiles::get.
 		$userfile = $input->files->get('install_package', null, 'raw');
@@ -367,7 +367,7 @@ class ImportModel extends FormModel
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
 		$app = \Joomla\CMS\Factory::getApplication();
-		$input = $app->input;
+		$input = $app->getInput();
 
 		// Get the path to the package to install.
 		$p_dir = $input->getString('install_directory');
@@ -408,7 +408,7 @@ class ImportModel extends FormModel
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
 		$app = \Joomla\CMS\Factory::getApplication();
-		$input = $app->input;
+		$input = $app->getInput();
 
 		// Get the URL of the data to install.
 		$url = $input->getString('install_url');

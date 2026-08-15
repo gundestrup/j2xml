@@ -92,7 +92,7 @@ class ImportController extends BaseController
 		}
 
 		// If the body is JSON, extract the XML from the "data" field.
-		$contentType = $app->input->server->getString('HTTP_CONTENT_TYPE', '');
+		$contentType = $app->getInput()->server->getString('HTTP_CONTENT_TYPE', '');
 		if (str_contains($contentType, 'application/json'))
 		{
 			$json = json_decode($raw, true);
@@ -102,7 +102,7 @@ class ImportController extends BaseController
 				// Options may also be in the JSON body.
 				if (isset($json['options']) && is_array($json['options']))
 				{
-					$app->input->set('options', json_encode($json['options']));
+					$app->getInput()->set('options', json_encode($json['options']));
 				}
 			}
 		}
@@ -136,7 +136,7 @@ class ImportController extends BaseController
 
 		// Build import options from the "options" query param, falling
 		// back to the component's global configuration.
-		$optionsParam = $app->input->getString('options', '{}');
+		$optionsParam = $app->getInput()->getString('options', '{}');
 		$fparams = new Registry($optionsParam);
 
 		$cparams = ComponentHelper::getParams('com_j2xml');

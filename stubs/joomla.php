@@ -249,6 +249,7 @@ namespace Joomla\CMS\Application
     interface CMSApplicationInterface
     {
         public function getDocument(): Document;
+        public function getInput(): Input;
         public function getLanguage(): Language;
         public function getIdentity(): User;
         public function triggerEvent(string $eventName, array $arguments = []): array;
@@ -259,6 +260,7 @@ namespace Joomla\CMS\Application
         public Input $input;
         public Language $language;
 
+        public function getInput(): Input { return $this->input; }
         public function get(string $key, $default = null) { return $default; }
         public function getMessageQueue(): array { return []; }
         public function getSession(): Session { return new Session(); }
@@ -290,6 +292,7 @@ namespace Joomla\CMS\Application
         public function out(string $text = '', bool $nl = true): self { return $this; }
         public function in(): string { return ''; }
         public function execute(): void {}
+        public function getInput(): Input { return $this->input; }
     }
 }
 

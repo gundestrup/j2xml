@@ -32,7 +32,7 @@ Text::script('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED');
 Text::script('COM_J2XML_PACKAGEIMPORTER_NO_PACKAGE');
 
 $token  = Session::getFormToken();
-$return = Factory::getApplication()->input->getBase64('return');
+$return = Factory::getApplication()->getInput()->getBase64('return');
 
 $params = ComponentHelper::getParams('com_j2xml');
 $this->document->addScriptOptions('J2XML', ['HaltOnError' => (bool) $params->get('haltonerror', 1)]);

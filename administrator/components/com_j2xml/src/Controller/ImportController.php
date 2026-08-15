@@ -49,7 +49,7 @@ class ImportController extends BaseController
 
 		if (!$redirect_url)
 		{
-			$redirect_url = base64_decode($app->input->get('return', ''));
+			$redirect_url = base64_decode($app->getInput()->get('return', ''));
 		}
 
 		if (!Uri::isInternal($redirect_url))
@@ -84,7 +84,7 @@ class ImportController extends BaseController
 		$app = $this->app;
 		$message = $app->getUserState('com_j2xml.message');
 
-		$jform = $app->input->post->get('jform', [], 'array');
+		$jform = $app->getInput()->post->get('jform', [], 'array');
 		$data = [];
 		foreach ($jform as $k => $v)
 		{

@@ -63,7 +63,7 @@ class AbstractRawView extends HtmlView
 		parent::__construct($config);
 
 		$app = Factory::getApplication();
-		$jform = $app->input->post->get('jform', [], 'array');
+		$jform = $app->getInput()->post->get('jform', [], 'array');
 
 		$this->ids = explode(',', $jform['cid'] ?? '');
 		unset($jform['cid']);

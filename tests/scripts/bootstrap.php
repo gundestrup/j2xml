@@ -44,10 +44,15 @@ if (!$container->has('Joomla\\Database\\DatabaseInterface')) {
 // Get the database directly
 $db = $container->get('Joomla\\Database\\DatabaseInterface');
 
-// Set up the factory's database
-Joomla\CMS\Factory::$database = $db;
+// Register the database in the container (replaces deprecated Factory::$database)
+$container->set('Joomla\\Database\\DatabaseInterface', $db);
 
-// Set up a dummy user (admin)
+// Set up a dummy user (admin).
+// Factory::$user is deprecated since Joomla 5.0 but is still the only
+// mechanism that works in a minimal CLI bootstrap without a full
+// application/session. The container-based replacement requires an
+// application identity (set via IdentityAware::setIdentity()), which is
+// not available here. Test code only; not shipped in the package.
 $user = new Joomla\CMS\User\User(['id' => 42, 'name' => 'Admin', 'username' => 'admin']);
 Joomla\CMS\Factory::$user = $user;
 

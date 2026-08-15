@@ -599,7 +599,7 @@ class Table extends \Joomla\CMS\Table\Table
 					$usergroupId = $db->setQuery($query)->loadResult();
 					if (!($usergroupId = $db->setQuery($query)->loadResult()))
 					{
-						$u = \Joomla\CMS\Table\Table::getInstance('Usergroup');
+						$u = new \Joomla\CMS\Table\Usergroup($db);
 						$u->save([
 							'title' => $groups[$j],
 							'parent_id' => $parentId

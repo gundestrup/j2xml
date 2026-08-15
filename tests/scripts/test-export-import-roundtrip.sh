@@ -47,7 +47,7 @@ else
         \$app = JFactory::getApplication(\"administrator\");
         \$app->initialiseApp();
 
-        \$db = JFactory::getDbo();
+        \$db = \\Joomla\\CMS\\Factory::getContainer()->get(\\Joomla\\Database\\DatabaseInterface::class);
         \$query = \$db->getQuery(true)
             ->select(\"*\")
             ->from(\"#_content\")

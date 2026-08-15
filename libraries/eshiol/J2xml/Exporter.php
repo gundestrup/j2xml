@@ -76,7 +76,7 @@ class Exporter
 		$app = $app ?? \Joomla\CMS\Factory::getApplication();
 		$this->app = $app;
 
-		$this->_option = (PHP_SAPI != 'cli') ? $app->input->getCmd('option') : 'cli_' .
+		$this->_option = (PHP_SAPI != 'cli') ? $app->getInput()->getCmd('option') : 'cli_' .
 				 strtolower(get_class($app));
 
 		// Merge the default translation with the current translation
