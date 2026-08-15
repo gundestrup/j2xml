@@ -59,13 +59,13 @@ class Module extends \eshiol\J2xml\Table\Table
 	 * {@inheritdoc}
 	 * @see \eshiol\J2XML\Table::export()
 	 */
-	public static function export ($id, &$xml, $options)
+	public static function export ($id, &$xml, $options, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('id: ' . $id, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('options: ' . print_r($options, true), \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$item = new Module($db);
 		if (!$item->load($id))
 		{
@@ -88,18 +88,16 @@ class Module extends \eshiol\J2xml\Table\Table
 	 * {@inheritdoc}
 	 * @see \eshiol\J2XML\Table::import()
 	 */
-	public static function import ($xml, &$params)
+	public static function import ($xml, &$params, $db = null, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$import_modules = $params->get('modules', '2');
 
 		foreach ($xml->xpath("//j2xml/module[not(title = '')]") as $record)
 		{
 			self::prepareData($record, $data, $params);
-
-			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
 			/* import module */
 			$query = $db->getQuery(true)

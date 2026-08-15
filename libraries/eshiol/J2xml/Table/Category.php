@@ -101,7 +101,7 @@ class Category extends Table
 	 *
 	 * @since 18.8.310
 	 */
-	public static function import ($xml, &$params)
+	public static function import ($xml, &$params, $db = null, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -114,7 +114,7 @@ class Category extends Table
 			return;
 
 		\Joomla\CMS\Factory::getApplication()->getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
 		$keep_id = $params->get('keep_id', 0);
 		if ($keep_id)
@@ -329,7 +329,7 @@ class Category extends Table
 	 *
 	 * @since 18.8.310
 	 */
-	public static function export ($id, &$xml, $options)
+	public static function export ($id, &$xml, $options, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -338,7 +338,7 @@ class Category extends Table
 			return;
 		}
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$item = new Category($db);
 		if (!$item->load($id))
 		{
@@ -441,7 +441,7 @@ class Category extends Table
 	 *
 	 * @since 20.5.349
 	 */
-	public static function prepareData ($record, &$data, $params)
+	public static function prepareData ($record, &$data, $params, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 

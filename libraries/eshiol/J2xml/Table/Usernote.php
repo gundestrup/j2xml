@@ -51,7 +51,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 	 * {@inheritdoc}
 	 * @see Table::export()
 	 */
-	public static function export ($id, &$xml, $options)
+	public static function export ($id, &$xml, $options, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -60,7 +60,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 			return;
 		}
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$item = new Usernote($db);
 		if (!$item->load($id))
 		{
@@ -116,7 +116,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 	 * {@inheritdoc}
 	 * @see Table::import()
 	 */
-	public static function import ($xml, &$params)
+	public static function import ($xml, &$params, $db = null, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -146,7 +146,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 
 				unset($data['id']);
 
-				$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+				$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$table = new NoteTable($db);
 
 //				if (!$overwrite)
@@ -179,7 +179,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 	 * {@inheritdoc}
 	 * @see Table::prepareData()
 	 */
-	public static function prepareData ($record, &$data, $params)
+	public static function prepareData ($record, &$data, $params, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 

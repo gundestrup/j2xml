@@ -61,7 +61,7 @@ class Tag extends Table
 	 *
 	 * @since 18.8.310
 	 */
-	public static function import ($xml, &$params)
+	public static function import ($xml, &$params, $db = null, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -70,9 +70,9 @@ class Tag extends Table
 			return;
 
 		$context = $params->get('context');
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$nullDate = $db->getNullDate();
-		$userid = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
+		$userid = $userId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 
 		foreach ($xml->xpath("//j2xml/tag") as $record)
 		{
@@ -144,7 +144,7 @@ class Tag extends Table
 	 *
 	 * @since 18.8.310
 	 */
-	public static function convertPathsToIds ($tags)
+	public static function convertPathsToIds ($tags, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -153,7 +153,7 @@ class Tag extends Table
 			// Remove duplicates
 			$tags = array_unique((array) $tags);
 
-			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+			$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
 			$query = $db->getQuery(true)
 				->select('id')
@@ -193,7 +193,7 @@ class Tag extends Table
 	 *
 	 * @since 18.8.310
 	 */
-	public static function export ($id, &$xml, $options)
+	public static function export ($id, &$xml, $options, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -202,7 +202,7 @@ class Tag extends Table
 			return;
 		}
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$item = new Tag($db);
 		if (!$item->load($id))
 		{
@@ -271,7 +271,7 @@ class Tag extends Table
 	 *
 	 * @since 18.8.310
 	 */
-	public static function prepareData ($record, &$data, $params)
+	public static function prepareData ($record, &$data, $params, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 

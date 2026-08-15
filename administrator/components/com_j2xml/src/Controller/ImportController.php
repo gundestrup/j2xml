@@ -15,7 +15,6 @@ namespace Joomla\Component\J2xml\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Log\LogEntry;
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -45,7 +44,7 @@ class ImportController extends BaseController
 
 		$result = $model->import();
 
-		$app = Factory::getApplication();
+		$app = $this->app;
 		$redirect_url = $app->getUserState('com_j2xml.redirect_url');
 
 		if (!$redirect_url)
@@ -82,7 +81,7 @@ class ImportController extends BaseController
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$app = Factory::getApplication();
+		$app = $this->app;
 		$message = $app->getUserState('com_j2xml.message');
 
 		$jform = $app->input->post->get('jform', [], 'array');

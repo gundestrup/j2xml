@@ -20,6 +20,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Log\LogEntry;
 use Joomla\CMS\MVC\View\HtmlView;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Registry\Registry;
 
 /**
@@ -61,7 +62,8 @@ class AbstractRawView extends HtmlView
 
 		parent::__construct($config);
 
-		$jform = Factory::getApplication()->input->post->get('jform', [], 'array');
+		$app = Factory::getApplication();
+		$jform = $app->input->post->get('jform', [], 'array');
 
 		$this->ids = explode(',', $jform['cid'] ?? '');
 		unset($jform['cid']);
@@ -87,7 +89,9 @@ class AbstractRawView extends HtmlView
 			$params->set(str_starts_with($k, 'export_') ? substr($k, 7) : $k, $v);
 		}
 
-		$j2xml = new \eshiol\J2xml\Exporter();
+		$app = Factory::getApplication();
+		$db = Factory::getContainer()->get(DatabaseInterface::class);
+		$j2xml = new \eshiol\J2xml\Exporter($db, $app);
 		$exportMethod = $this->exportMethod ?: strtolower($this->getName());
 		$xml = null;
 		$j2xml->$exportMethod($this->ids, $xml, $params);
@@ -100,24 +104,24 @@ class AbstractRawView extends HtmlView
 		$dom->loadXML($xml->asXML());
 		$data = $dom->saveXML();
 
-		$document = Factory::getApplication()->getDocument();
+		$document = $app->getDocument();
 		$compression = $params->get('compression', 0);
 
 		if (!\extension_loaded('zlib') || ini_get('zlib.output_compression'))
 		{
 			$document->setMimeEncoding('text/xml', true);
-			Factory::getApplication()->setHeader('Content-disposition', 'attachment; filename="' . $out . '.xml"', true);
+			$app->setHeader('Content-disposition', 'attachment; filename="' . $out . '.xml"', true);
 		}
 		elseif ($compression)
 		{
 			$document->setMimeEncoding('application/gzip', true);
-			Factory::getApplication()->setHeader('Content-disposition', 'attachment; filename="' . $out . '.gz"', true);
+			$app->setHeader('Content-disposition', 'attachment; filename="' . $out . '.gz"', true);
 			$data = gzencode($data, 4);
 		}
 		else
 		{
 			$document->setMimeEncoding('text/xml', true);
-			Factory::getApplication()->setHeader('Content-disposition', 'attachment; filename="' . $out . '.xml"', true);
+			$app->setHeader('Content-disposition', 'attachment; filename="' . $out . '.xml"', true);
 		}
 
 		echo $data;

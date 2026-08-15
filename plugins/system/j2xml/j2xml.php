@@ -117,7 +117,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 		}
 
 		// Only render for HTML output.
-		if (\Joomla\CMS\Factory::getApplication()->getDocument()->getType() !== 'html')
+		if ($this->app->getDocument()->getType() !== 'html')
 		{
 			return;
 		}

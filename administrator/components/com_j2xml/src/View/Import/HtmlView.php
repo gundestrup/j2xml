@@ -20,7 +20,6 @@ namespace Joomla\Component\J2xml\Administrator\View\Import;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Log\LogEntry;
@@ -73,7 +72,7 @@ class HtmlView extends \Joomla\Component\J2xml\Administrator\View\DefaultHtmlVie
 
 		ToolbarHelper::title(Text::_('COM_J2XML_TOOLBAR_J2XML'), 'upload import');
 
-		if (Factory::getApplication()->getIdentity()->authorise('core.admin'))
+		if (\Joomla\CMS\Factory::getApplication()->getIdentity()->authorise('core.admin'))
 		{
 			ToolbarHelper::preferences('com_j2xml');
 		}

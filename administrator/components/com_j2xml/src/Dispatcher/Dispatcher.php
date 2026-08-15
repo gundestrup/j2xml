@@ -59,10 +59,10 @@ class Dispatcher extends ComponentDispatcher
 			['lib_j2xml', 'com_j2xml']
 		);
 
-		\Joomla\CMS\Factory::getApplication()->getDocument()->addScriptOptions('J2XML', ['Joomla' => 4]);
+		$this->app->getDocument()->addScriptOptions('J2XML', ['Joomla' => 4]);
 
 		// Load language files.
-		$lang = \Joomla\CMS\Factory::getApplication()->getLanguage();
+		$lang = $this->app->getLanguage();
 		$lang->load('com_j2xml', JPATH_ADMINISTRATOR, 'en-GB', true);
 		$lang->load('com_j2xml', JPATH_ADMINISTRATOR, $lang->getDefault(), true);
 		$lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, true);

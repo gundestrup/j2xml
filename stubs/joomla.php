@@ -238,8 +238,23 @@ namespace Joomla\CMS\Application
     use Joomla\CMS\Input\Input;
     use Joomla\CMS\Language\Language;
     use Joomla\CMS\Session\Session;
+    use Joomla\CMS\Document\Document;
+    use Joomla\Registry\Registry;
+    use Joomla\CMS\User\User;
 
-    class CMSApplication
+    /**
+     * Minimal interface for the CMS application.
+     * Used as a type hint for injected application instances.
+     */
+    interface CMSApplicationInterface
+    {
+        public function getDocument(): Document;
+        public function getLanguage(): Language;
+        public function getIdentity(): User;
+        public function triggerEvent(string $eventName, array $arguments = []): array;
+    }
+
+    class CMSApplication implements CMSApplicationInterface
     {
         public Input $input;
         public Language $language;
@@ -260,6 +275,12 @@ namespace Joomla\CMS\Application
         public function isAdmin(): bool { return true; }
         public function isSite(): bool { return false; }
         public function getRouter(): \Joomla\CMS\Router\Router { return new \Joomla\CMS\Router\Router(); }
+        public function getDocument(): Document { return new Document(); }
+        public function getLanguage(): Language { return new Language(); }
+        public function getIdentity(): User { return new User(); }
+        public function getConfig(): Registry { return new Registry(); }
+        public function triggerEvent(string $eventName, array $arguments = []): array { return []; }
+        public function getContainer(): \Joomla\DI\Container { return new \Joomla\DI\Container(); }
     }
 
     class WebApplication extends CMSApplication {}
@@ -432,6 +453,8 @@ namespace Joomla\CMS\MVC\Controller
     class BaseController
     {
         public Input $input;
+        /** @var \Joomla\CMS\Application\CMSApplicationInterface */
+        protected $app;
         protected $default_view = '';
         public $redirect = null;
 
@@ -486,6 +509,7 @@ namespace Joomla\CMS\MVC\Model
         public function setError(string $error): void {}
         public function getError($i = null, $toString = true) { return null; }
         public function getErrors(): array { return []; }
+        public function getDatabase(): \Joomla\Database\DatabaseInterface { return new class implements \Joomla\Database\DatabaseInterface { public function getQuery(bool $new = false): \Joomla\Database\QueryInterface { return new class implements \Joomla\Database\QueryInterface {}; } public function setQuery($query): self { return $this; } public function execute(): bool { return true; } public function loadResult(): mixed { return null; } public function loadColumn(): array { return []; } public function loadAssoc(): ?array { return null; } public function loadObject(): ?object { return null; } public function loadAssocList(): array { return []; } public function loadObjectList(): array { return []; } public function quote($text, bool $escape = true): string { return ''; } public function quoteName(string $name): string { return ''; } public function q($text, bool $escape = true): string { return ''; } public function qn(string $name): string { return ''; } public function getNullDate(): string { return ''; } public function getServerType(): string { return 'mysql'; } public function insertObject(string $table, object $object, ?string $key = null): bool { return true; } public function updateObject(string $table, object $object, array $key, bool $nulls = false): bool { return true; } public function truncateTable(string $table): void {} }; }
     }
 
     class FormModel extends BaseModel

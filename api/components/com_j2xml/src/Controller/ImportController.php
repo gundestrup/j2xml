@@ -111,7 +111,7 @@ class ImportController extends BaseController
 		$raw = strstr($raw, '<?xml version="1.0" ');
 
 		libxml_use_internal_errors(true);
-		$xml = simplexml_load_string($raw, 'SimpleXMLElement', LIBXML_PARSEHUGE);
+		$xml = simplexml_load_string($raw, 'SimpleXMLElement', LIBXML_PARSEHUGE | LIBXML_NONET);
 
 		if (!$xml)
 		{

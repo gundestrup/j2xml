@@ -8,7 +8,7 @@ final class ImportSettingsTest extends TestCase
 {
 	private function importForm(): SimpleXMLElement
 	{
-		$xml = simplexml_load_file(J2XML_ROOT . '/administrator/components/com_j2xml/forms/import.xml');
+		$xml = simplexml_load_file(J2XML_ROOT . '/administrator/components/com_j2xml/forms/import.xml', 'SimpleXMLElement', LIBXML_NONET);
 		self::assertNotFalse($xml);
 
 		return $xml;
@@ -54,7 +54,7 @@ final class ImportSettingsTest extends TestCase
 
 	public function testComprehensiveFixtureContainsAllSupportedEntityNodes(): void
 	{
-		$xml = simplexml_load_file(J2XML_ROOT . '/tests/fixtures/all-content-types.xml');
+		$xml = simplexml_load_file(J2XML_ROOT . '/tests/fixtures/all-content-types.xml', 'SimpleXMLElement', LIBXML_NONET);
 		self::assertNotFalse($xml);
 
 		foreach (['user', 'content', 'category', 'contact', 'module', 'menu', 'tag', 'field', 'usernote'] as $node)

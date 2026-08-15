@@ -15,7 +15,6 @@ namespace Joomla\Component\J2xml\Administrator\View;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
@@ -34,7 +33,7 @@ class DefaultHtmlView extends HtmlView
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$app = Factory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 		parent::__construct($config);
 		$this->_addPath('template', $this->_basePath . '/views/default/tmpl');
 		$this->_addPath('template', JPATH_THEMES . '/' . $app->getTemplate() . '/html/com_j2xml/default');

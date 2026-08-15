@@ -112,7 +112,7 @@ class Viewlevel extends Table
 	 *
 	 * @since 18.8.310
 	 */
-	public static function import ($xml, &$params)
+	public static function import ($xml, &$params, $db = null, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -122,7 +122,7 @@ class Viewlevel extends Table
 			return;
 		}
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		foreach ($xml->xpath("//j2xml/viewlevel[not(title = '')]") as $record)
 		{
 			self::prepareData($record, $data, $params);
@@ -234,7 +234,7 @@ class Viewlevel extends Table
 	 *
 	 * @since 18.8.310
 	 */
-	public static function export ($id, &$xml, $options)
+	public static function export ($id, &$xml, $options, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -243,7 +243,7 @@ class Viewlevel extends Table
 			return;
 		}
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$item = new Viewlevel($db);
 		if (!$item->load($id))
 		{

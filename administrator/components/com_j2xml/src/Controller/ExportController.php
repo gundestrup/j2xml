@@ -15,13 +15,13 @@ namespace Joomla\Component\J2xml\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Log\LogEntry;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Session\Session;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Registry\Registry;
 
 /**
@@ -53,7 +53,7 @@ class ExportController extends BaseController
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$app = Factory::getApplication();
+		$app = $this->app;
 		$jform = $app->input->post->get('jform', [], 'array');
 		$data = [];
 		foreach ($jform as $k => $v)
@@ -87,7 +87,7 @@ class ExportController extends BaseController
 			return;
 		}
 
-		$app = Factory::getApplication();
+		$app = $this->app;
 		$data = $app->input->post->getArray();
 		$app->setUserState('com_j2xml.send.data', $data);
 		Log::add(new LogEntry('setUserState(\'com_j2xml.send.data\'): ' . print_r($data, true), Log::DEBUG, 'com_j2xml'));
@@ -96,7 +96,8 @@ class ExportController extends BaseController
 
 		$exportMethod = $this->viewName ?: $this->getName();
 
-		$j2xml = new \eshiol\J2xml\Exporter();
+		$db = \Joomla\CMS\Factory::getContainer()->get(DatabaseInterface::class);
+		$j2xml = new \eshiol\J2xml\Exporter($db, $this->app);
 		$xml = null;
 		$j2xml->$exportMethod($cid, $xml, new Registry());
 

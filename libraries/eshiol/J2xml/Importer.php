@@ -35,6 +35,8 @@ use eshiol\J2xml\Table\Usernote;
 use eshiol\J2xml\Table\Viewlevel;
 use eshiol\J2xml\Table\Weblink;
 use eshiol\J2xml\Version;
+use Joomla\CMS\Application\CMSApplicationInterface;
+use Joomla\Database\DatabaseInterface;
 
 /**
  *
@@ -56,25 +58,43 @@ class Importer
 
 	protected $_usergroups;
 
-	function __construct ()
+	/**
+	 * The application instance.
+	 *
+	 * @var CMSApplicationInterface
+	 * @since __DEPLOY_VERSION__
+	 */
+	protected $app;
+
+	/**
+	 * CONSTRUCTOR
+	 *
+	 * @param   DatabaseInterface           $db   Optional database instance.
+	 * @param   CMSApplicationInterface     $app  Optional application instance.
+	 *
+	 * @since 1.6.0
+	 */
+	function __construct (?DatabaseInterface $db = null, ?CMSApplicationInterface $app = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db         = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db         = $db ?? \Joomla\CMS\Factory::getContainer()->get(DatabaseInterface::class);
+		$app        = $app ?? \Joomla\CMS\Factory::getApplication();
+		$this->app  = $app;
 		$serverType = $db->getServerType();
 
 		// Merge the default translation with the current translation
-		$jlang = \Joomla\CMS\Factory::getApplication()->getLanguage();
+		$jlang = $app->getLanguage();
 		$jlang->load('lib_j2xml', JPATH_SITE, 'en-GB', true);
 		$jlang->load('lib_j2xml', JPATH_SITE, $jlang->getDefault(), true);
 		$jlang->load('lib_j2xml', JPATH_SITE, null, true);
 
-		$this->_user     = \Joomla\CMS\Factory::getApplication()->getIdentity();
+		$this->_user     = $app->getIdentity();
 		$this->_nullDate = $db->getNullDate();
 		$this->_user_id  = $this->_user->get('id');
 		$this->_now      = (new \Joomla\CMS\Date\Date("now"))->format("%Y-%m-%d-%H-%M-%S");
-		$this->_option   = (PHP_SAPI != 'cli') ? \Joomla\CMS\Factory::getApplication()->input->getCmd('option') : 'cli_' .
-				 strtolower(get_class(\Joomla\CMS\Factory::getApplication()));
+		$this->_option   = (PHP_SAPI != 'cli') ? $app->input->getCmd('option') : 'cli_' .
+				 strtolower(get_class($app));
 
 		try {
 			$query = "CREATE TABLE IF NOT EXISTS " . $db->quoteName("#__j2xml_usergroups");
@@ -228,7 +248,7 @@ class Importer
 		{
 			\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 			// Trigger the onAfterImport event.
-			$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentAfterImport', [
+			$results = $this->app->triggerEvent('onContentAfterImport', [
 				'com_j2xml.import',
 				&$xml,
 				$params

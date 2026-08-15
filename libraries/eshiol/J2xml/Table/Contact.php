@@ -107,7 +107,7 @@ class Contact extends Table
 	 *
 	 * @since 18.8.310
 	 */
-	public static function export ($id, &$xml, $options)
+	public static function export ($id, &$xml, $options, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -116,7 +116,7 @@ class Contact extends Table
 			return;
 		}
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$item = new Contact($db);
 		if (!$item->load($id))
 		{
@@ -201,7 +201,7 @@ class Contact extends Table
 	 *
 	 * @since 19.2.322
 	 */
-	public static function import ($xml, &$params)
+	public static function import ($xml, &$params, $db = null, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -211,7 +211,7 @@ class Contact extends Table
 			return;
 		}
 
-		$db     = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db     = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$keepId = $params->get('keep_user_id', '0');
 
 		$import_categories = $params->get('categories', 0);
@@ -288,7 +288,7 @@ class Contact extends Table
 	 *
 	 * @since 20.5.349
 	 */
-	public static function prepareData ($record, &$data, $params)
+	public static function prepareData ($record, &$data, $params, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 

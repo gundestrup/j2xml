@@ -83,7 +83,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
 	public function doExecute()
 	{
 		// Merge the default translation with the current translation
-		$lang = \Joomla\CMS\Factory::getApplication()->getLanguage();
+		$lang = $this->getLanguage();
 		$lang->load('lib_j2xml', JPATH_SITE, null, false, false)
 			|| $lang->load('lib_j2xml', JPATH_ADMINISTRATOR, null, false, false)
 			// Fallback to the lib_j2xml file in the default language
@@ -118,7 +118,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
 		}
 
 		libxml_use_internal_errors(true);
-		$xml = simplexml_load_string($data);
+		$xml = simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
 		if (!$xml)
 		{
 			$errors = libxml_get_errors();
@@ -157,7 +157,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
 		}
 
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onBeforeImport', array('cli_j2xml.import', &$xml));
+		$results = $this->triggerEvent('onBeforeImport', array('cli_j2xml.import', &$xml));
 		if (!$xml)
 		{
 			$this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
@@ -212,7 +212,8 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
 
 				$iparams->set('keep_data', $params->get('keep_data'));
 
-				$importer = class_exists('eshiol\J2xmlpro\Importer') ? new eshiol\J2xmlpro\Importer() : new eshiol\J2xml\Importer();
+				$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+				$importer = class_exists('eshiol\J2xmlpro\Importer') ? new eshiol\J2xmlpro\Importer($db, $this) : new eshiol\J2xml\Importer($db, $this);
 				$importer->import($xml, $iparams);
 			}
 			else

@@ -22,6 +22,8 @@ defined('_JEXEC') or die;
 
 use eshiol\J2xml\Messages;
 use eshiol\J2xml\Version;
+use Joomla\CMS\Application\CMSApplicationInterface;
+use Joomla\Database\DatabaseInterface;
 
 /**
  * Sender
@@ -87,19 +89,21 @@ class Sender
 	/**
 	 * Send data to a remote Joomla site via the REST API.
 	 *
-	 * @param   \SimpleXMLElement  $xml     The J2XML data to send
-	 * @param   array              $options  Options array (gzip, debug, etc.)
-	 * @param   int                $sid     The remote server ID in #__j2xml_websites
+	 * @param   \SimpleXMLElement       $xml      The J2XML data to send
+	 * @param   array                   $options  Options array (gzip, debug, etc.)
+	 * @param   int                     $sid      The remote server ID in #__j2xml_websites
+	 * @param   CMSApplicationInterface $app      Optional application instance.
+	 * @param   DatabaseInterface       $db       Optional database instance.
 	 *
 	 * @return  void
 	 *
 	 * @since   1.5.3beta3.38
 	 */
-	public static function send($xml, $options, $sid)
+	public static function send($xml, $options, $sid, ?CMSApplicationInterface $app = null, ?DatabaseInterface $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$app = \Joomla\CMS\Factory::getApplication();
+		$app = $app ?? \Joomla\CMS\Factory::getApplication();
 
 		$dom = new \DOMDocument('1.0');
 		$dom->preserveWhiteSpace = false;
@@ -112,7 +116,7 @@ class Sender
 			$data = gzencode($data, 9);
 		}
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(DatabaseInterface::class);
 		$query = $db->getQuery(true)
 			->select($db->quoteName(['title', 'remote_url', 'token']))
 			->from($db->quoteName('#__j2xml_websites'))

@@ -121,7 +121,7 @@ class Field extends Table
 	 *
 	 * @since 18.8.310
 	 */
-	public static function import ($xml, &$params)
+	public static function import ($xml, &$params, $db = null, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -130,9 +130,9 @@ class Field extends Table
 			return;
 
 		$context = $params->get('context');
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$nullDate = $db->getNullDate();
-		$userid = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
+		$userid = $userId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 
 		foreach ($xml->xpath("//j2xml/field") as $record)
 		{
@@ -184,7 +184,7 @@ class Field extends Table
 	 * {@inheritdoc}
 	 * @see Table::prepareData()
 	 */
-	public static function prepareData ($record, &$data, $params)
+	public static function prepareData ($record, &$data, $params, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -201,12 +201,12 @@ class Field extends Table
 			$data['params'] = '{}';
 		}
 
-		if (isset($data['modified_time']) && ($data['modified_time'] != \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class)->getNullDate()))
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		if (isset($data['modified_time']) && ($data['modified_time'] != $db->getNullDate()))
 		{
 			$data['modified_time'] = self::fixDate($data['modified_time']);
 		}
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		if ($data['type'] == 'subform')
 		{
 			$query = $db->getQuery(true)
@@ -247,7 +247,7 @@ class Field extends Table
 	 *
 	 * @since 18.8.310
 	 */
-	public static function export ($id, &$xml, $options)
+	public static function export ($id, &$xml, $options, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -256,7 +256,7 @@ class Field extends Table
 			return;
 		}
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$item = new Field($db);
 		if (!$item->load($id))
 		{

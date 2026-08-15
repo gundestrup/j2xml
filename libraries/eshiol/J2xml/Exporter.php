@@ -33,6 +33,8 @@ use eshiol\J2xml\Table\Usernote;
 use eshiol\J2xml\Table\Viewlevel;
 use eshiol\J2xml\Table\Weblink;
 use eshiol\J2xml\Version;
+use Joomla\CMS\Application\CMSApplicationInterface;
+use Joomla\Database\DatabaseInterface;
 
 /**
  *
@@ -51,21 +53,34 @@ class Exporter
 	private $_option = '';
 
 	/**
+	 * The application instance.
+	 *
+	 * @var CMSApplicationInterface
+	 * @since __DEPLOY_VERSION__
+	 */
+	protected $app;
+
+	/**
 	 * CONSTRUCTOR
+	 *
+	 * @param   DatabaseInterface           $db   Optional database instance.
+	 * @param   CMSApplicationInterface     $app  Optional application instance.
 	 *
 	 * @since 1.5
 	 */
-	function __construct ()
+	function __construct (?DatabaseInterface $db = null, ?CMSApplicationInterface $app = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db         = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(DatabaseInterface::class);
+		$app = $app ?? \Joomla\CMS\Factory::getApplication();
+		$this->app = $app;
 
-		$this->_option = (PHP_SAPI != 'cli') ? \Joomla\CMS\Factory::getApplication()->input->getCmd('option') : 'cli_' .
-				 strtolower(get_class(\Joomla\CMS\Factory::getApplication()));
+		$this->_option = (PHP_SAPI != 'cli') ? $app->input->getCmd('option') : 'cli_' .
+				 strtolower(get_class($app));
 
 		// Merge the default translation with the current translation
-		$jlang = \Joomla\CMS\Factory::getApplication()->getLanguage();
+		$jlang = $app->getLanguage();
 		$jlang->load('lib_j2xml', JPATH_SITE, 'en-GB', true);
 		$jlang->load('lib_j2xml', JPATH_SITE, $jlang->getDefault(), true);
 		$jlang->load('lib_j2xml', JPATH_SITE, null, true);
@@ -125,9 +140,10 @@ class Exporter
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
+		$app = $this->app;
+
 		if ($options['debug'] > 0)
 		{
-			$app = \Joomla\CMS\Factory::getApplication();
 			$data = ob_get_contents();
 			if ($data)
 			{
@@ -148,7 +164,7 @@ class Exporter
 		$data = $dom->saveXML();
 
 		// modify the MIME type
-		$document = \Joomla\CMS\Factory::getApplication()->getDocument();
+		$document = $app->getDocument();
 
 		// Verify that the server supports gzip compression before we attempt to gzip encode the data.
 		// @codeCoverageIgnoreStart
@@ -207,7 +223,7 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
+		$results = $this->app->triggerEvent('onJ2xmlAfterExport', [
 			$this->_option . '.' . __FUNCTION__,
 			&$xml,
 			$params
@@ -252,7 +268,7 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
+		$results = $this->app->triggerEvent('onJ2xmlAfterExport', [
 			$this->_option . '.' . __FUNCTION__,
 			&$xml,
 			$params
@@ -297,7 +313,7 @@ class Exporter
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
+		$results = $this->app->triggerEvent('onJ2xmlAfterExport', [
 			$this->_option . '.' . __FUNCTION__,
 			&$xml,
 			$params
@@ -341,7 +357,7 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
+		$results = $this->app->triggerEvent('onJ2xmlAfterExport', [
 				$this->_option . '.' . __FUNCTION__,
 				&$xml,
 				$params
@@ -385,7 +401,7 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
+		$results = $this->app->triggerEvent('onJ2xmlAfterExport', [
 			$this->_option . '.' . __FUNCTION__,
 			&$xml,
 			$params
@@ -429,7 +445,7 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
+		$results = $this->app->triggerEvent('onJ2xmlAfterExport', [
 				$this->_option . '.' . __FUNCTION__,
 				&$xml,
 				$params
@@ -473,7 +489,7 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
+		$results = $this->app->triggerEvent('onJ2xmlAfterExport', [
 				$this->_option . '.' . __FUNCTION__,
 				&$xml,
 				$params
@@ -519,7 +535,7 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
+		$results = $this->app->triggerEvent('onJ2xmlAfterExport', [
 				$this->_option . '.' . __FUNCTION__,
 				&$xml,
 				$params
@@ -565,7 +581,7 @@ class Exporter
 		$params = new \Joomla\Registry\Registry($options);
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
+		$results = $this->app->triggerEvent('onJ2xmlAfterExport', [
 				$this->_option . '.' . __FUNCTION__,
 				&$xml,
 				$params
@@ -610,7 +626,7 @@ class Exporter
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 
 		// Trigger the onAfterExport event.
-		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlAfterExport', [
+		$results = $this->app->triggerEvent('onJ2xmlAfterExport', [
 			$this->_option . '.' . __FUNCTION__,
 			&$xml,
 			$params

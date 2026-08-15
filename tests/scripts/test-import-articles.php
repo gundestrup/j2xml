@@ -29,7 +29,7 @@ if (!file_exists($xmlFile)) {
     exit(1);
 }
 
-$xml = simplexml_load_file($xmlFile);
+$xml = simplexml_load_file($xmlFile, 'SimpleXMLElement', LIBXML_NONET);
 if ($xml === false) {
     echo "FAIL: Could not parse XML\n";
     exit(1);
@@ -40,7 +40,7 @@ echo "Content elements: " . count($xml->content) . "\n";
 // Import categories first (articles need a valid category)
 $catFile = '/fixtures/categories-j3.xml';
 if (file_exists($catFile)) {
-    $catXml = simplexml_load_file($catFile);
+    $catXml = simplexml_load_file($catFile, 'SimpleXMLElement', LIBXML_NONET);
     $catParams = new \Joomla\Registry\Registry();
     $catParams->set('categories', 1);
     $catParams->set('content', 0);

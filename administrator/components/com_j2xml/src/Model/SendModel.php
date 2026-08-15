@@ -19,7 +19,6 @@
 namespace Joomla\Component\J2xml\Administrator\Model;
 
 use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Log\LogEntry;
 use Joomla\CMS\MVC\Model\FormModel;
@@ -54,7 +53,7 @@ class SendModel extends FormModel
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$layout = Factory::getApplication()->input->get('layout', 'default');
+		$layout = \Joomla\CMS\Factory::getApplication()->input->get('layout', 'default');
 		if ($layout != 'default')
 		{
 			$this->context .= '.' . $layout;
@@ -86,7 +85,7 @@ class SendModel extends FormModel
 				'load_data' => false
 			]);
 
-			$layout = Factory::getApplication()->input->get('layout', 'default');
+			$layout = \Joomla\CMS\Factory::getApplication()->input->get('layout', 'default');
 			if ($layout != 'default')
 			{
 				$form->loadFile('send_' . $layout);
@@ -144,7 +143,7 @@ class SendModel extends FormModel
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
 		// Check the session for previously entered form data.
-		$data   = Factory::getApplication()->getUserState('com_j2xml.send.data', []);
+		$data   = \Joomla\CMS\Factory::getApplication()->getUserState('com_j2xml.send.data', []);
 		Log::add(new LogEntry('getUserState(\'com_j2xml.send.data\'): ' . print_r($data, true), Log::DEBUG, 'com_j2xml'));
 		$jform  = [];
 		foreach($data as $k => $v)

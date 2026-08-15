@@ -68,7 +68,7 @@ class Fieldgroup extends Table
 	 *
 	 * @since 19.2.323
 	 */
-	public static function import ($xml, &$params)
+	public static function import ($xml, &$params, $db = null, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -77,9 +77,9 @@ class Fieldgroup extends Table
 			return;
 
 		$context = $params->get('context');
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$nullDate = $db->getNullDate();
-		$userid = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
+		$userid = $userId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 
 		foreach ($xml->xpath("//j2xml/fieldgroup") as $record)
 		{
@@ -132,7 +132,7 @@ class Fieldgroup extends Table
 	 *
 	 * @since 19.2.323
 	 */
-	public static function export ($id, &$xml, $options)
+	public static function export ($id, &$xml, $options, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -141,7 +141,7 @@ class Fieldgroup extends Table
 			return;
 		}
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$item = new Fieldgroup($db);
 		if (!$item->load($id))
 		{
@@ -174,7 +174,7 @@ class Fieldgroup extends Table
 	 *
 	 * @since 22.2.356
 	 */
-	public static function prepareData ($record, &$data, $params)
+	public static function prepareData ($record, &$data, $params, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 

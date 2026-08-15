@@ -20,7 +20,6 @@ namespace Joomla\Component\J2xml\Administrator\Model;
 
 use Joomla\CMS\Client\ClientHelper;
 use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
@@ -67,7 +66,7 @@ class ImportModel extends FormModel
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$app = Factory::getApplication('administrator');
+		$app = \Joomla\CMS\Factory::getApplication();
 
 		$this->setState('message', $app->getUserState('com_j2xml.message'));
 		$app->setUserState('com_j2xml.message', '');
@@ -90,7 +89,7 @@ class ImportModel extends FormModel
 
 		// Set FTP credentials, if given.
 		ClientHelper::setCredentialsFromRequest('ftp');
-		$app = Factory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 
 		// Load j2xml plugins for assistance if required:
 		PluginHelper::importPlugin('j2xml');
@@ -159,7 +158,7 @@ class ImportModel extends FormModel
 		$data->content = $rawData;
 		Log::add(new LogEntry('data: ' . $data->content, Log::DEBUG, 'com_j2xml'));
 
-		$jform = Factory::getApplication()->input->post->get('jform', [], 'array');
+		$jform = \Joomla\CMS\Factory::getApplication()->input->post->get('jform', [], 'array');
 
 		$fparams = new \Joomla\Registry\Registry($jform);
 		Log::add(new LogEntry('jform: ' . print_r($fparams->toArray(), true), Log::DEBUG, 'com_j2xml'));
@@ -196,7 +195,7 @@ class ImportModel extends FormModel
 		// This event allows a custom import of the data or a customization of the data:
 		PluginHelper::importPlugin('j2xml');
 
-		$results = Factory::getApplication()->triggerEvent('onContentPrepareData', ['com_j2xml.import', &$data, $params]);
+		$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentPrepareData', ['com_j2xml.import', &$data, $params]);
 
 		if (in_array(false, $results, true))
 		{
@@ -212,7 +211,7 @@ class ImportModel extends FormModel
 
 		$data->content = strstr($data->content, '<?xml version="1.0" ');
 
-		$xml = simplexml_load_string($data->content, 'SimpleXMLElement', LIBXML_PARSEHUGE);
+		$xml = simplexml_load_string($data->content, 'SimpleXMLElement', LIBXML_PARSEHUGE | LIBXML_NONET);
 		if (!$xml)
 		{
 			return;
@@ -235,14 +234,15 @@ class ImportModel extends FormModel
 			$version = explode(".", $xmlVersion);
 			$xmlVersionNumber = $version[0] . substr('0' . $version[1], strlen($version[1]) - 1) . substr('0' . $version[2], strlen($version[2]) - 1);
 
-			$results = Factory::getApplication()->triggerEvent('onValidateData', [&$xml, $params]);
+			$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onValidateData', [&$xml, $params]);
 
-			$importer = class_exists('\eshiol\J2xmlpro\Importer') ? new \eshiol\J2xmlpro\Importer() : new \eshiol\J2xml\Importer();
+			$db = $this->getDatabase();
+			$importer = class_exists('\eshiol\J2xmlpro\Importer') ? new \eshiol\J2xmlpro\Importer($db, \Joomla\CMS\Factory::getApplication()) : new \eshiol\J2xml\Importer($db, \Joomla\CMS\Factory::getApplication());
 			if ($importer->isSupported($xmlVersionNumber) || in_array(true, $results, true))
 			{
 				$params->set('version', (string) $xml['version']);
 
-				$results = Factory::getApplication()->triggerEvent('onContentBeforeImport', ['com_j2xml.import', &$xml, $params]);
+				$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentBeforeImport', ['com_j2xml.import', &$xml, $params]);
 
 				$importer->import($xml, $params);
 
@@ -263,7 +263,7 @@ class ImportModel extends FormModel
 		{
 			if (!is_file($package['packagefile']))
 			{
-				$config = Factory::getApplication()->getConfig();
+				$config = \Joomla\CMS\Factory::getApplication()->getConfig();
 				$package['packagefile'] = $config->get('tmp_path') . '/' . $package['packagefile'];
 			}
 
@@ -287,7 +287,7 @@ class ImportModel extends FormModel
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
 		// Get the uploaded file information.
-		$app = Factory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 		$input	= $app->input;
 
 		// Do not change the filter type 'raw'. We need this to let files containing PHP code to upload. See JInputFiles::get.
@@ -342,7 +342,7 @@ class ImportModel extends FormModel
 		}
 
 		// Build the appropriate paths.
-		$config   = Factory::getApplication()->getConfig();
+		$config   = \Joomla\CMS\Factory::getApplication()->getConfig();
 		$tmp_dest = $config->get('tmp_path') . '/' . $userfile['name'];
 		$tmp_src  = $userfile['tmp_name'];
 
@@ -366,7 +366,7 @@ class ImportModel extends FormModel
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$app = Factory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 		$input = $app->input;
 
 		// Get the path to the package to install.
@@ -407,7 +407,7 @@ class ImportModel extends FormModel
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$app = Factory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 		$input = $app->input;
 
 		// Get the URL of the data to install.
@@ -432,7 +432,7 @@ class ImportModel extends FormModel
 			return false;
 		}
 
-		$config   = Factory::getApplication()->getConfig();
+		$config   = \Joomla\CMS\Factory::getApplication()->getConfig();
 		$tmp_dest = $config->get('tmp_path');
 
 		// Unpack the downloaded package file.
@@ -503,7 +503,7 @@ class ImportModel extends FormModel
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
 		// Check the session for previously entered form data.
-		$data   = Factory::getApplication()->getUserState('com_j2xml.import.data', []);
+		$data   = \Joomla\CMS\Factory::getApplication()->getUserState('com_j2xml.import.data', []);
 		Log::add(new LogEntry('getUserState(\'com_j2xml.import.data\'): ' . print_r($data, true), Log::DEBUG, 'com_j2xml'));
 		$jform  = [];
 		foreach($data as $k => $v)

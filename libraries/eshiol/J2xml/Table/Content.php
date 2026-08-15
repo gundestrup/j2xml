@@ -245,7 +245,7 @@ class Content extends Table
 	 *
 	 * @since 18.8.301
 	 */
-	public static function import ($xml, &$params)
+	public static function import ($xml, &$params, $db = null, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
@@ -258,9 +258,9 @@ class Content extends Table
 		//$params->def('content_category_default', self::getCategoryId('uncategorised', 'com_content'));
 		$force_to = $params->get('content_category_forceto');
 		$context = $params->get('context', 'com_content.article');
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$nullDate = $db->getNullDate();
-		$userid = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
+		$userid = $userId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 		\Joomla\CMS\Plugin\PluginHelper::importPlugin('content');
 
 		$params->set('extension', 'com_content');
@@ -459,7 +459,7 @@ class Content extends Table
 	 *
 	 * @since 18.8.301
 	 */
-	public static function prepareData ($record, &$data, $params)
+	public static function prepareData ($record, &$data, $params, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
@@ -496,7 +496,7 @@ class Content extends Table
 		}
 		if (!isset($data['created_by']))
 		{
-			$data['created_by'] = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
+			$data['created_by'] = $userId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 		}
 		if (!isset($data['language']))
 		{
@@ -590,7 +590,7 @@ class Content extends Table
 	 *
 	 * @since 18.8.310
 	 */
-	public static function export ($id, &$xml, $options)
+	public static function export ($id, &$xml, $options, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
@@ -599,7 +599,7 @@ class Content extends Table
 			return;
 		}
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$item = new Content($db);
 		if (!$item->load($id))
 		{
@@ -775,7 +775,7 @@ class Content extends Table
 	 * {@inheritdoc}
 	 * @see Table::getCategoryId()
 	 */
-	public static function getCategoryId ($category, $extension = 'com_content', $defaultCategoryId = 0)
+	public static function getCategoryId ($category, $extension = 'com_content', $defaultCategoryId = 0, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
@@ -787,7 +787,7 @@ class Content extends Table
 	 *
 	 * @since 23.2.378
 	 */
-	public static function changeId($id, $newid)
+	public static function changeId($id, $newid, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__ . '(' . $id . ', ' . $newid . ')', \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
@@ -796,7 +796,7 @@ class Content extends Table
 			return;
 		}
 
-		$db      = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db      = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$context = 'com_content.article';
 
 		// Check id

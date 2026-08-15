@@ -363,13 +363,13 @@ class Table extends \Joomla\CMS\Table\Table
 	 * @return void
 	 * @access public
 	 */
-	public static function prepareData ($record, &$data, $params)
+	public static function prepareData ($record, &$data, $params, $userId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
 		$nullDate = null;
 
-		$userid = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
+		$userid = $userId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 
 		$data = self::xml2array($record, version_compare($params->get('version', Version::$DOCVERSION), '19.2.0', 'ne'));
 
@@ -497,7 +497,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 *
 	 * @return int the id of the article if it exists or the default article id
 	 */
-	public static function getArticleId ($article, $defaultArticleId = 0)
+	public static function getArticleId ($article, $defaultArticleId = 0, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -507,7 +507,7 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 		else
 		{
-			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+			$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$i = strrpos($article, '/');
 			$query = $db->getQuery(true)
 				->select($db->quoteName('c.id'))
@@ -536,18 +536,19 @@ class Table extends \Joomla\CMS\Table\Table
 	 *
 	 * @return int the id of the user if it exists or the default user id
 	 */
-	public static function getUserId ($username, $defaultUserId = null)
+	public static function getUserId ($username, $defaultUserId = null, $db = null, $currentUserId = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		$query = $db->getQuery(true)
 			->select($db->quoteName('id'))
 			->from($db->quoteName('#__users'))
 			->where($db->quoteName('username') . ' = ' . $db->quote($username));
 		$userId = $db->setQuery($query)->loadResult();
 
-		$userId = $userId ?: ($defaultUserId ?: \Joomla\CMS\Factory::getApplication()->getIdentity()->id);
+		$currentUserId = $currentUserId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
+		$userId = $userId ?: ($defaultUserId ?: $currentUserId);
 
 		return $userId;
 	}
@@ -561,7 +562,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 * @return boolean|mixed|stdClass|void|NULL
 	 * @return mixed The usergroup id on success, boolean false on failure.
 	 */
-	public static function getUsergroupId ($usergroup, $import = true)
+	public static function getUsergroupId ($usergroup, $import = true, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -571,7 +572,7 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 		elseif (!is_numeric($usergroup))
 		{
-			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+			$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$query = $db->getQuery(true)
 				->select($db->quoteName('id'))
 				->from($db->quoteName('#__j2xml_usergroups', 'g'))
@@ -625,7 +626,7 @@ class Table extends \Joomla\CMS\Table\Table
 		return $usergroupId;
 	}
 
-	public static function getAccessId ($access)
+	public static function getAccessId ($access, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -635,7 +636,7 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 		else
 		{
-			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+			$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$query = $db->getQuery(true)
 				->select($db->quoteName('id'))
 				->from($db->quoteName('#__viewlevels'))
@@ -662,11 +663,11 @@ class Table extends \Joomla\CMS\Table\Table
 	 *
 	 * @return int the id of the category if it exists or the default category id
 	 */
-	public static function getCategoryId ($category, $extension, $defaultCategoryId = 0)
+	public static function getCategoryId ($category, $extension, $defaultCategoryId = 0, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 		if (!is_numeric($category))
 		{
 			$query = $db->getQuery(true)
@@ -720,11 +721,11 @@ class Table extends \Joomla\CMS\Table\Table
 	 *
 	 * @since 14.8.240
 	 */
-	public static function getTagId ($tag)
+	public static function getTagId ($tag, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
 		try
 		{
@@ -875,7 +876,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 *
 	 * @since 19.2.323
 	 */
-	public static function import ($xml, &$params)
+	public static function import ($xml, &$params, $db = null, $userId = null)
 	{
 	}
 
@@ -894,7 +895,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 *
 	 * @since 19.2.323
 	 */
-	public static function export ($id, &$xml, $options)
+	public static function export ($id, &$xml, $options, $db = null)
 	{
 	}
 
@@ -943,7 +944,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 *
 	 * @return int the id of the menu if it exists or the default menu id
 	 */
-	public static function getMenuId ($menu, $defaultMenuId = 0)
+	public static function getMenuId ($menu, $defaultMenuId = 0, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -953,7 +954,7 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 		else
 		{
-			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+			$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$query = $db->getQuery(true);
 			$path = $query->concatenate([$db->quoteName('menutype'), $db->quoteName('path')], '/');
 			$query->select($db->quoteName('id'))
@@ -977,7 +978,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 * @param   array    $associations  The associated items.
 	 * @param   string   $context       The associations context.
 	 */
-	protected static function setAssociations($id, $language, $associations, $context)
+	protected static function setAssociations($id, $language, $associations, $context, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($id, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
@@ -990,7 +991,7 @@ class Table extends \Joomla\CMS\Table\Table
 			return;
 		}
 
-		$db      = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+		$db      = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
 		$isEnabled = \Joomla\CMS\Language\Associations::isEnabled();
 
@@ -1079,7 +1080,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 *
 	 * @since 20.5.349
 	 */
-	public static function getContactId ($contact, $defaultContactId = 0)
+	public static function getContactId ($contact, $defaultContactId = 0, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($contact, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
@@ -1090,7 +1091,7 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 		else
 		{
-			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+			$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$i = strrpos($contact, '/');
 			$query = $db->getQuery(true)
 				->select($db->quoteName('c.id'))
@@ -1122,7 +1123,7 @@ class Table extends \Joomla\CMS\Table\Table
 	 *
 	 * @since 20.5.349
 	 */
-	public static function getWeblinkId ($weblink, $defaultWeblinkId = 0)
+	public static function getWeblinkId ($weblink, $defaultWeblinkId = 0, $db = null)
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -1132,7 +1133,7 @@ class Table extends \Joomla\CMS\Table\Table
 		}
 		else
 		{
-			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+			$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 			$i = strrpos($weblink, '/');
 			$query = $db->getQuery(true)
 				->select($db->quoteName('c.id'))
