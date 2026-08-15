@@ -59,7 +59,7 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
 ├── plugins/system/
 │   ├── j2xml/                  # System plugin (j2xml.php, layouts/{joomla,joomla4}, src/)
 │   └── basicauth/              # Basic-auth system plugin
-├── .github/                    # Issue templates + PR template (no CI workflows)
+├── .github/                    # Issue templates, PR template, CI workflows (ci.yml)
 ├── AI_INSTRUCTIONS.md          # THIS FILE — single source of truth for AI tools
 ├── AGENTS.md                   # Pointer → AI_INSTRUCTIONS.md (Devin / generic agents)
 ├── CLAUDE.md                   # Pointer → AI_INSTRUCTIONS.md (Claude Code)
@@ -162,13 +162,17 @@ Releases are produced externally (eshiol.it tooling) which:
    `plg_system_j2xml.zip`, `lib_eshiol_phpxmlrpc.zip`,
    `plg_system_basicauth.zip`, and bundles them into `pkg_j2xml.zip`.
 
-**CI is deferred**. The plan is to add GitHub
-Actions workflows that:
+**CI** runs on every push and pull request via GitHub Actions
+(`.github/workflows/ci.yml`) with three jobs:
 
-- Lint + run PHPStan on every push/PR (PHP 8.4 and 8.5 matrix).
-- Build release zips on git tag push (`v*`) and publish GitHub Releases.
+- **php-quality** (PHP 8.4 + 8.5 matrix): Composer validate, PHP lint,
+  PHPStan, PHPUnit, ShellCheck (warning+), XML validation with `xmllint`.
+- **mysql-integration**: Docker Compose Joomla 5 + 6 with MySQL 8.0;
+  runs `tests/scripts/run-all-tests.sh`.
+- **postgresql-integration**: Docker Compose Joomla 5 + 6 with PostgreSQL 16;
+  runs `tests/scripts/run-postgresql-smoke.sh`.
 
-Until then, use the **pre-commit hook** (below) for local checks.
+For local checks, use the **pre-commit hook** (below).
 
 ### Pre-commit hook
 
