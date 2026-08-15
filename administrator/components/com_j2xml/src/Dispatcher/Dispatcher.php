@@ -71,12 +71,6 @@ class Dispatcher extends ComponentDispatcher
 			|| $lang->load('lib_j2xml', JPATH_SITE, null, true)
 			|| $lang->load('lib_j2xml', JPATH_ADMINISTRATOR, null, true);
 
-		// Register the eshiol\J2xml namespace for PSR-0 autoloading.
-		if (!\class_exists('eshiol\\J2xml\\Exporter'))
-		{
-			\JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
-		}
-
 		parent::dispatch();
 	}
 }

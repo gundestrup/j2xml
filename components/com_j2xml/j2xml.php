@@ -18,12 +18,6 @@
 // no direct access
 defined('_JEXEC') or die;
 
-// Register the eshiol\J2xml namespace for PSR-0 autoloading.
-if (!class_exists('eshiol\\J2xml\\Version'))
-{
-	\JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
-}
-
 $params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 
 if ($params->get('debug') || defined('JDEBUG') && JDEBUG)
@@ -68,7 +62,7 @@ if ($forceCORS)
 	}
 }
 
-$jinput = \Joomla\CMS\Factory::getApplication()->input;
+$jinput = \Joomla\CMS\Factory::getApplication()->getInput();
 $controllerClass = 'J2xmlController';
 $task = $jinput->getCmd('task');
 

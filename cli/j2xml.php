@@ -54,9 +54,6 @@ require_once JPATH_CONFIGURATION.'/configuration.php';
 // System configuration.
 $config = new JConfig();
 
-// Register the eshiol\J2xml namespace for PSR-0 autoloading.
-\JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
-
 // Load Library language
 $lang = \Joomla\CMS\Factory::getApplication()->getLanguage();
 
@@ -90,7 +87,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
 			|| $lang->load('lib_j2xml', JPATH_SITE, null, true)
 			|| $lang->load('lib_j2xml', JPATH_ADMINISTRATOR, null, true);
 
-		$filename = $this->input->get('f',null,'');
+		$filename = $this->getInput()->get('f',null,'');
 
 		if (!$filename)
 		{

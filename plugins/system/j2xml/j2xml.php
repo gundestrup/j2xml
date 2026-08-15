@@ -19,12 +19,6 @@
 // no direct access
 defined('_JEXEC') or die;
 
-// Register the eshiol\J2xml namespace for PSR-0 autoloading.
-if (!class_exists('eshiol\\J2xml\\Exporter'))
-{
-	\JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
-}
-
 /**
  *
  */
@@ -111,7 +105,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
-		if ($this->app->input->get('format') == 'xmlrpc')
+		if ($this->app->getInput()->get('format') == 'xmlrpc')
 		{
 			return;
 		}
@@ -142,7 +136,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
 			return;
 		}
 
-		$input = $this->app->input;
+		$input = $this->app->getInput();
 		$option = $input->get('option');
 		$contentType = substr($option, 4);
 

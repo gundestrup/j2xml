@@ -9,9 +9,6 @@
 
 require __DIR__ . '/bootstrap.php';
 
-// Register the eshiol\J2xml namespace for PSR-0 autoloading.
-\JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
-
 echo "=== Test: Import articles (issues #72, #71) ===\n";
 echo "PHP: " . PHP_VERSION . "\n";
 echo "Joomla: " . (new \Joomla\CMS\Version())->getShortVersion() . "\n";

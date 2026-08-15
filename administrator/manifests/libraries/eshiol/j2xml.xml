@@ -2,7 +2,7 @@
 <extension type="library" method="upgrade">
 	<name>J2XML</name>
 	<libraryname>eshiol/J2xml</libraryname>
-	<namespace path="eshiol/J2xml">eshiol\J2xml</namespace>
+	<namespace path="">eshiol\J2xml</namespace>
 	<description>J2XML Library. Export/Import Joomla! content.</description>
 	<author>Helios Ciancio</author>
 	<authorEmail>info (at) eshiol (dot) it</authorEmail>

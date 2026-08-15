@@ -18,6 +18,3 @@
 
 // No direct access.
 defined('_JEXEC') or die();
-
-// Register the eshiol\J2xml namespace for PSR-0 autoloading.
-\JLoader::registerNamespace('eshiol\\J2xml', JPATH_LIBRARIES . '/eshiol/J2xml');
