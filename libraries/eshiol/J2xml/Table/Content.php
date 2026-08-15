@@ -380,22 +380,29 @@ class Content extends Table
 						}
 						else
 						{
-							$query = 'INSERT IGNORE INTO `#__content_frontpage`' . ' SET content_id = ' . $item->id 
-								. ',' . ' ordering = ' . $data['ordering'];
+							// Use query builder for cross-database compatibility (MySQL + PostgreSQL)
+							$query = $db->getQuery(true)
+								->insert($db->quoteName('#__content_frontpage'))
+								->columns([$db->quoteName('content_id'), $db->quoteName('ordering')])
+								->values($item->id . ',' . $data['ordering']);
 							if (!is_null($data['featured_up']))
 							{
-								$query .= ',' . ' featured_up = ' . $db->quote($data['featured_up']);
+								$query->columns($db->quoteName('featured_up'))
+									->values($db->quote($data['featured_up']));
 							}
 							if (!is_null($data['featured_down']))
 							{
-								$query .= ',' . ' featured_down = ' . $db->quote($data['featured_down']);
+								$query->columns($db->quoteName('featured_down'))
+									->values($db->quote($data['featured_down']));
 							}
 						}
 						$db->setQuery($query)->execute();
 
 						if (($keep_rating == 0) || (!isset($data['rating_count'])) || ($data['rating_count'] == 0))
 						{
-							$query = "DELETE FROM `#__content_rating` WHERE `content_id`=" . $item->id;
+							$query = $db->getQuery(true)
+								->delete($db->quoteName('#__content_rating'))
+								->where($db->quoteName('content_id') . ' = ' . $item->id);
 							$db->setQuery($query)->execute();
 						}
 						else

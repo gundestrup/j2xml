@@ -244,7 +244,19 @@ class ImportModel extends FormModel
 
 				$results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentBeforeImport', ['com_j2xml.import', &$xml, $params]);
 
-				$importer->import($xml, $params);
+				try
+				{
+					$importer->import($xml, $params);
+				}
+				catch (\Throwable $e)
+				{
+					// The import may throw on database-specific SQL (e.g.
+					// PostgreSQL vs MySQL syntax differences).  Log the error
+					// and continue so the user sees a message rather than a
+					// raw HTTP 500.
+					Log::add(new LogEntry('Import error: ' . $e->getMessage(), Log::ERROR, 'com_j2xml'));
+					$app->enqueueMessage($e->getMessage(), 'error');
+				}
 
 				if (in_array($installType, ['upload', 'url'], true))
 				{
