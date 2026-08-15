@@ -21,10 +21,16 @@ DATE="$(date +%Y-%m-%d)"
 # --- helpers ----------------------------------------------------------------
 
 # Substitute __DEPLOY_VERSION__ and __DEPLOY_DATE__ in a file (in-place)
+# Portable across BSD sed (macOS) and GNU sed (Linux)
 substitute_placeholders() {
     local file="$1"
-    sed -i '' "s/__DEPLOY_VERSION__/$VERSION/g" "$file"
-    sed -i '' "s/__DEPLOY_DATE__/$DATE/g" "$file"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/__DEPLOY_VERSION__/$VERSION/g" "$file"
+        sed -i '' "s/__DEPLOY_DATE__/$DATE/g" "$file"
+    else
+        sed -i "s/__DEPLOY_VERSION__/$VERSION/g" "$file"
+        sed -i "s/__DEPLOY_DATE__/$DATE/g" "$file"
+    fi
 }
 
 # Copy a directory tree, excluding .DS_Store and .git

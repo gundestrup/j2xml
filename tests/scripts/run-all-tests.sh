@@ -242,7 +242,7 @@ joomla_export() {
     fi
 
     local http_code
-    http_code=$(curl -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -o "$export_file" -w "%{http_code}" \
+    http_code=$(curl -s --max-time 120 -c "$COOKIE_FILE" -b "$COOKIE_FILE" -o "$export_file" -w "%{http_code}" \
         -X POST "$export_url" \
         -H "X-CSRF-Token: ${token}" \
         -F "task=${content_type}.display" \
@@ -651,8 +651,9 @@ for export_spec in \
     export_method=${export_spec%% *}
     export_node=${export_spec##* }
     export_xml=$(joomla_export "$JOOMLA5_URL" "$export_method" all 0 "$J5_CONTAINER" joomla5 2>/dev/null)
-    export_count=$(echo "$export_xml" | grep -c "<${export_node}[ >]" || true)
-    if echo "$export_xml" | grep -q '<j2xml' && [ "$export_count" -gt 0 ]; then
+    export_count=$(printf '%s' "$export_xml" | grep -c "<${export_node}[ >]" || true)
+    has_j2xml=$(printf '%s' "$export_xml" | grep -c '<j2xml' || true)
+    if [ "$has_j2xml" -gt 0 ] && [ "$export_count" -gt 0 ]; then
         pass "Export J5: $export_method endpoint exported $export_count $export_node record(s)"
     else
         fail "Export J5: $export_method endpoint did not export $export_node records"
