@@ -355,7 +355,7 @@ echo \$tokenString;
 header "Phase 1: Waiting for Joomla instances"
 
 info "Waiting for Joomla 5 at $JOOMLA5_URL ..."
-for i in $(seq 1 60); do
+for _ in $(seq 1 60); do
     if curl -sf -o /dev/null "$JOOMLA5_URL/" 2>/dev/null; then
         info "Joomla 5 is up"
         break
@@ -364,7 +364,7 @@ for i in $(seq 1 60); do
 done
 
 info "Waiting for Joomla 6 at $JOOMLA6_URL ..."
-for i in $(seq 1 60); do
+for _ in $(seq 1 60); do
     if curl -sf -o /dev/null "$JOOMLA6_URL/" 2>/dev/null; then
         info "Joomla 6 is up"
         break

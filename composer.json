@@ -2,6 +2,7 @@
 	"name": "j2xml/j2xml",
 	"description": "J2XML Joomla extension development tools",
 	"type": "project",
+	"license": "GPL-3.0-or-later",
 	"require-dev": {
 		"phpunit/phpunit": "^11.5",
 		"phpstan/phpstan": "^2.1"
