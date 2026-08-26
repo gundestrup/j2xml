@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Changed
+- **Renamed `AI_INSTRUCTIONS.md` to `AGENTS.md`** — `AGENTS.md` is now the single source of truth for all coding agents, following the agents.md open convention. Tool-specific files (`CLAUDE.md`, `.windsurfrules`, `.devin/global_rules.md`) now point to `AGENTS.md` instead of `AI_INSTRUCTIONS.md`.
+
 ## [4.0.0] - 2026-08
 
 **Major release: Joomla 3 support removed; Joomla 5/6 + PHP 8.4+ only.**

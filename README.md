@@ -102,7 +102,7 @@ phpstan analyse libraries/eshiol/J2xml --memory-limit=512M
 ### Contributing
 
 AI coding assistants working on this repo should read
-[`AI_INSTRUCTIONS.md`](./AI_INSTRUCTIONS.md) first — it is the single source
+[`AGENTS.md`](./AGENTS.md) first — it is the single source
 of truth for project conventions, layout, and constraints.
 
 ## Testing
