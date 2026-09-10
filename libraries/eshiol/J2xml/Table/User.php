@@ -85,60 +85,7 @@ class User extends Table
 				->where($this->_db->quoteName('m.user_id') . ' = ' . (int) $this->id);
 		}
 
-		// $this->_aliases['field'] = 'SELECT f.name, v.value FROM
-		// #__fields_values v, #__fields f WHERE f.id = v.field_id AND
-		// v.item_id = '. (int)$this->id;
-		$query = $this->_db->getQuery(true)
-			->select($this->_db->quoteName('f.name'))
-			->select($this->_db->quoteName('v.value'))
-			->from($this->_db->quoteName('#__fields_values', 'v'))
-			->from($this->_db->quoteName('#__fields', 'f'))
-			->where($this->_db->quoteName('f.id') . ' = ' . $this->_db->quoteName('v.field_id'))
-			->where($this->_db->quoteName('v.item_id') . ' = ' . $this->_db->quote((string) $this->id));
-		$query->where($this->_db->quoteName('f.type') . ' <> ' . $this->_db->quote('subform'));
-		$this->_aliases['field'] = (string) $query;
-
-		$query = $this->_db->getQuery(true)
-			->select($this->_db->quoteName('f.id'))
-			->select($this->_db->quoteName('f.name'))
-			->from($this->_db->quoteName('#__fields', 'f'));
-		$fields = [];
-		foreach ($this->_db->setQuery($query)->loadObjectList() as $field)
-		{
-			$fields['field' . $field->id] = $field->name;
-		}
-
-		$query = $this->_db->getQuery(true)
-			->select($this->_db->quoteName('f.name'))
-			->select($this->_db->quoteName('v.value'))
-			->from($this->_db->quoteName('#__fields_values', 'v'))
-			->from($this->_db->quoteName('#__fields', 'f'))
-			->where($this->_db->quoteName('f.type') . ' = ' . $this->_db->quote('subform'))
-			->where($this->_db->quoteName('f.id') . ' = ' . $this->_db->quoteName('v.field_id'))
-			->where($this->_db->quoteName('v.item_id') . ' = ' . $this->_db->quote((string) $this->id));
-		$fieldValues = $this->_db->setQuery($query)->loadObjectList();
-		foreach ($fieldValues as $field)
-		{
-			$subformValue = json_decode($field->value, true);
-			foreach ($subformValue as $rowId => $row)
-			{
-				foreach ($row as $fieldId => $fieldValue)
-				{
-					unset($subformValue[$rowId][$fieldId]);
-					$subformValue[$rowId][$fields[$fieldId]] = $fieldValue;
-				}
-			}
-			$subformValue = json_encode($subformValue, true);
-
-			$query = $this->_db->getQuery(true)
-				->select($this->_db->quote($field->name))
-				->select($this->_db->quote($subformValue));
-			if ($serverType === 'sqlserver')
-			{
-				$query->from($this->_db->quoteName('DUAL'));
-			}
-			$this->_aliases['field'] .= ' UNION ' . (string) $query;
-		}
+		$this->buildFieldAliases();
 
 		// $this->_aliases['profile'] = 'SELECT profile_key name, profile_value
 		// value FROM #__user_profiles WHERE user_id = '. (int)$this->id;

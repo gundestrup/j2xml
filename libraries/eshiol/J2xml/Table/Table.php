@@ -93,6 +93,75 @@ class Table extends \Joomla\CMS\Table\Table
 	}
 
 	/**
+	 * Build the SQL alias query for custom fields (including subform fields)
+	 * and store it in $this->_aliases['field'].
+	 *
+	 * Shared by Content::toXML() and User::toXML() to avoid code duplication.
+	 *
+	 * @return void
+	 * @since 4.0.0
+	 */
+	protected function buildFieldAliases(): void
+	{
+		$serverType = $this->_db->getServerType();
+
+		// Non-subform field values
+		$query = $this->_db->getQuery(true)
+			->select($this->_db->quoteName('f.name'))
+			->select($this->_db->quoteName('v.value'))
+			->from($this->_db->quoteName('#__fields_values', 'v'))
+			->from($this->_db->quoteName('#__fields', 'f'))
+			->where($this->_db->quoteName('f.id') . ' = ' . $this->_db->quoteName('v.field_id'))
+			->where($this->_db->quoteName('v.item_id') . ' = ' . $this->_db->quote((string) $this->id));
+		$query->where($this->_db->quoteName('f.type') . ' <> ' . $this->_db->quote('subform'));
+		$this->_aliases['field'] = (string) $query;
+
+		// Map field IDs to names for subform processing
+		$query = $this->_db->getQuery(true)
+			->select($this->_db->quoteName('f.id'))
+			->select($this->_db->quoteName('f.name'))
+			->from($this->_db->quoteName('#__fields', 'f'));
+		$fields = [];
+		foreach ($this->_db->setQuery($query)->loadObjectList() as $field)
+		{
+			$fields['field' . $field->id] = $field->name;
+		}
+
+		// Subform field values — decode, rename field IDs to names, re-encode, UNION
+		$query = $this->_db->getQuery(true)
+			->select($this->_db->quoteName('f.name'))
+			->select($this->_db->quoteName('v.value'))
+			->from($this->_db->quoteName('#__fields_values', 'v'))
+			->from($this->_db->quoteName('#__fields', 'f'))
+			->where($this->_db->quoteName('f.type') . ' = ' . $this->_db->quote('subform'))
+			->where($this->_db->quoteName('f.id') . ' = ' . $this->_db->quoteName('v.field_id'))
+			->where($this->_db->quoteName('v.item_id') . ' = ' . $this->_db->quote((string) $this->id));
+		$fieldValues = $this->_db->setQuery($query)->loadObjectList();
+		foreach ($fieldValues as $field)
+		{
+			$subformValue = json_decode($field->value, true);
+			foreach ($subformValue as $rowId => $row)
+			{
+				foreach ($row as $fieldId => $fieldValue)
+				{
+					unset($subformValue[$rowId][$fieldId]);
+					$subformValue[$rowId][$fields[$fieldId]] = $fieldValue;
+				}
+			}
+			$subformValue = json_encode($subformValue, true);
+
+			$query = $this->_db->getQuery(true)
+				->select($this->_db->quote($field->name))
+				->select($this->_db->quote($subformValue));
+			if ($serverType === 'sqlserver')
+			{
+				$query->from($this->_db->quoteName('DUAL'));
+			}
+			$this->_aliases['field'] .= ' UNION ' . (string) $query;
+		}
+	}
+
+	/**
 	 * Method to load a row from the database by primary key and bind the fields
 	 * to the JTable instance properties.
 	 *

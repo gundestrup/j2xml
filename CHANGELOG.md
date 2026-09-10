@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Added CodeFactor integration** — `.codefactor.yml` excludes test fixtures, vendored libraries, and media from analysis; badge added to README.
 
 ### Changed
+- **Eliminated duplicate code in Content.php and User.php** — extracted the custom field/subform alias-building logic (50 identical lines) into a shared `buildFieldAliases()` method in the base `Table` class. Resolves CodeFactor duplicate-code finding.
 - **CI Semgrep job uses local config** — switched from `semgrep ci` (App mode, requires `SEMGREP_APP_TOKEN`) to `semgrep scan --config .semgrep.yml --error` so the custom rules in `.semgrep.yml` are actually applied.
 - **Renamed `AI_INSTRUCTIONS.md` to `AGENTS.md`** — `AGENTS.md` is now the single source of truth for all coding agents, following the agents.md open convention. Tool-specific files (`CLAUDE.md`, `.windsurfrules`, `.devin/global_rules.md`) now point to `AGENTS.md` instead of `AI_INSTRUCTIONS.md`.
 
