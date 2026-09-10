@@ -231,7 +231,8 @@ class Table extends \Joomla\CMS\Table\Table
 	{
 		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		if ($ret = parent::load($keys, $reset))
+		$ret = parent::load($keys, $reset);
+		if ($ret)
 		{
 			if (isset($this->created_by))
 			{
@@ -489,17 +490,6 @@ class Table extends \Joomla\CMS\Table\Table
 
 		$data = self::xml2array($record, version_compare($params->get('version', Version::$DOCVERSION), '19.2.0', 'ne'));
 
-		// @todo fix alias
-		/**
-		if (empty($data['alias']))
-		{
-			getTableColumns($name, false);
-
-			$data['alias'] = $data['title'] ? $data['title'] : $data['name'];
-			$data['alias'] = str_replace(' ', '-', $data['alias']);
-		}
-		 */
-
 		$data['checked_out'] = 0;
 		$data['checked_out_time'] = $nullDate;
 
@@ -713,7 +703,7 @@ class Table extends \Joomla\CMS\Table\Table
 						->where($db->quoteName('title') . ' = ' . $db->quote($groups[$j]))
 						->where($db->quoteName('parent_id') . ' = ' . $parentId);
 					$usergroupId = $db->setQuery($query)->loadResult();
-					if (!($usergroupId = $db->setQuery($query)->loadResult()))
+					if (!$usergroupId)
 					{
 						$u = new \Joomla\CMS\Table\Usergroup($db);
 						$u->save([
@@ -848,7 +838,7 @@ class Table extends \Joomla\CMS\Table\Table
 			if (is_array($tag))
 			{
 				$tags = array_unique($tag);
-				$query = 'SELECT CASE WHEN b.id IS NOT NULL THEN b.id ELSE CONCAT(\'#new#\', a.path) END FROM (' . 'SELECT ' .
+				$query = 'SELECT CASE WHEN b.id IS NOT NULL THEN b.id ELSE CONCAT(\'#new#\', a.path) END FROM (SELECT ' .
 					$db->quote(array_shift($tags)) . ' as path';
 				foreach ($tags as $tag)
 				{
@@ -915,7 +905,8 @@ class Table extends \Joomla\CMS\Table\Table
 
 		if (is_object($xmlObject))
 		{
-			if ($a = $xmlObject->attributes())
+			$a = $xmlObject->attributes();
+			if ($a)
 			{
 				foreach ($a as $k => $v)
 				{
