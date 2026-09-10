@@ -51,6 +51,14 @@ $RECYCLE.BIN/
 CHANGELOG
 
 # =========================
+# Node.js / npm build tooling
+# =========================
+# Build tooling for vendored JS bundles (e.g. pako)
+# Only the built output is committed, not the tooling
+build/pako/node_modules/
+node_modules/
+
+# =========================
 # Operating System Files
 # =========================
 

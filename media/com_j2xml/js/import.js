@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
         reader.onload = function () {
             let data;
             try {
-                data = pako.ungzip(this.result, {to: 'string'});
+                data = pako.ungzip(this.result, {toText: true});
             } catch (err) {
                 data = this.result;
             }
