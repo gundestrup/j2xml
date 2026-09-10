@@ -117,31 +117,7 @@ class Importer
 			}
 			$db->setQuery($query)->execute();
 
-			$db->truncateTable("#__j2xml_usergroups");
-
-			$query = $db->getQuery(true)
-			//	->insert($db->quoteName("#__j2xml_usergroups"))
-				->select($db->quoteName("id"))
-				->select($db->quoteName("parent_id"))
-				->select("CONCAT('[\"',REPLACE(" . $db->quoteName("title") . ",'\"','\\\"'),'\"]')")
-				->from($db->quoteName("#__usergroups"));
-			$query = "INSERT INTO " . $db->quoteName("#__j2xml_usergroups") . $query;
-			$db->setQuery($query)->execute();
-
-			do {
-				$query = $db->getQuery(true)
-					->update($db->quoteName("#__j2xml_usergroups", "j"))
-					->join("INNER", $db->quoteName("#__usergroups", "g"), $db->quoteName("j.parent_id") . " = " . $db->quoteName("g.id"))
-					->set($db->quoteName("j.parent_id") . " = " . $db->quoteName("g.parent_id"))
-					->set($db->quoteName("j.title") . " = CONCAT('[\"',REPLACE(" . $db->quoteName("g.title") . ",'\"','\\\"'), '\",', SUBSTR(" . $db->quoteName("j.title") . ",2))");
-				$db->setQuery($query)->execute();
-
-				$query = $db->getQuery(true)
-					->select("COUNT(*)")
-					->from($db->quoteName("#__j2xml_usergroups"))
-					->where($db->quoteName("parent_id") . " > 0");
-				$n = $db->setQuery($query)->loadResult();
-			} while ($n > 0);
+			User::syncUsergroupsTable($db);
 		}
 		catch (\Joomla\Database\Exception\ExecutionFailureException $e)
 		{
