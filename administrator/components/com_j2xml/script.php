@@ -169,7 +169,7 @@ class Com_J2xmlInstallerScript
 			'/language/en-GB/en-GB.lib_eshiol.sys.ini',
 		];
 
-		// TODO There is an issue while deleting folders using the ftp mode
+		// Note: there is an issue while deleting folders using the ftp mode
 		$folders = [
 			/*
 			 * 3.9.232

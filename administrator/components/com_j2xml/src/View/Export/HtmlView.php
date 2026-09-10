@@ -55,7 +55,8 @@ class HtmlView extends BaseHtmlView
 		$this->form  = $this->get('Form');
 
 		// Check for errors.
-		if (count($errors = $this->get('Errors')))
+		$errors = $this->get('Errors');
+		if (count($errors))
 		{
 			throw new \Exception(implode("\n", $errors), 500);
 		}

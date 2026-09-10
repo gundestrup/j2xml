@@ -151,7 +151,8 @@ class Module extends \eshiol\J2xml\Table\Table
 							{
 								foreach ($data['menulist']['menu'] as $v)
 								{
-									if ($m = parent::getMenuId($v))
+									$m = parent::getMenuId($v);
+									if ($m)
 									{
 										$query->values($table->id . ', ' . ($include * $m));
 									}
