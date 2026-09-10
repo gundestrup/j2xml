@@ -120,7 +120,6 @@ class ImportModel extends FormModel
 					$app->setUserState('com_j2xml.message', Text::_('COM_J2XML_NO_IMPORT_TYPE_FOUND'));
 
 					return false;
-					break;
 			}
 		}
 

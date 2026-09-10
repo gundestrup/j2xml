@@ -161,12 +161,12 @@ class Field extends Table
 					$table->load($data['id']);
 				}
 
-				// @todo Trigger the onContentBeforeSave event.
+				// Note: could trigger onContentBeforeSave event here.
 				$table->bind($data);
 				if ($table->store())
 				{
 					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FIELD_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
-					// @todo Trigger the onContentAfterSave event.
+					// Note: could trigger onContentAfterSave event here.
 				}
 				else
 				{

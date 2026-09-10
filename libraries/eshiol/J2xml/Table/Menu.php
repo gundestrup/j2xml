@@ -59,8 +59,8 @@ class Menu extends \eshiol\J2xml\Table\Table
 				if (isset($args['view']) && ($args['view'] == 'article'))
 				{
 					$this->_aliases['article_id'] = 'SELECT CONCAT(' . $this->_db->qn('c.path') . ', ' . $this->_db->q('/') . ', ' .
-							 $this->_db->qn('a.alias') . ')' . ' FROM ' . $this->_db->qn('#__content') . ' a' . ' INNER JOIN ' .
-							 $this->_db->qn('#__categories') . ' c' . ' ON ' . $this->_db->qn('a.catid') . ' = ' . $this->_db->qn('c.id') . ' WHERE ' .
+							 $this->_db->qn('a.alias') . ') FROM ' . $this->_db->qn('#__content') . ' a INNER JOIN ' .
+							 $this->_db->qn('#__categories') . ' c ON ' . $this->_db->qn('a.catid') . ' = ' . $this->_db->qn('c.id') . ' WHERE ' .
 							 $this->_db->qn('a.id') . ' = ' . (int) $args['id'];
 					 \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry('article_id: ' . $this->_aliases['article_id'], \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 				}
@@ -117,7 +117,8 @@ class Menu extends \eshiol\J2xml\Table\Table
 
 		if (isset($options['images']) && $options['images'])
 		{
-			if ($imgs = json_decode($item->params))
+			$imgs = json_decode($item->params);
+			if ($imgs)
 			{
 				if (isset($imgs->menu_image))
 				{

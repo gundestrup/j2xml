@@ -104,7 +104,8 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
 		\Joomla\CMS\Log\Log::addLogger(array('text_file' => 'j2xml.php', 'extension' => 'com_j2xml'), \Joomla\CMS\Log\Log::ALL, array('lib_j2xml','cli_j2xml'));
 		\Joomla\CMS\Log\Log::addLogger(array('logger' => 'echo', 'extension' => 'com_j2xml'), \Joomla\CMS\Log\Log::ALL & ~\Joomla\CMS\Log\Log::DEBUG, array('lib_j2xml','cli_j2xml'));
 
-		if (!($data = implode(gzfile($filename))))
+		$data = implode(gzfile($filename));
+		if (!$data)
 		{
 			$data = file_get_contents($filename);
 		}

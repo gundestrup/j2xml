@@ -124,7 +124,8 @@ class Sender
 			->where($db->quoteName('id') . ' = ' . (int) $sid);
 		$db->setQuery($query);
 
-		if (!($server = $db->loadAssoc()))
+		$server = $db->loadAssoc();
+		if (!$server)
 		{
 			return;
 		}

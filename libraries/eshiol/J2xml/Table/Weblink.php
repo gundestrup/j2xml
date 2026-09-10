@@ -145,14 +145,16 @@ class Weblink extends Table
 			{
 				for ($i = 0; $i < count($matches[1]); $i ++)
 				{
-					if ($_image = $matches[1][$i])
+					$_image = $matches[1][$i];
+					if ($_image)
 					{
 						Image::export($_image, $xml, $options);
 					}
 				}
 			}
 
-			if ($imgs = json_decode($item->images))
+			$imgs = json_decode($item->images);
+			if ($imgs)
 			{
 				if (isset($imgs->image_first))
 				{

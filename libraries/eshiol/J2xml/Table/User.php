@@ -269,7 +269,8 @@ class User extends Table
 				{
 					$users[$id] = !(bool) $data['id'];
 
-					if ($error = $user->getError())
+					$error = $user->getError();
+					if ($error)
 					{
 						\Joomla\CMS\Log\Log::add(
 								new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_IMPORTED_WITH_ERRORS', $data['name']), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
@@ -352,7 +353,8 @@ class User extends Table
 				}
 				else
 				{
-					if ($error = $user->getError())
+					$error = $user->getError();
+					if ($error)
 					{
 						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NOT_IMPORTED', $data['name'], $error), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
 						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($error, \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));

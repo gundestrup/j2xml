@@ -26,9 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Eliminated duplicate code in Content.php, User.php, Exporter.php, and Importer.php** — extracted three duplicated blocks into shared methods: `buildFieldAliases()` (50 lines, field/subform alias queries in Content & User), `exportFields()` (30 lines, subform field export in Content & User), and `User::syncUsergroupsTable()` (25 lines, `#__j2xml_usergroups` rebuild in Exporter & Importer constructors). Resolves CodeFactor duplicate-code findings.
-- **Fixed assignment-in-condition warnings** — separated 6 assignment-from-condition patterns in `Content.php` (3) and `Table.php` (3) into explicit assignment + condition, per CodeFactor. Also fixed a redundant double query execution in `Table::import()` usergroup lookup.
-- **Removed dead TODO code in Table.php** — removed an unresolved `@todo fix alias` comment and its commented-out code block (disabled, non-functional).
-- **Fixed unnecessary string concatenation in Table.php** — merged `'FROM (' . 'SELECT '` into `'FROM (SELECT '` in the tag import query.
+- **Fixed assignment-in-condition warnings** — separated 15 assignment-from-condition patterns across 10 files (`Content.php`, `Table.php`, `User.php`, `Category.php`, `Tag.php`, `Weblink.php`, `Menu.php`, `Usernote.php`, `Sender.php`, `cli/j2xml.php`) into explicit assignment + condition, per CodeFactor. Also fixed a redundant double query execution in `Table::import()` usergroup lookup.
+- **Removed unresolved TODO comments** — removed `@todo` markers from `Table.php` (dead commented-out alias fix), `Field.php` (2 content event notes), and `Fieldgroup.php` (2 content event notes). Converted actionable notes to regular comments.
+- **Fixed unnecessary string concatenation** — merged consecutive string literals in `Table.php` (tag import query) and `Menu.php` (article_id alias query).
+- **Removed unreachable code** — removed `break` after `return false` in `ImportModel.php` default switch case.
 - **CI Semgrep job uses local config** — switched from `semgrep ci` (App mode, requires `SEMGREP_APP_TOKEN`) to `semgrep scan --config .semgrep.yml --error` so the custom rules in `.semgrep.yml` are actually applied.
 - **Renamed `AI_INSTRUCTIONS.md` to `AGENTS.md`** — `AGENTS.md` is now the single source of truth for all coding agents, following the agents.md open convention. Tool-specific files (`CLAUDE.md`, `.windsurfrules`, `.devin/global_rules.md`) now point to `AGENTS.md` instead of `AI_INSTRUCTIONS.md`.
 

@@ -94,7 +94,8 @@ class Usernote extends \eshiol\J2xml\Table\Table
 			{
 				for ($i = 0; $i < count($matches[1]); $i ++)
 				{
-					if ($_image = $matches[1][$i])
+					$_image = $matches[1][$i];
+					if ($_image)
 					{
 						Image::export($_image, $xml, $options);
 					}

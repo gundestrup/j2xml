@@ -407,14 +407,16 @@ class Category extends Table
 			{
 				for ($i = 0; $i < count($matches[1]); $i ++)
 				{
-					if ($_image = $matches[1][$i])
+					$_image = $matches[1][$i];
+					if ($_image)
 					{
 						Image::export($_image, $xml, $options);
 					}
 				}
 			}
 
-			if ($imgs = json_decode($item->params))
+			$imgs = json_decode($item->params);
+			if ($imgs)
 			{
 				if (isset($imgs->image))
 				{
