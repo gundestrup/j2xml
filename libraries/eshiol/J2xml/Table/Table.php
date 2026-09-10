@@ -162,6 +162,53 @@ class Table extends \Joomla\CMS\Table\Table
 	}
 
 	/**
+	 * Export custom fields (including subform fields) for an item.
+	 *
+	 * Shared by Content::export() and User::export() to avoid code duplication.
+	 *
+	 * @param int                   $id      The item id
+	 * @param \SimpleXMLElement     $xml     The XML element to append to
+	 * @param array                 $options Export options
+	 * @param \Joomla\Database\DatabaseDriver $db Database driver
+	 *
+	 * @return void
+	 * @since 4.0.0
+	 */
+	protected static function exportFields($id, &$xml, $options, $db): void
+	{
+		// load subform fields
+		$query = $db->getQuery(true)
+			->select($db->quoteName('v.value'))
+			->from($db->quoteName('#__fields_values', 'v'))
+			->from($db->quoteName('#__fields', 'f'))
+			->where($db->quoteName('f.type') . ' = ' . $db->quote('subform'))
+			->where($db->quoteName('f.id') . ' = ' . $db->quoteName('v.field_id'));
+		$subformValues = $db->setQuery($query)->loadColumn();
+		foreach ($subformValues as $subformValue)
+		{
+			foreach (json_decode($subformValue, true) as $row)
+			{
+				foreach ($row as $fieldId => $fieldValue)
+				{
+					Field::export(substr($fieldId, 5), $xml, $options);
+				}
+			}
+		}
+
+		$query = $db->getQuery(true)
+			->select('DISTINCT field_id')
+			->from('#__fields_values')
+			->where('item_id = ' . $db->quote($id));
+		$db->setQuery($query);
+
+		$ids_field = $db->loadColumn();
+		foreach ($ids_field as $id_field)
+		{
+			Field::export($id_field, $xml, $options);
+		}
+	}
+
+	/**
 	 * Method to load a row from the database by primary key and bind the fields
 	 * to the JTable instance properties.
 	 *

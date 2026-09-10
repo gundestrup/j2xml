@@ -591,36 +591,7 @@ class Content extends Table
 
 		if (isset($options['fields']) && $options['fields'])
 		{
-			// load subform fields
-			$query = $db->getQuery(true)
-				->select($db->quoteName('v.value'))
-				->from($db->quoteName('#__fields_values', 'v'))
-				->from($db->quoteName('#__fields', 'f'))
-				->where($db->quoteName('f.type') . ' = ' . $db->quote('subform'))
-				->where($db->quoteName('f.id') . ' = ' . $db->quoteName('v.field_id'));
-			$subformValues = $db->setQuery($query)->loadColumn();
-			foreach ($subformValues as $subformValue)
-			{
-				foreach (json_decode($subformValue, true) as $row)
-				{
-					foreach ($row as $fieldId => $fieldValue)
-					{
-						Field::export(substr($fieldId, 5), $xml, $options);
-					}
-				}
-			}
-
-			$query = $db->getQuery(true)
-				->select('DISTINCT field_id')
-				->from('#__fields_values')
-				->where('item_id = ' . $db->quote($id));
-			$db->setQuery($query);
-
-			$ids_field = $db->loadColumn();
-			foreach ($ids_field as $id_field)
-			{
-				Field::export($id_field, $xml, $options);
-			}
+			self::exportFields($id, $xml, $options, $db);
 		}
 
 		$doc = dom_import_simplexml($xml)->ownerDocument;
