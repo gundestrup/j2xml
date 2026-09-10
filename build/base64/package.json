@@ -1,0 +1,13 @@
+{
+  "name": "j2xml-base64-build",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Build script to produce a browser-compatible base64 decode bundle for J2XML",
+  "scripts": {
+    "build": "esbuild entry.js --bundle --format=iife --global-name=base64 --outfile=../../media/lib_eshiol_j2xml/js/base64.js --banner:js='/* @jsonjoy.com/base64 18.30.0 decode-only bundle (built from npm) */'"
+  },
+  "devDependencies": {
+    "@jsonjoy.com/base64": "^18.30.0",
+    "esbuild": "^0.25.0"
+  }
+}

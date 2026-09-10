@@ -53,9 +53,10 @@ CHANGELOG
 # =========================
 # Node.js / npm build tooling
 # =========================
-# Build tooling for vendored JS bundles (e.g. pako)
+# Build tooling for vendored JS bundles (e.g. pako, base64)
 # Only the built output is committed, not the tooling
 build/pako/node_modules/
+build/base64/node_modules/
 node_modules/
 
 # =========================
