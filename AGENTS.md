@@ -28,8 +28,7 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
 |----------|--------------|--------------------------------------------|----------------------------------------------------|
 | Component| `com_j2xml`  | `administrator/components/com_j2xml/`, `components/com_j2xml/` | Admin UI for export/import/send; site entry point |
 | Library  | `j2xml`      | `libraries/eshiol/J2xml/`                  | Core `Exporter`, `Importer`, `Sender`, `Messages`, `Version`, `Table\*` |
-| Library  | `phpxmlrpc`  | `libraries/eshiol/phpxmlrpc/`              | Vendored XML-RPC client/server (v4.11.5) used by Sender; `Log/Logger/XmlrpcLogger.php` is J2XML-specific |
-| Plugin   | `j2xml` (system) | `plugins/system/j2xml/`                | System plugin: content preparation, layouts, Joomla 3/4/5 compatibility shims |
+| Plugin   | `j2xml` (system) | `plugins/system/j2xml/`                | System plugin: content preparation, layouts, Joomla 5/6 compatibility shims |
 | Plugin   | `basicauth` (system) | `plugins/system/basicauth/`        | HTTP Basic Auth for XML-RPC endpoints              |
 | CLI      | `j2xml`      | `cli/j2xml.php`                            | Command-line exporter (run with `php cli/j2xml.php -f file.xml`) |
 
@@ -51,9 +50,9 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
 ├── cli/j2xml.php               # Standalone CLI exporter
 ├── language/en-GB/             # Site language files (en-GB)
 ├── libraries/eshiol/
-│   ├── J2xml/                  # Core library (Exporter, Importer, Sender, Table/*, Version)
-│   └── phpxmlrpc/              # Vendored XML-RPC library
-├── media/                      # Joomla media folders (com_j2xml, lib_eshiol_j2xml, lib_eshiol_phpxmlrpc)
+│   └── J2xml/                  # Core library (Exporter, Importer, Sender, Table/*, Version)
+├── media/                      # Joomla media folders (com_j2xml, lib_eshiol_j2xml)
+├── build/                      # JS bundle build tooling (pako, base64) — node_modules gitignored
 ├── plugins/system/
 │   ├── j2xml/                  # System plugin (j2xml.php, layouts/{joomla,joomla4}, src/)
 │   └── basicauth/              # Basic-auth system plugin
@@ -71,7 +70,7 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
 - `libraries/eshiol/J2xml/Importer.php` — parses J2XML XML and inserts/updates
   rows in the target Joomla instance.
 - `libraries/eshiol/J2xml/Sender.php` — pushes content to remote Joomla sites
-  via XML-RPC (uses `libraries/eshiol/phpxmlrpc`).
+  via HTTP (uses native `stream_context_create`).
 - `libraries/eshiol/J2xml/Table/*.php` — per-entity table wrappers used by
   Exporter/Importer (`Content`, `Category`, `User`, `Menu`, `Menutype`,
   `Module`, `Contact`, `Weblink`, `Field`, `Fieldgroup`, `Tag`, `Viewlevel`,
@@ -119,8 +118,8 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
   `plugins/system/j2xml/src/` (e.g. `Joomla::makeAlias()`) or branch on
   `JVERSION`.
 - **PHP 8.4/8.5 readiness:** avoid dynamic properties on classes (recent
-  commits fixed this in `Importer`); avoid `utf8_encode()` (replaced in
-  XML-RPC code); avoid deprecated `each()`, `create_function()`,
+  commits fixed this in `Importer`); avoid `utf8_encode()` (removed, no
+  longer referenced); avoid deprecated `each()`, `create_function()`,
   `mb_strtolower()` on null, implicit nullable types, etc. Run the
   pre-commit hook (see §4) to catch these before commit.
 
@@ -156,8 +155,8 @@ Releases are produced externally (eshiol.it tooling) which:
 
 1. Substitutes `__DEPLOY_VERSION__` and `__DEPLOY_DATE__` in manifests/headers.
 2. Zips each extension into `com_j2xml.zip`, `lib_eshiol_J2xml.zip`,
-   `plg_system_j2xml.zip`, `lib_eshiol_phpxmlrpc.zip`,
-   `plg_system_basicauth.zip`, and bundles them into `pkg_j2xml.zip`.
+   `plg_system_j2xml.zip`, `plg_system_basicauth.zip`, and bundles them
+   into `pkg_j2xml.zip`.
 
 **CI** runs on every push and pull request via GitHub Actions
 (`.github/workflows/ci.yml`) with three jobs:
@@ -455,7 +454,7 @@ modernisation effort:
 - `utf8_encode()` replaced with `mb_convert_encoding()` (removed in PHP 8.3) — 5 files
 - Non-canonical casts `(boolean)`/`(integer)`/`(double)` → `(bool)`/`(int)`/`(float)` — 4 files
 - `case;` → `case:` syntax — 1 file
-- phpxmlrpc vendored library updated from 4.10.1 → **4.11.5** (latest stable, Nov 2025)
+- phpxmlrpc vendored library removed (Sender now uses native `stream_context_create`)
 
 **Joomla 5/6 compatibility note:** All `J*` legacy class aliases (`JFactory`,
 `JLog`, `JText`, etc.) have been **migrated to fully-qualified namespaced

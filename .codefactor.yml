@@ -11,7 +11,7 @@ exclude:
   - tests/scripts/**
 
   # Vendored / external libraries (not maintained here)
-  - libraries/eshiol/phpxmlrpc/**
+  # (phpxmlrpc was removed; Sender now uses native stream_context_create)
 
   # Joomla media assets (generated / static)
   - media/**
