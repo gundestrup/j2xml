@@ -1054,7 +1054,7 @@ class Table extends \Joomla\CMS\Table\Table
 			if (count($associations) > 1)
 			{
 				// Adding new association for these items
-				$key   = md5(json_encode($associations));
+				$key   = md5(json_encode($associations)); // nosemgrep: weak-crypto — non-cryptographic lookup key for #__associations, matches Joomla core
 				$query = $db->getQuery(true)
 					->insert('#__associations');
 

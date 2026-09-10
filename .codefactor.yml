@@ -1,0 +1,21 @@
+# CodeFactor configuration for j2xml
+# https://www.codefactor.io/repository/github/gundestrup/j2xml
+#
+# CodeFactor analyses the repo automatically via the GitHub App
+# integration. This file controls which paths are excluded.
+
+exclude:
+  # Test fixtures (XML data, not production code)
+  - tests/fixtures/**
+  - tests/docker/**
+  - tests/scripts/**
+
+  # Vendored / external libraries (not maintained here)
+  - libraries/eshiol/phpxmlrpc/**
+
+  # Joomla media assets (generated / static)
+  - media/**
+
+  # Build artefacts
+  - vendor/**
+  - node_modules/**

@@ -19,8 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Pinned all GitHub Actions to commit SHAs** — `actions/checkout`, `shivammathur/setup-php`, and `ludeeus/action-shellcheck` were pinned to immutable commit SHAs (with `# tag` comments) to prevent supply-chain attacks via mutable tag repointing. Resolves 6 Semgrep `github-actions-mutable-action-tag` findings.
+- **Added Semgrep security scanning** — `.semgrep.yml` with custom rules for SQL injection, `eval()`, command injection, and LFI/RFI; integrated into CI (`semgrep scan --config .semgrep.yml --error`) and the pre-commit hook.
+- **Added CodeFactor integration** — `.codefactor.yml` excludes test fixtures, vendored libraries, and media from analysis; badge added to README.
+
 ### Changed
+- **CI Semgrep job uses local config** — switched from `semgrep ci` (App mode, requires `SEMGREP_APP_TOKEN`) to `semgrep scan --config .semgrep.yml --error` so the custom rules in `.semgrep.yml` are actually applied.
 - **Renamed `AI_INSTRUCTIONS.md` to `AGENTS.md`** — `AGENTS.md` is now the single source of truth for all coding agents, following the agents.md open convention. Tool-specific files (`CLAUDE.md`, `.windsurfrules`, `.devin/global_rules.md`) now point to `AGENTS.md` instead of `AI_INSTRUCTIONS.md`.
+
+### Note
+- **Semgrep false positives suppressed** — 3 findings annotated with `// nosemgrep`: `ini_set('display_errors', 1)` in `cli/j2xml.php` (CLI-only, guarded by `REQUEST_METHOD` check); `md5()` in `Content.php` and `Table.php` (non-cryptographic lookup key for `#__associations`, matches Joomla core pattern).
 
 ## [4.0.0] - 2026-08
 

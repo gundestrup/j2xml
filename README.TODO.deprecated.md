@@ -47,11 +47,11 @@ verification.  The deprecated API still works in Joomla 5 and 6.
 **Files (18 active occurrences)**
 - `libraries/eshiol/J2xml/Exporter.php` — 10 calls via `$this->app->triggerEvent('onJ2xmlAfterExport', [...])` (lines 226, 271, 316, 360, 404, 448, 492, 538, 584, 629)
 - `libraries/eshiol/J2xml/Importer.php:251` — `$this->app->triggerEvent('onContentAfterImport', [...])`
-- `libraries/eshiol/J2xml/Table/Content.php:612` — `Factory::getApplication()->triggerEvent('onJ2xmlBeforeExportContent', [...])`
+- `libraries/eshiol/J2xml/Table/Content.php:619` — `Factory::getApplication()->triggerEvent('onJ2xmlBeforeExportContent', [...])`
 - `administrator/components/com_j2xml/src/Model/ImportModel.php` — 3 calls via `Factory::getApplication()->triggerEvent(...)` (lines 198, 237, 245)
 - `api/components/com_j2xml/src/Controller/ImportController.php:170` — `$app->triggerEvent('onContentBeforeImport', [...])`
 - `administrator/components/com_j2xml/views/import/tmpl/default.php:106` — `Factory::getApplication()->triggerEvent('onLoadJS')`
-- `cli/j2xml.php:160` — `$this->triggerEvent('onBeforeImport', [...])`
+- `cli/j2xml.php:157` — `$this->triggerEvent('onBeforeImport', [...])`
 
 **Current code**
 ```php
@@ -91,7 +91,7 @@ need proper event classes.  `triggerEvent()` still works in Joomla 5/6.
 **Files (15 occurrences across 13 files)**
 - `libraries/eshiol/J2xml/Table/Category.php:294`
 - `libraries/eshiol/J2xml/Table/Contact.php:276`
-- `libraries/eshiol/J2xml/Table/Content.php:444, 449`
+- `libraries/eshiol/J2xml/Table/Content.php:451, 456`
 - `libraries/eshiol/J2xml/Table/Field.php:174`
 - `libraries/eshiol/J2xml/Table/Fieldgroup.php:112`
 - `libraries/eshiol/J2xml/Table/Menu.php:277`
@@ -222,7 +222,7 @@ thorough testing on a real installation.
 | **Priority** | Low (test code only) |
 
 **File**
-- `tests/scripts/bootstrap.php:52` — `Joomla\CMS\Factory::$user = $user;`
+- `tests/scripts/bootstrap.php:57` — `Joomla\CMS\Factory::$user = $user;`
 
 **Current code**
 ```php
@@ -244,6 +244,8 @@ Joomla 6.0+.  No direct CLI-compatible replacement exists yet.
 ---
 
 ## Summary
+
+_Last verified: 2026-08-15 — all 7 items still present, counts unchanged._
 
 | # | Pattern | Occurrences | Priority | Target version |
 |---|---------|-------------|----------|----------------|

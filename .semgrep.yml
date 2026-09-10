@@ -1,0 +1,67 @@
+# Semgrep configuration for j2xml
+# https://semgrep.dev/docs/
+#
+# Run: semgrep scan --config .semgrep.yml --error libraries/ plugins/ components/ administrator/ cli/
+
+rules:
+  # Detect SQL injection via string interpolation in query methods.
+  - id: php-sql-injection-string-interpolation
+    languages: [php]
+    severity: ERROR
+    message: "SQL query built with string interpolation — potential SQL injection"
+    pattern-either:
+      - pattern: $DB->setQuery("...$VAR...")
+      - pattern: $DB->setQuery("...{$VAR}...")
+      - pattern: $DB->query("...$VAR...")
+    metadata:
+      owasp: "A03:2021 - Injection"
+      cwe: "CWE-89: SQL Injection"
+
+  # Detect use of eval with variable input.
+  - id: php-eval-usage
+    languages: [php]
+    severity: ERROR
+    message: "Use of eval() is dangerous — avoid dynamic code execution"
+    pattern: eval($VAR)
+    metadata:
+      owasp: "A03:2021 - Injection"
+      cwe: "CWE-95: Code Injection"
+
+  # Detect command injection via exec/system/shell_exec with variable input.
+  - id: php-command-injection
+    languages: [php]
+    severity: ERROR
+    message: "Command execution with variable input — potential command injection"
+    pattern-either:
+      - pattern: exec($VAR)
+      - pattern: system($VAR)
+      - pattern: shell_exec($VAR)
+      - pattern: passthru($VAR)
+      - pattern: proc_open($VAR, ...)
+      - pattern: popen($VAR, ...)
+    metadata:
+      owasp: "A03:2021 - Injection"
+      cwe: "CWE-78: OS Command Injection"
+
+  # Detect file inclusion with user-controlled input (superglobals or request data).
+  - id: php-file-inclusion-user-input
+    languages: [php]
+    severity: ERROR
+    message: "File inclusion with user input — potential LFI/RFI"
+    pattern-either:
+      - pattern: include($_GET[...])
+      - pattern: include($_POST[...])
+      - pattern: include($_REQUEST[...])
+      - pattern: include($_COOKIE[...])
+      - pattern: include_once($_GET[...])
+      - pattern: include_once($_POST[...])
+      - pattern: include_once($_REQUEST[...])
+      - pattern: require($_GET[...])
+      - pattern: require($_POST[...])
+      - pattern: require($_REQUEST[...])
+      - pattern: require_once($_GET[...])
+      - pattern: require_once($_POST[...])
+      - pattern: require_once($_REQUEST[...])
+    metadata:
+      owasp: "A01:2021 - Broken Access Control"
+      cwe: "CWE-98: File Inclusion"

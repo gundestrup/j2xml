@@ -31,7 +31,7 @@ const _JEXEC = 1;
 
 // Configure error reporting to maximum for CLI output.
 error_reporting(E_ALL & ~E_NOTICE);
-ini_set('display_errors', 1);
+ini_set('display_errors', 1); // nosemgrep: search-active-debug — CLI-only script, guarded by REQUEST_METHOD check above
 
 // Load system defines
 if (file_exists(dirname(dirname(__FILE__)).'/defines.php'))

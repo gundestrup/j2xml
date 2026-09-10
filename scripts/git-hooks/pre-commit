@@ -169,5 +169,20 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 4. Semgrep security scan (if installed)
+# ---------------------------------------------------------------------------
+semgrep_bin=$(command -v semgrep 2>/dev/null || true)
+if [ -n "$semgrep_bin" ]; then
+	info "Running Semgrep security scan…"
+	if ! $semgrep_bin scan --config .semgrep.yml --error libraries/ plugins/ components/ administrator/ cli/ 2>&1; then
+		error "Semgrep scan failed. Fix the issues above or use --no-verify to bypass."
+		exit 1
+	fi
+	info "Semgrep scan passed."
+else
+	warn "semgrep not found on PATH — skipping security scan. (pip3 install semgrep)"
+fi
+
+# ---------------------------------------------------------------------------
 info "All pre-commit checks passed."
 exit 0
