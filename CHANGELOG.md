@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `php:S4790` — `md5()` in `Content.php` and `Table.php` suppressed with `// NOSONAR` (non-cryptographic lookup key matching Joomla core).
   - `phpsecurity:S5131` — XSS in `cli/j2xml.php` suppressed with `// NOSONAR` (CLI-only, guarded by `REQUEST_METHOD` check).
   - `phpsecurity:S2083` — Path traversal in `cli/j2xml.php` and `ImportModel.php` suppressed with `// NOSONAR` (CLI-only / admin-only with `Path::clean`).
-  - `githubactions:S8541` + `S8544` — `pip3 install semgrep` → `pip3 install --only-binary :all: "semgrep>=1.176.0,<2.0.0"` (pinned version, binary-only).
+  - `githubactions:S8541` + `S8544` — `pip3 install semgrep` → `pip3 install --only-binary :all: "semgrep==1.176.0"` (exact version pin, binary-only). `composer.lock` added to lock Composer dev dependencies.
   - `shelldre:S7688` — `[` → `[[` in `scripts/build-package.sh` and `scripts/install-hooks.sh`.
 - **ci.yml YAML syntax** — fixed `pip3 install` line that confused YAML parsers (colons in `:all:`); switched to block scalar syntax.
 - **PHP 8.5 deprecation** — `$http_response_header` in `Sender.php` replaced with `http_get_last_response_headers()` (PHP 8.4+ API).
