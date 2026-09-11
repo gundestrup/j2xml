@@ -51,6 +51,11 @@ $RECYCLE.BIN/
 CHANGELOG
 
 # =========================
+# Composer dev dependencies
+# =========================
+vendor/
+
+# =========================
 # Node.js / npm build tooling
 # =========================
 # Build tooling for vendored JS bundles (e.g. pako, base64)
