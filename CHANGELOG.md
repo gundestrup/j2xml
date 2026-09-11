@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [4.5.0] - 2026-09-11
+
 ### Security
 - **Pinned all GitHub Actions to commit SHAs** — `actions/checkout`, `shivammathur/setup-php`, and `ludeeus/action-shellcheck` were pinned to immutable commit SHAs (with `# tag` comments) to prevent supply-chain attacks via mutable tag repointing. Resolves 6 Semgrep `github-actions-mutable-action-tag` findings.
 - **Added Semgrep security scanning** — `.semgrep.yml` with custom rules for SQL injection, `eval()`, command injection, and LFI/RFI; integrated into CI (`semgrep scan --config .semgrep.yml --error`) and the pre-commit hook.
