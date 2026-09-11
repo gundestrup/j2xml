@@ -186,11 +186,12 @@ class Sender
 			return;
 		}
 
-		// Parse the HTTP response code from the $http_response_header array.
+		// Parse the HTTP response code from the response headers.
 		$httpCode = 0;
-		if (isset($http_response_header) && is_array($http_response_header))
+		$headers = http_get_last_response_headers();
+		if (is_array($headers))
 		{
-			if (preg_match('/HTTP\/\d\.\d\s+(\d+)/', $http_response_header[0], $matches))
+			if (preg_match('/HTTP\/\d\.\d\s+(\d+)/', $headers[0], $matches))
 			{
 				$httpCode = (int) $matches[1];
 			}

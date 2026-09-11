@@ -54,7 +54,8 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install Semgrep
-        run: pip3 install --only-binary :all: "semgrep>=1.176.0,<2.0.0"
+        run: |
+          pip3 install --only-binary :all: "semgrep>=1.176.0,<2.0.0"
       - name: Run Semgrep security scan
         run: semgrep scan --config .semgrep.yml --error libraries/ plugins/ components/ administrator/ cli/
 

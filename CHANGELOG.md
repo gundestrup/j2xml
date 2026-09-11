@@ -35,9 +35,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `phpsecurity:S2083` — Path traversal in `cli/j2xml.php` and `ImportModel.php` suppressed with `// NOSONAR` (CLI-only / admin-only with `Path::clean`).
   - `githubactions:S8541` + `S8544` — `pip3 install semgrep` → `pip3 install --only-binary :all: "semgrep>=1.176.0,<2.0.0"` (pinned version, binary-only).
   - `shelldre:S7688` — `[` → `[[` in `scripts/build-package.sh` and `scripts/install-hooks.sh`.
+- **ci.yml YAML syntax** — fixed `pip3 install` line that confused YAML parsers (colons in `:all:`); switched to block scalar syntax.
+- **PHP 8.5 deprecation** — `$http_response_header` in `Sender.php` replaced with `http_get_last_response_headers()` (PHP 8.4+ API).
 
 ### Note
 - **`composer.lock` missing** (SonarCloud `text:S8567`) — run `composer install` and commit `composer.lock` for reproducible dev dependency versions.
+
+### Tests
+- **All tests passed** (2026-09-11):
+  - PHP lint: PHP 8.4 + 8.5 — all files clean (0 deprecation warnings).
+  - PHPStan: 0 errors.
+  - Semgrep: 0 findings (4 rules, 73 files).
+  - Shell syntax: 12/12 scripts pass `bash -n`.
+  - MySQL integration (Joomla 5 + 6): **82/82 passed**, 0 failed.
+  - PostgreSQL smoke (Joomla 5 + 6): **passed**.
 
 ---
 
