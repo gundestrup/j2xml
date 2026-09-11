@@ -38,7 +38,7 @@ copy_dir() {
     local src="$1"
     local dst="$2"
     mkdir -p "$dst"
-    if [ -d "$src" ]; then
+    if [[ -d "$src" ]]; then
         cp -R "$src"/* "$dst/" 2>/dev/null || true
         find "$dst" -name '.DS_Store' -delete
     fi

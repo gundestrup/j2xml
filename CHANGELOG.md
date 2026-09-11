@@ -19,6 +19,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **SonarCloud integration** — `sonar-project.properties` with project key `gundestrup_j2xml`; excludes `media/**`, `build/**`, `tests/**`, `vendor/**`, `node_modules/**`. Badge added to README.
+- **AGENTS.md updated** — documented Semgrep, CodeFactor, and SonarCloud services, suppression syntax (`nosemgrep` / `NOSONAR`), and SonarCloud REST API access for local finding retrieval.
+
+### Fixed
+- **SonarCloud findings addressed** (18 non-vendored findings):
+  - `php:S128` — switch case fallthrough in `default_package.php` documented with `// fallthrough` comments (intentional byte-conversion cascade).
+  - `Web:S8732` — `<legend>` wrapped in `<fieldset>` in `default_package.php`.
+  - `php:S3699` — removed invalid assignment from `ArrayHelper::toInteger()` return (returns void) in `Table.php`.
+  - `php:S836` — fixed uninitialized `$app` variable in `Table::setAssociations()` (added `Factory::getApplication()` call).
+  - **Bug fix:** `$associationsContext` → `$context` in `Table::setAssociations()` (was using undefined variable instead of the function parameter).
+  - `php:S4790` — `md5()` in `Content.php` and `Table.php` suppressed with `// NOSONAR` (non-cryptographic lookup key matching Joomla core).
+  - `phpsecurity:S5131` — XSS in `cli/j2xml.php` suppressed with `// NOSONAR` (CLI-only, guarded by `REQUEST_METHOD` check).
+  - `phpsecurity:S2083` — Path traversal in `cli/j2xml.php` and `ImportModel.php` suppressed with `// NOSONAR` (CLI-only / admin-only with `Path::clean`).
+  - `githubactions:S8541` + `S8544` — `pip3 install semgrep` → `pip3 install --only-binary :all: "semgrep>=1.176.0,<2.0.0"` (pinned version, binary-only).
+  - `shelldre:S7688` — `[` → `[[` in `scripts/build-package.sh` and `scripts/install-hooks.sh`.
+
+### Note
+- **`composer.lock` missing** (SonarCloud `text:S8567`) — run `composer install` and commit `composer.lock` for reproducible dev dependency versions.
+
 ---
 
 ## [4.5.0] - 2026-09-11

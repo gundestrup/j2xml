@@ -12,6 +12,7 @@
 [![Last commit](https://img.shields.io/github/last-commit/gundestrup/j2xml?logo=github)](https://github.com/gundestrup/j2xml/commits)
 [![Semgrep](https://img.shields.io/badge/Semgrep-Pro-brightgreen?logo=semgrep&logoColor=white)](./.semgrep.yml)
 [![CodeFactor](https://www.codefactor.io/repository/github/gundestrup/j2xml/badge)](https://www.codefactor.io/repository/github/gundestrup/j2xml)
+[![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=gundestrup_j2xml&metric=alert_status)](https://sonarcloud.io/dashboard?id=gundestrup_j2xml)
 
 > Export, import, and share Joomla! content as XML between sites.
 

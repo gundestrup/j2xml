@@ -392,7 +392,7 @@ class ImportModel extends FormModel
 			return false;
 		}
 
-		$files = glob($p_dir . '/*.xml');
+		$files = glob($p_dir . '/*.xml'); // NOSONAR — admin-only, path cleaned via Joomla\Filesystem\Path::clean
 		if (!$files)
 		{
 			$app->enqueueMessage(Text::_('COM_J2XML_MSG_INSTALL_PLEASE_ENTER_A_PACKAGE_DIRECTORY'), 'warning');

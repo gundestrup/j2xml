@@ -57,6 +57,9 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
 │   ├── j2xml/                  # System plugin (j2xml.php, layouts/{joomla,joomla4}, src/)
 │   └── basicauth/              # Basic-auth system plugin
 ├── .github/                    # Issue templates, PR template, CI workflows (ci.yml)
+├── .semgrep.yml                # Semgrep security rules (local + CI)
+├── .codefactor.yml             # CodeFactor exclude paths
+├── sonar-project.properties    # SonarCloud configuration (exclusions, project key)
 ├── AGENTS.md                   # THIS FILE — single source of truth for AI tools
 ├── CLAUDE.md                   # Pointer → AGENTS.md (Claude Code)
 └── .windsurfrules              # Pointer → AGENTS.md (Windsurf)
@@ -167,6 +170,21 @@ Releases are produced externally (eshiol.it tooling) which:
   runs `tests/scripts/run-all-tests.sh`.
 - **postgresql-integration**: Docker Compose Joomla 5 + 6 with PostgreSQL 16;
   runs `tests/scripts/run-postgresql-smoke.sh`.
+- **semgrep**: Semgrep security scan using the local `.semgrep.yml` config.
+
+### External code-quality services
+
+- **Semgrep Pro** — security scanning via `.semgrep.yml` (local + CI).
+  Suppress false positives with `// nosemgrep: <rule-id>` on the flagged line.
+- **CodeFactor** — automated code review via `.codefactor.yml`.
+  Excludes `media/**`, `tests/**`, `vendor/**`, `node_modules/**`.
+- **SonarCloud** — static analysis via `sonar-project.properties`
+  (project key: `gundestrup_j2xml`, org: `gundestrup`).
+  Excludes `media/**`, `build/**`, `tests/**`, `vendor/**`, `node_modules/**`.
+  Suppress false positives with `// NOSONAR` on the flagged line.
+  Findings are accessible via the SonarCloud REST API (no auth needed for
+  public projects):
+  `https://sonarcloud.io/api/issues/search?componentKeys=gundestrup_j2xml`
 
 For local checks, use the **pre-commit hook** (below).
 
@@ -182,6 +200,7 @@ installed via `scripts/install-hooks.sh`. It runs on every `git commit`:
    `scanFiles` are applied correctly. PHPStan's result cache keeps
    re-runs fast.
 3. **PHPUnit** if a `phpunit.xml` exists (placeholder — no test suite yet).
+4. **Semgrep** security scan using `.semgrep.yml` (local Pro engine).
 
 **Install (once after cloning):**
 

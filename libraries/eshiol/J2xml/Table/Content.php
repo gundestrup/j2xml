@@ -875,7 +875,7 @@ class Content extends Table
 					$associations[$row->language] = (int) $row->id;
 				}
 				\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(json_encode($associations), \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-				$newkey   = md5(json_encode($associations)); // nosemgrep: weak-crypto — non-cryptographic lookup key for #__associations, matches Joomla core
+				$newkey   = md5(json_encode($associations)); // nosemgrep: weak-crypto — non-cryptographic lookup key for #__associations, matches Joomla core // NOSONAR
 
 				$query = $db->getQuery(true)
 					->update($db->quoteName('#__associations'))

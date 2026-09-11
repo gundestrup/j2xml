@@ -97,7 +97,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
 
 		if (!file_exists($filename))
 		{
-			echo "File {$filename} not found";
+			echo "File {$filename} not found"; // NOSONAR — CLI-only script (guarded by REQUEST_METHOD check at line 25), no browser output
 			exit(1);
 		}
 
@@ -107,7 +107,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
 		$data = implode(gzfile($filename));
 		if (!$data)
 		{
-			$data = file_get_contents($filename);
+			$data = file_get_contents($filename); // NOSONAR — CLI-only script, user already has filesystem access
 		}
 
 		if (!mb_detect_encoding($data, 'UTF-8'))

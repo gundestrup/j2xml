@@ -1105,7 +1105,7 @@ class Table extends \Joomla\CMS\Table\Table
 		if ($isEnabled)
 		{
 			// Unset any invalid associations
-			$associations = ArrayHelper::toInteger($associations);
+			ArrayHelper::toInteger($associations);
 
 			// Unset any invalid associations
 			foreach ($associations as $tag => $itemId)
@@ -1119,8 +1119,9 @@ class Table extends \Joomla\CMS\Table\Table
 			// Show a warning if the item isn't assigned to a language but we have associations.
 			if ($associations && $language === '*')
 			{
+				$app = \Joomla\CMS\Factory::getApplication();
 				$app->enqueueMessage(
-					\Joomla\CMS\Language\Text::_(strtoupper(strtok($associationsContext, '.')) . '_ERROR_ALL_LANGUAGE_ASSOCIATED'),
+					\Joomla\CMS\Language\Text::_(strtoupper(strtok($context, '.')) . '_ERROR_ALL_LANGUAGE_ASSOCIATED'),
 					'warning'
 					);
 			}
@@ -1161,7 +1162,7 @@ class Table extends \Joomla\CMS\Table\Table
 			if (count($associations) > 1)
 			{
 				// Adding new association for these items
-				$key   = md5(json_encode($associations)); // nosemgrep: weak-crypto — non-cryptographic lookup key for #__associations, matches Joomla core
+				$key   = md5(json_encode($associations)); // nosemgrep: weak-crypto — non-cryptographic lookup key for #__associations, matches Joomla core // NOSONAR
 				$query = $db->getQuery(true)
 					->insert('#__associations');
 

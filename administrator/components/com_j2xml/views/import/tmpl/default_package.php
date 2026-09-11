@@ -50,8 +50,8 @@ if ($max !== '' && $max !== '0')
 	$value = (int) $max;
 	switch ($unit)
 	{
-		case 'G': $value *= 1024;
-		case 'M': $value *= 1024;
+		case 'G': $value *= 1024; // fallthrough
+		case 'M': $value *= 1024; // fallthrough
 		case 'K': $value *= 1024;
 	}
 	$maxSize = $value;
@@ -65,6 +65,7 @@ $this->document->addScriptOptions('progressBarContainerClass', 'progress');
 $this->document->addScriptOptions('progressBarClass', 'progress-bar progress-bar-striped progress-bar-animated bg');
 $this->document->addScriptOptions('progressBarErrorClass', 'progress-bar progress-bar-striped progress-bar-animated bg-error');
 ?>
+<fieldset>
 <legend><?php echo Text::_('COM_J2XML_PACKAGEIMPORTER_UPLOAD_IMPORT_DATA'); ?></legend>
 
 <div id="uploader-wrapper">
@@ -138,3 +139,4 @@ $this->document->addScriptOptions('progressBarErrorClass', 'progress-bar progres
 
 <input id="j2xml_filename" name="j2xml_filename" type="hidden" value="" />
 <input id="j2xml_data" name="j2xml_data" type="hidden" value="" />
+</fieldset>

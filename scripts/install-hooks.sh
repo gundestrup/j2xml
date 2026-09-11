@@ -8,7 +8,7 @@
 set -euo pipefail
 
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
-if [ -z "$repo_root" ]; then
+if [[ -z "$repo_root" ]]; then
 	echo "Error: not inside a git repository." >&2
 	exit 1
 fi
@@ -19,7 +19,7 @@ source_dir="$repo_root/scripts/git-hooks"
 mkdir -p "$hooks_dir"
 
 for hook in "$source_dir"/*; do
-	[ -f "$hook" ] || continue
+	[[ -f "$hook" ]] || continue
 	hook_name=$(basename "$hook")
 	target="$hooks_dir/$hook_name"
 
@@ -27,7 +27,7 @@ for hook in "$source_dir"/*; do
 	chmod +x "$hook"
 
 	# Remove existing hook (file or symlink) and create a fresh symlink.
-	if [ -e "$target" ] || [ -L "$target" ]; then
+	if [[ -e "$target" || -L "$target" ]]; then
 		rm -f "$target"
 	fi
 	ln -s "../../scripts/git-hooks/$hook_name" "$target"
