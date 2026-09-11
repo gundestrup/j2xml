@@ -15,10 +15,10 @@ set -euo pipefail
 VERSION="${1:?Usage: install-plugin.sh <5|6> [zip_path]}"
 ZIP_PATH="${2:-$(cd "$(dirname "$0")/../.." && pwd)/build/pkg_j2xml.zip}"
 
-if [ "$VERSION" = "5" ]; then
+if [[ "$VERSION" = "5" ]]; then
     CONTAINER="${J2XML_CONTAINER:-j2xml-joomla5}"
     JOOMLA_URL="${J2XML_URL:-http://localhost:8085}"
-elif [ "$VERSION" = "6" ]; then
+elif [[ "$VERSION" = "6" ]]; then
     CONTAINER="${J2XML_CONTAINER:-j2xml-joomla6}"
     JOOMLA_URL="${J2XML_URL:-http://localhost:8086}"
 else
@@ -26,7 +26,7 @@ else
     exit 1
 fi
 
-if [ ! -f "$ZIP_PATH" ]; then
+if [[ ! -f "$ZIP_PATH" ]]; then
     echo "FAIL: Package zip not found at $ZIP_PATH"
     echo "Run scripts/build-package.sh first."
     exit 1
@@ -45,7 +45,7 @@ LOGIN_PAGE=$(curl -s -c "$COOKIE_FILE" "$JOOMLA_URL/administrator/index.php" 2>/
 
 # Extract CSRF token from login form (hidden field name is the token hash)
 TOKEN=$(echo "$LOGIN_PAGE" | sed -n 's/.*name="\([a-f0-9]\{32\}\)" value="1".*/\1/p' | head -1)
-if [ -z "$TOKEN" ]; then
+if [[ -z "$TOKEN" ]]; then
     echo "FAIL: Could not find CSRF token on login page"
     exit 1
 fi
@@ -56,7 +56,7 @@ LOGIN_CODE=$(curl -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -L -o /dev/null -w "%{h
     -d "username=admin&passwd=AdminAdmin123!&option=com_login&task=login&${TOKEN}=1" \
     2>/dev/null)
 
-if [ "$LOGIN_CODE" != "200" ]; then
+if [[ "$LOGIN_CODE" != "200" ]]; then
     echo "FAIL: Login returned HTTP $LOGIN_CODE"
     exit 1
 fi
@@ -68,7 +68,7 @@ INSTALLER_PAGE=$(curl -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
     "$JOOMLA_URL/administrator/index.php?option=com_installer&view=install" 2>/dev/null)
 
 CSRF=$(echo "$INSTALLER_PAGE" | sed -n 's/.*"csrf.token":[[:space:]]*"\([a-f0-9]\{32\}\)".*/\1/p' | head -1)
-if [ -z "$CSRF" ]; then
+if [[ -z "$CSRF" ]]; then
     echo "FAIL: Could not find CSRF token on installer page"
     exit 1
 fi
@@ -115,13 +115,13 @@ fi
 WARNINGS_HTML=$(echo "$RESULT_HTML" | grep -io 'alert-warning[^<]*<[^>]*>[^<]*' | grep -i 'File does not exist\|JInstaller' | head -10 || true)
 INSTALLER_WARNINGS=$(echo "$RESULT_HTML" | grep -io 'JInstaller[^<]*File does not exist[^<]*' | head -10 || true)
 
-if [ -n "$WARNINGS_HTML" ] || [ -n "$INSTALLER_WARNINGS" ]; then
+if [[ -n "$WARNINGS_HTML" ]] || [[ -n "$INSTALLER_WARNINGS" ]]; then
     echo "[install] WARNING: Installer warnings detected:"
-    if [ -n "$WARNINGS_HTML" ]; then
+    if [[ -n "$WARNINGS_HTML" ]]; then
         echo "  alert-warning: $WARNINGS_HTML"
         INSTALL_WARNINGS="$WARNINGS_HTML"
     fi
-    if [ -n "$INSTALLER_WARNINGS" ]; then
+    if [[ -n "$INSTALLER_WARNINGS" ]]; then
         echo "  JInstaller: $INSTALLER_WARNINGS"
         INSTALL_WARNINGS="${INSTALL_WARNINGS}${INSTALLER_WARNINGS}"
     fi
@@ -135,9 +135,9 @@ $c = new JConfig();
 echo $c->log_path;
 ' 2>/dev/null || echo "/var/www/html/administrator/logs")
 
-if [ -n "$JLOG_DIR" ]; then
+if [[ -n "$JLOG_DIR" ]]; then
     JLOG_WARNINGS=$(docker exec "$CONTAINER" bash -c "grep -r 'File does not exist' '$JLOG_DIR'/*.log* 2>/dev/null | tail -10" 2>/dev/null || true)
-    if [ -n "$JLOG_WARNINGS" ]; then
+    if [[ -n "$JLOG_WARNINGS" ]]; then
         echo "[install] WARNING: Joomla log contains installer warnings:"
         echo "$JLOG_WARNINGS"
         INSTALL_WARNINGS="${INSTALL_WARNINGS}${JLOG_WARNINGS}"
@@ -207,11 +207,11 @@ echo "$VERIFY"
 
 EXT_COUNT=$(echo "$VERIFY" | tr -d '\r' | grep "^COUNT:" | cut -d: -f2)
 
-if [ "${EXT_COUNT:-0}" -ge 4 ]; then
+if [[ "${EXT_COUNT:-0}" -ge 4 ]]; then
     echo "SUCCESS: J2XML installed on Joomla $VERSION ($EXT_COUNT extensions found)"
     # Even if extensions are registered, fail if installer warnings were detected
     # (e.g. missing language files, missing manifest-referenced files)
-    if [ -n "$INSTALL_WARNINGS" ]; then
+    if [[ -n "$INSTALL_WARNINGS" ]]; then
         echo "FAIL: Installation completed but installer warnings were detected"
         echo "  This usually indicates a packaging problem (missing files, wrong paths in manifest)"
         echo "  Warnings found:"
@@ -222,7 +222,7 @@ if [ "${EXT_COUNT:-0}" -ge 4 ]; then
 else
     echo "WARNING: Only $EXT_COUNT extensions found (expected 4+)"
     # Check if the install result page has any useful info
-    if [ -f /tmp/j2xml-install-result-$VERSION.html ]; then
+    if [[ -f /tmp/j2xml-install-result-$VERSION.html ]]; then
         echo "[install] Checking install result page for errors..."
         grep -i "error\|fail\|warning" /tmp/j2xml-install-result-$VERSION.html | grep -v "script\|css\|noscript\|JavaScript" | head -5
     fi

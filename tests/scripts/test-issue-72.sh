@@ -36,7 +36,7 @@ IMPORT_HTTP=$(curl -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -o /dev/null -w "%{htt
     "$JOOMLA_URL/administrator/index.php?option=com_j2xml&view=import" 2>/dev/null)
 echo "  Import page HTTP code: $IMPORT_HTTP"
 
-if [ "$IMPORT_HTTP" != "200" ]; then
+if [[ "$IMPORT_HTTP" != "200" ]]; then
     echo "  RESULT: FAIL — Cannot access J2XML import page (HTTP $IMPORT_HTTP)"
     exit 1
 fi
@@ -57,10 +57,10 @@ HTTP_CODE=$(curl -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -o /tmp/upload-response.
 echo "  Upload HTTP code: $HTTP_CODE"
 echo "  Upload response: $(cat /tmp/upload-response.txt | head -c 300)"
 
-if [ "$HTTP_CODE" = "200" ]; then
+if [[ "$HTTP_CODE" = "200" ]]; then
     echo "  RESULT: PASS — Upload did not return HTTP 500"
     exit 0
-elif [ "$HTTP_CODE" = "500" ]; then
+elif [[ "$HTTP_CODE" = "500" ]]; then
     echo "  RESULT: FAIL — HTTP 500 (the original bug)"
     exit 1
 else

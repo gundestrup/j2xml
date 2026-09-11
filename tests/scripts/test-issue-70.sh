@@ -54,7 +54,7 @@ echo "  Users after import: $AFTER"
 DIFF=$((AFTER - BEFORE))
 echo "  New users: $DIFF"
 
-if [ "$DIFF" -ge 3 ]; then
+if [[ "$DIFF" -ge 3 ]]; then
     echo "  RESULT: PASS — At least 3 users imported"
     exit 0
 elif echo "$OUTPUT" | grep -q "IMPORT_OK"; then

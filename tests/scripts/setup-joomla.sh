@@ -12,11 +12,11 @@ set -euo pipefail
 
 VERSION="${1:?Usage: setup-joomla.sh <5|6>}"
 
-if [ "$VERSION" = "5" ]; then
+if [[ "$VERSION" = "5" ]]; then
     CONTAINER="j2xml-joomla5"
     DB="$JOOMLA5_DB"
     URL="$JOOMLA5_URL"
-elif [ "$VERSION" = "6" ]; then
+elif [[ "$VERSION" = "6" ]]; then
     CONTAINER="j2xml-joomla6"
     DB="$JOOMLA6_DB"
     URL="$JOOMLA6_URL"
@@ -29,7 +29,7 @@ echo "[setup] Installing Joomla $VERSION via CLI in $CONTAINER..."
 
 # Check if already installed
 TABLES=$(mysql -h "$JOOMLA5_DB_HOST" -u"$DB_USER" -p"$DB_PASS" "$DB" -e "SHOW TABLES" 2>/dev/null | wc -l)
-if [ "$TABLES" -gt 10 ]; then
+if [[ "$TABLES" -gt 10 ]]; then
     echo "[setup] Joomla $VERSION already has $TABLES tables — skipping"
     exit 0
 fi
@@ -67,7 +67,7 @@ docker exec "$CONTAINER" php /var/www/html/installation/joomla.php install \
 TABLES=$(mysql -h "$JOOMLA5_DB_HOST" -u"$DB_USER" -p"$DB_PASS" "$DB" -e "SHOW TABLES" 2>/dev/null | wc -l)
 echo "[setup] Joomla $VERSION now has $TABLES tables"
 
-if [ "$TABLES" -gt 10 ]; then
+if [[ "$TABLES" -gt 10 ]]; then
     echo "[setup] SUCCESS: Joomla $VERSION installed"
     exit 0
 else

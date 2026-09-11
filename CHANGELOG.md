@@ -20,10 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - **SonarCloud integration** — `sonar-project.properties` with project key `gundestrup_j2xml`; excludes `media/**`, `build/**`, `tests/**`, `vendor/**`, `node_modules/**`. Badge added to README.
 - **AGENTS.md updated** — documented Semgrep, CodeFactor, and SonarCloud services, suppression syntax (`nosemgrep` / `NOSONAR`), and SonarCloud REST API access for local finding retrieval.
 
 ### Fixed
+
 - **SonarCloud findings addressed** (18 non-vendored findings):
   - `php:S128` — switch case fallthrough in `default_package.php` documented with `// fallthrough` comments (intentional byte-conversion cascade).
   - `Web:S8732` — `<legend>` wrapped in `<fieldset>` in `default_package.php`.
@@ -37,11 +39,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `shelldre:S7688` — `[` → `[[` in `scripts/build-package.sh` and `scripts/install-hooks.sh`.
 - **ci.yml YAML syntax** — fixed `pip3 install` line that confused YAML parsers (colons in `:all:`); switched to block scalar syntax.
 - **PHP 8.5 deprecation** — `$http_response_header` in `Sender.php` replaced with `http_get_last_response_headers()` (PHP 8.4+ API).
+- **SonarCloud `shelldre:S7688`** — converted all `[` → `[[` conditional tests in `tests/scripts/*.sh` (89 lines across 10 files, using exact SonarCloud API line data).
 
 ### Note
+
 - **`composer.lock` missing** (SonarCloud `text:S8567`) — run `composer install` and commit `composer.lock` for reproducible dev dependency versions.
 
 ### Tests
+
 - **All tests passed** (2026-09-11):
   - PHP lint: PHP 8.4 + 8.5 — all files clean (0 deprecation warnings).
   - PHPStan: 0 errors.
@@ -55,11 +60,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [4.5.0] - 2026-09-11
 
 ### Security
+
 - **Pinned all GitHub Actions to commit SHAs** — `actions/checkout`, `shivammathur/setup-php`, and `ludeeus/action-shellcheck` were pinned to immutable commit SHAs (with `# tag` comments) to prevent supply-chain attacks via mutable tag repointing. Resolves 6 Semgrep `github-actions-mutable-action-tag` findings.
 - **Added Semgrep security scanning** — `.semgrep.yml` with custom rules for SQL injection, `eval()`, command injection, and LFI/RFI; integrated into CI (`semgrep scan --config .semgrep.yml --error`) and the pre-commit hook.
 - **Added CodeFactor integration** — `.codefactor.yml` excludes test fixtures, vendored libraries, and media from analysis; badge added to README.
 
 ### Changed
+
 - **Upgraded vendored pako from 1.0.11 to 3.0.1** — replaced the 108KB pre-built UMD bundle with a 79KB inflate-only IIFE bundle built from npm pako 3.0.1 using esbuild. Added minimal build tooling in `build/pako/` (package.json + entry.js, node_modules gitignored). Updated `import.js` to use the pako 3.x API (`{toText: true}` instead of `{to: 'string'}`). Resolves CodeFactor "Very Complex Method" finding in vendored code.
 - **Upgraded vendored base64.js from 2011 standalone to @jsonjoy.com/base64 18.30.0** — replaced the 14-year-old hand-rolled base64 utility with a decode-only IIFE bundle built from npm `@jsonjoy.com/base64` 18.30.0 using esbuild. Added build tooling in `build/base64/`. Uses native `TextDecoder` for UTF-8 output. API unchanged (`base64.decode()`). Round-trip tested with XML and unicode content.
 - **Eliminated duplicate code in Content.php, User.php, Exporter.php, and Importer.php** — extracted three duplicated blocks into shared methods: `buildFieldAliases()` (50 lines, field/subform alias queries in Content & User), `exportFields()` (30 lines, subform field export in Content & User), and `User::syncUsergroupsTable()` (25 lines, `#__j2xml_usergroups` rebuild in Exporter & Importer constructors). Resolves CodeFactor duplicate-code findings.
@@ -72,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Renamed `AI_INSTRUCTIONS.md` to `AGENTS.md`** — `AGENTS.md` is now the single source of truth for all coding agents, following the agents.md open convention. Tool-specific files (`CLAUDE.md`, `.windsurfrules`, `.devin/global_rules.md`) now point to `AGENTS.md` instead of `AI_INSTRUCTIONS.md`.
 
 ### Note
+
 - **Semgrep false positives suppressed** — 3 findings annotated with `// nosemgrep`: `ini_set('display_errors', 1)` in `cli/j2xml.php` (CLI-only, guarded by `REQUEST_METHOD` check); `md5()` in `Content.php` and `Table.php` (non-cryptographic lookup key for `#__associations`, matches Joomla core pattern).
 
 ## [4.0.0] - 2026-08
@@ -83,6 +91,7 @@ HEAD includes all CI, PostgreSQL, and test-suite fixes that landed after
 that commit.
 
 ### Removed
+
 - **Joomla 3 compatibility shims** — removed `plugins/system/j2xml/layouts/joomla/` (jQuery-based modal/form-field layouts), `plugins/system/j2xml/src/joomla/` (J3 `JLayoutFile` alias shims), and `plugins/system/j2xml/src/J2xml/Helper/Joomla.php`
 - **`onBeforeCompileHead` jQuery loader** — removed explicit jQuery loading from the system plugin; Joomla 5/6 loads web assets on demand
 - **Inline jQuery `onclick` handlers** — replaced with vanilla JavaScript event listeners
@@ -90,6 +99,7 @@ that commit.
 - **`LIBXML_PARSEHUGE` manual `define()`** — removed; the constant is native to libxml ≥ 2.7.0
 
 ### Fixed
+
 - **Issue #72: Import HTTP 500 on Joomla 5.2+** — fixed class alias and API compatibility issues that caused fatal errors during import
 - **Issue #71: Import articles from J3 to J5** — articles now import correctly from J3-era XML format (version 21.12.0) into Joomla 5
 - **Issue #70: Import users on J5** — user import now works correctly, including handling of multiple group assignments and empty params
@@ -103,7 +113,7 @@ that commit.
 - **PHP 8.4 deprecated: `case` with semicolon** — changed `case 'array[]';` to `case 'array[]':` in `phpxmlrpc/src/Wrapper.php`
 - **Library manifest namespace path doubling** — `<namespace path="eshiol/J2xml">` caused Joomla's `JNamespacePsr4Map` to generate a doubled autoload path (`JPATH_LIBRARIES/eshiol/J2xml/eshiol/J2xml`), preventing class autoloading and causing HTTP 500 on every export/import; fixed by changing `path` to `""` (relative to library root)
 - **Import error handling** — `ImportModel::import()` now wraps `$importer->import()` in try/catch to log database-specific errors (e.g. PostgreSQL vs MySQL syntax differences) and show a user-friendly message instead of a raw HTTP 500
-- **PostgreSQL: MySQL-specific SQL in Content import** — replaced `INSERT IGNORE INTO ... SET` (MySQL-only syntax with backtick quoting) with Joomla query builder `->insert()->columns()->values()` for cross-database compatibility; replaced `DELETE FROM ``#__content_rating``` (backtick quoting) with query builder `->delete()->where()`
+- **PostgreSQL: MySQL-specific SQL in Content import** — replaced `INSERT IGNORE INTO ... SET` (MySQL-only syntax with backtick quoting) with Joomla query builder `->insert()->columns()->values()` for cross-database compatibility; replaced `DELETE FROM ``#__content_rating``` (backtick quoting) with query builder`->delete()->where()`
 - **PostgreSQL: install verification** — `tests/scripts/install-plugin.sh` Step 5 previously used `mysqli` to verify extension registration, which fails on PostgreSQL-only environments; now reads Joomla's `configuration.php` inside the container and branches on `$dbtype` to use `mysqli` (MySQL) or `pg_connect` + `pg_query_params` (PostgreSQL)
 - **CI: `composer validate --strict`** — added missing `license` field to `composer.json` (`GPL-3.0-or-later`)
 - **CI: `xmllint` not installed** — added `sudo apt-get install -y libxml2-utils` to the quality job
@@ -114,6 +124,7 @@ that commit.
 - **CI: REST API send test thresholds** — send tests expected specific record counts (e.g. 3+ articles) that don't match fresh CI Joomla installs; adjusted assertions to check minimum counts (1+) that are robust across fresh and pre-populated environments
 
 ### Added
+
 - **GitHub Actions CI** (`.github/workflows/ci.yml`) — three jobs on every push/PR:
   - **php-quality** (PHP 8.4 + 8.5 matrix): Composer validate, PHP lint, PHPStan, PHPUnit, ShellCheck (warning+), XML validation with `xmllint`
   - **mysql-integration**: Docker Compose Joomla 5 + 6 with MySQL 8.0; runs `tests/scripts/run-all-tests.sh` (82 assertions covering install, import, export, send, round-trip)
@@ -126,6 +137,7 @@ that commit.
 - **Deprecated patterns tracker** — `README.TODO.deprecated.md` documents all remaining deprecated APIs with file locations, recommended replacements, and target versions
 
 ### Changed
+
 - **`Factory::getDbo()` → container-based `DatabaseInterface`** — all 56 occurrences replaced with `Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class)` (non-Table classes) or `$this->getDatabase()` is not used because Table methods are static
 - **`Factory::getUser()` → `Factory::getApplication()->getIdentity()`** — all 11 occurrences replaced
 - **`Factory::getDate()` → `new \Joomla\CMS\Date\Date('now')`** — all 3 occurrences replaced (the container does not register `Date` as a service in Joomla 5)
@@ -157,6 +169,7 @@ that commit.
 - **`composer.json`** — added `"license": "GPL-3.0-or-later"` for `composer validate --strict` compatibility
 
 ### Note
+
 - Verified clean lint on PHP 8.4.24 and PHP 8.5.9 (0 errors, 0 deprecations)
 - PHPStan passes with 0 errors
 - All 82 integration tests pass on Joomla 5.4.7 and Joomla 6.1.2 (MySQL 8.0)
@@ -171,6 +184,7 @@ that commit.
 Latest release published on Joomla Extensions Directory.
 
 ### Fixed
+
 - Joomla 5.0.0 PHP 8.2 export and import support
 - PHP 8.2: `utf8_encode()` deprecation in XMLRPC
 - PHP 8.2: Dynamic Properties deprecated in `J2xml\Importer`
@@ -179,6 +193,7 @@ Latest release published on Joomla Extensions Directory.
 - `open_basedir` restriction fix
 
 ### Changed
+
 - XML-RPC for PHP 4.10.1
 
 ---
@@ -186,6 +201,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.9] - 2023-10
 
 ### Added
+
 - Joomla 5.0.0 support (export and import)
 - Import/export menus and modules
 - Send menus feature
@@ -193,11 +209,13 @@ Latest release published on Joomla Extensions Directory.
 - Drag and drop import
 
 ### Changed
+
 - PhpXmlRpc 4.10.0
 - CORS error message improvements
 - Featured up/down, rating, tags fixes
 
 ### Fixed
+
 - Import tags
 - Export images
 - Keep category
@@ -217,6 +235,7 @@ Latest release published on Joomla Extensions Directory.
 - PHP 8 compatibility
 
 ### Removed
+
 - PHP console
 
 ---
@@ -224,11 +243,13 @@ Latest release published on Joomla Extensions Directory.
 ## [3.9-beta-5] - 2022-12
 
 ### Added
+
 - Import menu
 - Third-party plugins support
 - Content hits
 
 ### Fixed
+
 - Import menu
 - Non-XML file reading
 - Set hits
@@ -238,6 +259,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.9-beta-4] - 2022-11
 
 ### Added
+
 - Send errors trapping
 - User fields
 - Usergroups
@@ -245,6 +267,7 @@ Latest release published on Joomla Extensions Directory.
 - Content introtext
 
 ### Fixed
+
 - Usergroups table
 - Contact import categories
 - Content introtext
@@ -256,16 +279,19 @@ Latest release published on Joomla Extensions Directory.
 ## [3.9-beta-1] - 2022-05
 
 ### Changed
+
 - Beta 1 release
 - Database refactor
 - Installation refactor
 
 ### Added
+
 - Import viewlevels when importing users
 - Import subform fields
 - Import via drag and drop
 
 ### Fixed
+
 - User activation, lastvisitDate, authProvider, lastResetTime
 - Show buttons only if J2XML is installed and enabled
 - Import menu
@@ -279,6 +305,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.9-alpha-6] - 2022-02
 
 ### Added
+
 - Import progress bar
 - Sender
 - Fields
@@ -291,6 +318,7 @@ Latest release published on Joomla Extensions Directory.
 - Usernotes
 
 ### Fixed
+
 - `FileReader.reader.onload`
 - Article not imported
 - Not imported message error
@@ -303,11 +331,13 @@ Latest release published on Joomla Extensions Directory.
 ## [3.9-alpha-5] - 2022-02
 
 ### Added
+
 - Fields
 - Content id
 - Field group
 
 ### Fixed
+
 - Not imported message error
 - Export categories
 - Usernotes
@@ -318,12 +348,14 @@ Latest release published on Joomla Extensions Directory.
 ## [3.9-alpha-4] - 2022-01
 
 ### Added
+
 - Export field images
 - Export and send buttons
 - Menus and modules
 - Version 19.2.0 support
 
 ### Fixed
+
 - Export and import contacts
 - Import contact J4
 - Duplicate code
@@ -333,6 +365,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.9-alpha-3] - 2022-01
 
 ### Changed
+
 - Version 19.2.0 support
 
 ---
@@ -340,21 +373,25 @@ Latest release published on Joomla Extensions Directory.
 ## [3.8] - 2021-12
 
 ### Added
+
 - Joomla 4 compatibility
 - PHP XML-RPC 4.5.1
 - Basic Auth plugin
 - J2XML Library 21.11.353
 
 ### Changed
+
 - UTF-8 handling
 - Version check
 - Export/send button
 - Joomla 4 compatibility
 
 ### Removed
+
 - eshiol/core Library dependency
 
 ### Fixed
+
 - Import/send content
 - Export/send button
 
@@ -363,6 +400,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.7] - 2020-06
 
 ### Added
+
 - Joomla 2.5 backward compatibility
 - XML-RPC for PHP 4.4.1
 - Overwrite article if newer
@@ -376,6 +414,7 @@ Latest release published on Joomla Extensions Directory.
 - Third-party plugin support
 
 ### Fixed
+
 - Import content
 - Import category
 - Import categories
@@ -401,6 +440,7 @@ Latest release published on Joomla Extensions Directory.
 - Uncaught ReferenceError: Joomla is not defined
 
 ### Changed
+
 - Associations support
 - Language strings
 - Uninstall handling
@@ -410,11 +450,13 @@ Latest release published on Joomla Extensions Directory.
 ## [3.7.201] - 2019-09
 
 ### Added
+
 - Keep user id
 - Original id
 - Keep id
 
 ### Fixed
+
 - Link source file
 - Code style
 
@@ -423,10 +465,12 @@ Latest release published on Joomla Extensions Directory.
 ## [3.7.199] - 2019-07
 
 ### Added
+
 - Slovenian (sl-SI) language
 - Third-party plugin support
 
 ### Fixed
+
 - Import weblinks
 - `html_entity_decode`
 
@@ -435,6 +479,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.7.196] - 2019-04
 
 ### Fixed
+
 - `JRegistry`
 - `htmlspecialchars_decode`
 - User skipped
@@ -445,6 +490,7 @@ Latest release published on Joomla Extensions Directory.
 - Export
 
 ### Added
+
 - J2XML Pro support
 
 ---
@@ -452,6 +498,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.7 stable] - 2019-04
 
 ### Note
+
 - Stable release of 3.7 series
 
 ---
@@ -459,6 +506,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.7.192] - 2019-02
 
 ### Fixed
+
 - Export
 - Tags
 - `allow_url_fopen=Off`
@@ -468,6 +516,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.6] - 2016-12
 
 ### Note
+
 - Restructured repository; removed standalone CHANGELOG and LICENSE files
 
 ---
@@ -475,21 +524,25 @@ Latest release published on Joomla Extensions Directory.
 ## [3.3.17] - 2016-05
 
 ### Added
+
 - Link2 button (`window.open`)
 - Import users with clear password
 - `onContentPrepareData` support
 - HTML for J2XML support
 
 ### Changed
+
 - Sendbydate button (mobile)
 - File button (mobile, plugins)
 - User group numeric
 - Check `#__j2xml_websites`
 
 ### Removed
+
 - Joomla 2.5 compatibility (system plugin)
 
 ### Fixed
+
 - Usergroup null
 - Installation
 
@@ -498,10 +551,12 @@ Latest release published on Joomla Extensions Directory.
 ## [3.3.15] - 2015-12
 
 ### Added
+
 - Export user notes
 - Buttons support
 
 ### Fixed
+
 - Weblinks import
 - Category import
 
@@ -510,9 +565,11 @@ Latest release published on Joomla Extensions Directory.
 ## [3.3.14] - 2015-10
 
 ### Changed
+
 - XMLRPC for PHP 3.0.1
 
 ### Fixed
+
 - Send
 
 ---
@@ -520,6 +577,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.3.13] - 2015-10
 
 ### Fixed
+
 - PHP 5.2 compatibility
 
 ---
@@ -527,13 +585,16 @@ Latest release published on Joomla Extensions Directory.
 ## [3.3.12] - 2015-09
 
 ### Added
+
 - Login XMLRPC
 - Import XMLRPC
 
 ### Changed
+
 - Open file from server via JCE filebrowser (filter: xml, gz)
 
 ### Removed
+
 - Import for Joomla 2.5
 
 ---
@@ -541,9 +602,11 @@ Latest release published on Joomla Extensions Directory.
 ## [3.3.11] - 2015-09
 
 ### Added
+
 - `onContentBeforeExport`
 
 ### Fixed
+
 - `J2XMLImporter::getArticleId($path)`
 
 ---
@@ -551,9 +614,11 @@ Latest release published on Joomla Extensions Directory.
 ## [3.2.10] - 2015-09
 
 ### Note
+
 - Stable release
 
 ### Fixed
+
 - Export
 
 ---
@@ -561,10 +626,12 @@ Latest release published on Joomla Extensions Directory.
 ## [3.2.9] - 2015-09
 
 ### Added
+
 - Import view levels
 - Export view levels
 
 ### Fixed
+
 - Import categories
 - Export/import users
 - Import contacts
@@ -575,6 +642,7 @@ Latest release published on Joomla Extensions Directory.
 - J2XML file format 15.9
 
 ### Changed
+
 - Logs
 
 ---
@@ -582,6 +650,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.2.8 RC] - 2015-09
 
 ### Added
+
 - Import contacts
 - Export contacts
 
@@ -590,6 +659,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.2.7 Beta] - 2015-09
 
 ### Fixed
+
 - Export
 
 ---
@@ -597,9 +667,11 @@ Latest release published on Joomla Extensions Directory.
 ## [3.2.6 Beta] - 2015-09
 
 ### Added
+
 - Third-party plugin log
 
 ### Changed
+
 - Export weblinks
 - Send
 - Clean attachments
@@ -607,9 +679,11 @@ Latest release published on Joomla Extensions Directory.
 - Import weblinks
 
 ### Removed
+
 - Clean redirect links
 
 ### Fixed
+
 - Export categories
 
 ---
@@ -617,9 +691,11 @@ Latest release published on Joomla Extensions Directory.
 ## [3.2.5 Beta] - 2015-08
 
 ### Fixed
+
 - Export users
 
 ### Added
+
 - `J2XMLImporter::getArticledId($path)`
 - `J2XMLImporter::getUserId($username)`
 
@@ -628,10 +704,12 @@ Latest release published on Joomla Extensions Directory.
 ## [3.2.4 Beta] - 2015-08
 
 ### Added
+
 - `onAfterImport`
 - `onAfterExport`
 
 ### Changed
+
 - Export
 - Rebuild links
 
@@ -640,6 +718,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.2.3 Beta] - 2015-06
 
 ### Added
+
 - Rebuild links
 
 ---
@@ -647,15 +726,18 @@ Latest release published on Joomla Extensions Directory.
 ## [3.2.2 Beta] - 2015-06
 
 ### Added
+
 - Import from server
 - File format check
 - Joomla 1.6 compatibility
 
 ### Changed
+
 - Upload file
 - Develop delete icon replaced by purge icon
 
 ### Fixed
+
 - Import from server
 - Language fixes (CLI)
 
@@ -664,12 +746,14 @@ Latest release published on Joomla Extensions Directory.
 ## [3.2.a2] - 2015-03
 
 ### Added
+
 - Joomla 1.6 compatibility
 - Export custom viewing access level
 - Auto send compatibility
 - Article tag export
 
 ### Fixed
+
 - Undefined `currentAssetId` on Joomla 2.5
 - Tags on Joomla 2.5
 - Featured
@@ -679,6 +763,7 @@ Latest release published on Joomla Extensions Directory.
 - PHP 5.2.4 compatibility
 
 ### Changed
+
 - Develop function
 
 ---
@@ -686,6 +771,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.2.a1] - 2014-10
 
 ### Added
+
 - Auto send support
 - Import from server
 - Import from external URL
@@ -693,14 +779,17 @@ Latest release published on Joomla Extensions Directory.
 - File button
 
 ### Removed
+
 - Filemanager library support
 
 ### Fixed
+
 - Logout XMLRPC user
 - Minor bug fixes
 - Language fix
 
 ### Changed
+
 - Minor language fix
 
 ---
@@ -708,6 +797,7 @@ Latest release published on Joomla Extensions Directory.
 ## [3.1.1] - 2014-06
 
 ### Fixed
+
 - Minor bug fixes
 - Large dataset XML parse error (Libxml < 2.7.0 compatibility)
 
@@ -716,10 +806,12 @@ Latest release published on Joomla Extensions Directory.
 ## [3.1] - 2014-03
 
 ### Added
+
 - Send by date button
 - Help screen (CLI)
 
 ### Fixed
+
 - Joomla 3.2 compatibility (CLI)
 - Joomla 2.5 compatibility (CLI)
 - Large dataset XML parse error
@@ -742,9 +834,11 @@ Latest release published on Joomla Extensions Directory.
 ## [3.1.rc2] - 2013-09
 
 ### Added
+
 - Help screen (CLI)
 
 ### Fixed
+
 - Import button in Joomla 3.x
 - Send button in Joomla 2.5
 

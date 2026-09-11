@@ -64,7 +64,7 @@ echo "  Articles after import: $AFTER"
 DIFF=$((AFTER - BEFORE))
 echo "  New articles: $DIFF"
 
-if [ "$DIFF" -ge 3 ]; then
+if [[ "$DIFF" -ge 3 ]]; then
     echo "  RESULT: PASS — At least 3 articles imported from J3 format"
     exit 0
 elif echo "$OUTPUT" | grep -q "IMPORT_OK"; then

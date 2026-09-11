@@ -69,7 +69,7 @@ joomla_login() {
     local token
     token=$(echo "$login_page" | sed -n 's/.*name="\([a-f0-9]\{32\}\)" value="1".*/\1/p' | head -1)
 
-    if [ -z "$token" ]; then
+    if [[ -z "$token" ]]; then
         fail "Could not find CSRF token on $name login page"
         return 1
     fi
@@ -80,7 +80,7 @@ joomla_login() {
         -d "username=admin&passwd=AdminAdmin123!&option=com_login&task=login&${token}=1" \
         2>/dev/null)
 
-    if [ "$http_code" = "200" ]; then
+    if [[ "$http_code" = "200" ]]; then
         info "Logged in to $name (HTTP $http_code)"
         return 0
     else
@@ -129,7 +129,7 @@ joomla_import() {
     local token
     token=$(get_csrf_token "$import_url")
 
-    if [ -z "$token" ]; then
+    if [[ -z "$token" ]]; then
         echo "NO_TOKEN"
         return 1
     fi
@@ -204,14 +204,14 @@ joomla_export() {
     local token
     token=$(get_csrf_token "$joomla_url/administrator/index.php?option=com_j2xml&view=export&layout=${content_type}")
 
-    if [ -z "$token" ]; then
+    if [[ -z "$token" ]]; then
         echo "NO_TOKEN"
         return 1
     fi
 
     # If ids="all", we need to get all IDs from the database
     local cid="$ids"
-    if [ "$ids" = "all" ]; then
+    if [[ "$ids" = "all" ]]; then
         # Get all IDs based on content type
         case "$content_type" in
             content)
@@ -256,7 +256,7 @@ joomla_export() {
         -F "jform[export_tags]=1" \
         2>/dev/null)
 
-    if [ "$http_code" = "200" ] && [ -f "$export_file" ]; then
+    if [[ "$http_code" = "200" ]] && [[ -f "$export_file" ]]; then
         cat "$export_file"
         rm -f "$export_file"
         return 0
@@ -509,7 +509,7 @@ J5_UI_THREE_ID=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joom
 info "Exporting only selected UI fixture articles 2 and 3 (not article 1)..."
 SELECTED_UI_XML=$(joomla_export "$JOOMLA5_URL" "content" "$J5_UI_TWO_ID,$J5_UI_THREE_ID" 1 2>/dev/null)
 if grep -q '<content>' <<< "$SELECTED_UI_XML" && \
-   [ "$(echo "$SELECTED_UI_XML" | grep -c '<content>')" -eq 2 ] && \
+   [[ "$(echo "$SELECTED_UI_XML" | grep -c '<content>')" -eq 2 ]] && \
    ! grep -q 'J2XML UI Selection One' <<< "$SELECTED_UI_XML" && \
    grep -q 'J2XML UI Selection Two' <<< "$SELECTED_UI_XML" && \
    grep -q 'J2XML UI Selection Three' <<< "$SELECTED_UI_XML"; then
@@ -553,7 +553,7 @@ if grep -q 'Joomla\.Modal\.getCurrent()\.close' <<< "$ARTICLES_HTML_J5"; then
     fail "Modal J5: Uses deprecated Joomla.Modal.getCurrent().close() pattern"
     DEPRECATED_COUNT=$((DEPRECATED_COUNT + 1))
 fi
-if [ "$DEPRECATED_COUNT" -eq 0 ]; then
+if [[ "$DEPRECATED_COUNT" -eq 0 ]]; then
     pass "Modal J5: No deprecated Joomla 4 / Bootstrap 4 patterns in modal HTML"
 fi
 
@@ -566,7 +566,7 @@ info "Importing comprehensive fixture (all content types)..."
 HTTP_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" \
     1 1 1 1 1 1 1 1 1)
 
-if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "303" ]; then
+if [[ "$HTTP_CODE" = "200" ]] || [[ "$HTTP_CODE" = "303" ]]; then
     pass "Import: All content types imported (HTTP $HTTP_CODE)"
 else
     fail "Import: Failed to import all content types (HTTP $HTTP_CODE)"
@@ -574,7 +574,7 @@ fi
 
 # Verify articles imported
 ARTICLE_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_content")
-if [ "$ARTICLE_COUNT" -ge 4 ] 2>/dev/null; then
+if [[ "$ARTICLE_COUNT" -ge 4 ]] 2>/dev/null; then
     pass "Import: $ARTICLE_COUNT articles in J5 database (default + imported)"
 else
     fail "Import: Only $ARTICLE_COUNT articles in J5 database (expected 4+)"
@@ -582,7 +582,7 @@ fi
 
 # Verify users imported
 USER_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_users")
-if [ "$USER_COUNT" -ge 3 ] 2>/dev/null; then
+if [[ "$USER_COUNT" -ge 3 ]] 2>/dev/null; then
     pass "Import: $USER_COUNT users in J5 database (1 admin + 2 imported)"
 else
     fail "Import: Only $USER_COUNT users in J5 database (expected 3+)"
@@ -590,7 +590,7 @@ fi
 
 # Verify categories imported
 CAT_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_categories")
-if [ "$CAT_COUNT" -ge 4 ] 2>/dev/null; then
+if [[ "$CAT_COUNT" -ge 4 ]] 2>/dev/null; then
     pass "Import: $CAT_COUNT categories in J5 database (default + imported)"
 else
     fail "Import: Only $CAT_COUNT categories in J5 database (expected 4+)"
@@ -598,7 +598,7 @@ fi
 
 # Verify tags imported
 TAG_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_tags")
-if [ "$TAG_COUNT" -ge 2 ] 2>/dev/null; then
+if [[ "$TAG_COUNT" -ge 2 ]] 2>/dev/null; then
     pass "Import: $TAG_COUNT tags in J5 database"
 else
     fail "Import: Only $TAG_COUNT tags in J5 database (expected 2+)"
@@ -606,7 +606,7 @@ fi
 
 # Verify contacts imported
 CONTACT_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_contact_details")
-if [ "$CONTACT_COUNT" -ge 1 ] 2>/dev/null; then
+if [[ "$CONTACT_COUNT" -ge 1 ]] 2>/dev/null; then
     pass "Import: $CONTACT_COUNT contacts in J5 database"
 else
     fail "Import: Only $CONTACT_COUNT contacts in J5 database (expected 1+)"
@@ -614,7 +614,7 @@ fi
 
 # Verify modules imported
 MODULE_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_modules")
-if [ "$MODULE_COUNT" -ge 1 ] 2>/dev/null; then
+if [[ "$MODULE_COUNT" -ge 1 ]] 2>/dev/null; then
     pass "Import: $MODULE_COUNT modules in J5 database (default + imported)"
 else
     fail "Import: Only $MODULE_COUNT modules in J5 database"
@@ -622,7 +622,7 @@ fi
 
 # Verify menu types imported
 MENUTYPE_COUNT=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT COUNT(*) FROM joom_menu_types");echo $r->fetch_row()[0];' 2>/dev/null)
-if [ "${MENUTYPE_COUNT:-0}" -ge 1 ] 2>/dev/null; then
+if [[ "${MENUTYPE_COUNT:-0}" -ge 1 ]] 2>/dev/null; then
     pass "Import: $MENUTYPE_COUNT menu types in J5 database"
 else
     fail "Import: Only $MENUTYPE_COUNT menu types in J5 database (expected 1+)"
@@ -630,7 +630,7 @@ fi
 
 # Verify fields imported
 FIELD_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_fields")
-if [ "$FIELD_COUNT" -ge 1 ] 2>/dev/null; then
+if [[ "$FIELD_COUNT" -ge 1 ]] 2>/dev/null; then
     pass "Import: $FIELD_COUNT custom fields in J5 database"
 else
     fail "Import: Only $FIELD_COUNT custom fields in J5 database (expected 1+)"
@@ -653,7 +653,7 @@ for export_spec in \
     export_xml=$(joomla_export "$JOOMLA5_URL" "$export_method" all 0 "$J5_CONTAINER" joomla5 2>/dev/null)
     export_count=$(printf '%s' "$export_xml" | grep -c "<${export_node}[ >]" || true)
     has_j2xml=$(printf '%s' "$export_xml" | grep -c '<j2xml' || true)
-    if [ "$has_j2xml" -gt 0 ] && [ "$export_count" -gt 0 ]; then
+    if [[ "$has_j2xml" -gt 0 ]] && [[ "$export_count" -gt 0 ]]; then
         pass "Export J5: $export_method endpoint exported $export_count $export_node record(s)"
     else
         fail "Export J5: $export_method endpoint did not export $export_node records"
@@ -675,21 +675,21 @@ NOOP_FIELDS_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_fields")
 NOOP_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 0 0 0 0 0 0 0 0 0)
 NOOP_COUNTS_AFTER="$(db_count "$J5_CONTAINER" "joomla5" "joom_content") $(db_count "$J5_CONTAINER" "joomla5" "joom_users") $(db_count "$J5_CONTAINER" "joomla5" "joom_categories") $(db_count "$J5_CONTAINER" "joomla5" "joom_tags") $(db_count "$J5_CONTAINER" "joomla5" "joom_modules") $(db_count "$J5_CONTAINER" "joomla5" "joom_menu") $(db_count "$J5_CONTAINER" "joomla5" "joom_contact_details") $(db_count "$J5_CONTAINER" "joomla5" "joom_fields")"
 NOOP_COUNTS_BEFORE="$NOOP_ARTICLES_BEFORE $NOOP_USERS_BEFORE $NOOP_CATEGORIES_BEFORE $NOOP_TAGS_BEFORE $NOOP_MODULES_BEFORE $NOOP_MENUS_BEFORE $NOOP_CONTACTS_BEFORE $NOOP_FIELDS_BEFORE"
-if { [ "$NOOP_IMPORT_CODE" = "200" ] || [ "$NOOP_IMPORT_CODE" = "303" ]; } && [ "$NOOP_COUNTS_BEFORE" = "$NOOP_COUNTS_AFTER" ]; then
+if { [[ "$NOOP_IMPORT_CODE" = "200" ]] || [[ "$NOOP_IMPORT_CODE" = "303" ]]; } && [[ "$NOOP_COUNTS_BEFORE" = "$NOOP_COUNTS_AFTER" ]]; then
     pass "Import J5: All entity switches set to NO produce no changes"
 else
     fail "Import J5: Disabled entity switches changed data (before: $NOOP_COUNTS_BEFORE; after: $NOOP_COUNTS_AFTER; HTTP: $NOOP_IMPORT_CODE)"
 fi
 
 OVERWRITE_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 2 2 2 1 2 2 2 2 2 0 0)
-if [ "$OVERWRITE_IMPORT_CODE" = "200" ] || [ "$OVERWRITE_IMPORT_CODE" = "303" ]; then
+if [[ "$OVERWRITE_IMPORT_CODE" = "200" ]] || [[ "$OVERWRITE_IMPORT_CODE" = "303" ]]; then
     pass "Import J5: Existing-record overwrite settings (content, categories, users, contacts, menus, modules, fields) completed"
 else
     fail "Import J5: Existing-record overwrite settings failed (HTTP $OVERWRITE_IMPORT_CODE)"
 fi
 
 NEWER_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/articles-j3.xml" 3 0 0 0 0 0 0 0 0 0 0)
-if [ "$NEWER_IMPORT_CODE" = "200" ] || [ "$NEWER_IMPORT_CODE" = "303" ]; then
+if [[ "$NEWER_IMPORT_CODE" = "200" ]] || [[ "$NEWER_IMPORT_CODE" = "303" ]]; then
     pass "Import J5: Overwrite-if-newer article setting completed"
 else
     fail "Import J5: Overwrite-if-newer article setting failed (HTTP $NEWER_IMPORT_CODE)"
@@ -699,7 +699,7 @@ KEEP_ID_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-ty
 KEEP_ID_USER=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT username FROM joom_users WHERE id=50");echo $r->fetch_row()[0] ?? "";' 2>/dev/null)
 KEEP_CONTENT_ID_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/keep-id.xml" 2 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0)
 KEEP_ID_ARTICLE=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT alias FROM joom_content WHERE id=1903");echo $r->fetch_row()[0] ?? "";' 2>/dev/null)
-if { [ "$KEEP_ID_IMPORT_CODE" = "200" ] || [ "$KEEP_ID_IMPORT_CODE" = "303" ]; } && { [ "$KEEP_CONTENT_ID_CODE" = "200" ] || [ "$KEEP_CONTENT_ID_CODE" = "303" ]; } && [ "$KEEP_ID_ARTICLE" = "j2xml-keep-id-only-article" ] && [ "$KEEP_ID_USER" = "fixtureuser1" ]; then
+if { [[ "$KEEP_ID_IMPORT_CODE" = "200" ]] || [[ "$KEEP_ID_IMPORT_CODE" = "303" ]]; } && { [[ "$KEEP_CONTENT_ID_CODE" = "200" ]] || [[ "$KEEP_CONTENT_ID_CODE" = "303" ]]; } && [[ "$KEEP_ID_ARTICLE" = "j2xml-keep-id-only-article" ]] && [[ "$KEEP_ID_USER" = "fixtureuser1" ]]; then
     pass "Import J5: keep_id and keep_user_id preserve source IDs"
 else
     fail "Import J5: keep_id/keep_user_id did not preserve source IDs (user HTTP: $KEEP_ID_IMPORT_CODE; content HTTP: $KEEP_CONTENT_ID_CODE; article: $KEEP_ID_ARTICLE; user: $KEEP_ID_USER)"
@@ -707,7 +707,7 @@ fi
 
 FORCE_CATEGORY_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 2 2 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0)
 FORCED_ARTICLE_CATEGORY=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT catid FROM joom_content WHERE alias=\"fixture-article-one\"");echo $r->fetch_row()[0] ?? "";' 2>/dev/null)
-if { [ "$FORCE_CATEGORY_CODE" = "200" ] || [ "$FORCE_CATEGORY_CODE" = "303" ]; } && [ "$FORCED_ARTICLE_CATEGORY" = "2" ]; then
+if { [[ "$FORCE_CATEGORY_CODE" = "200" ]] || [[ "$FORCE_CATEGORY_CODE" = "303" ]]; } && [[ "$FORCED_ARTICLE_CATEGORY" = "2" ]]; then
     pass "Import J5: keep_category force-to setting assigns the selected category"
 else
     fail "Import J5: keep_category force-to setting failed (HTTP: $FORCE_CATEGORY_CODE; catid: $FORCED_ARTICLE_CATEGORY)"
@@ -715,7 +715,7 @@ fi
 
 SUPERUSER_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 2 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0)
 SUPERUSER_PRESENT=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT COUNT(*) FROM joom_users WHERE username=\"fixturesuperuser\"");echo $r->fetch_row()[0];' 2>/dev/null)
-if { [ "$SUPERUSER_CODE" = "200" ] || [ "$SUPERUSER_CODE" = "303" ]; } && [ "$SUPERUSER_PRESENT" -eq 1 ]; then
+if { [[ "$SUPERUSER_CODE" = "200" ]] || [[ "$SUPERUSER_CODE" = "303" ]]; } && [[ "$SUPERUSER_PRESENT" -eq 1 ]]; then
     pass "Import J5: superusers setting permits superuser imports when enabled"
 else
     fail "Import J5: superusers setting failed (HTTP: $SUPERUSER_CODE; present: $SUPERUSER_PRESENT)"
@@ -723,7 +723,7 @@ fi
 
 USERNOTE_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0)
 USERNOTE_PRESENT=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT COUNT(*) FROM joom_user_notes WHERE subject=\"J2XML User Note Setting\"");echo $r->fetch_row()[0];' 2>/dev/null)
-if { [ "$USERNOTE_CODE" = "200" ] || [ "$USERNOTE_CODE" = "303" ]; } && [ "$USERNOTE_PRESENT" -ge 1 ]; then
+if { [[ "$USERNOTE_CODE" = "200" ]] || [[ "$USERNOTE_CODE" = "303" ]]; } && [[ "$USERNOTE_PRESENT" -ge 1 ]]; then
     pass "Import J5: usernotes setting imports user notes"
 else
     fail "Import J5: usernotes setting failed (HTTP: $USERNOTE_CODE; present: $USERNOTE_PRESENT)"
@@ -731,7 +731,7 @@ fi
 
 KEEP_DATA_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 2 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1)
 KEEP_DATA_MODIFIED=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT modified FROM joom_content WHERE alias=\"fixture-keep-id-article\"");echo $r->fetch_row()[0] ?? "";' 2>/dev/null)
-if [ "$KEEP_DATA_CODE" = "200" ] || [ "$KEEP_DATA_CODE" = "303" ]; then
+if [[ "$KEEP_DATA_CODE" = "200" ]] || [[ "$KEEP_DATA_CODE" = "303" ]]; then
     pass "Import J5: keep_data setting completed (modified: $KEEP_DATA_MODIFIED)"
 else
     fail "Import J5: keep_data setting failed (HTTP: $KEEP_DATA_CODE; modified: $KEEP_DATA_MODIFIED)"
@@ -739,9 +739,9 @@ fi
 
 WEBLINKS_ENABLED=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT COUNT(*) FROM joom_extensions WHERE name=\"com_weblinks\" AND enabled=1");echo $r->fetch_row()[0];' 2>/dev/null)
 WEBLINKS_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1 0)
-if [ "$WEBLINKS_ENABLED" -eq 0 ] 2>/dev/null && { [ "$WEBLINKS_CODE" = "200" ] || [ "$WEBLINKS_CODE" = "303" ]; }; then
+if [[ "$WEBLINKS_ENABLED" -eq 0 ]] 2>/dev/null && { [[ "$WEBLINKS_CODE" = "200" ]] || [[ "$WEBLINKS_CODE" = "303" ]]; }; then
     pass "Import J5: weblinks setting safely no-ops when com_weblinks is unavailable"
-elif [ "$WEBLINKS_ENABLED" -gt 0 ] 2>/dev/null; then
+elif [[ "$WEBLINKS_ENABLED" -gt 0 ]] 2>/dev/null; then
     pass "Import J5: weblinks setting path executed with com_weblinks installed"
 else
     fail "Import J5: weblinks setting failed (HTTP: $WEBLINKS_CODE; component enabled: $WEBLINKS_ENABLED)"
@@ -756,7 +756,7 @@ info "Re-exporting articles from Joomla 5 (should include old + new)..."
 REEXPORT_XML=$(joomla_export "$JOOMLA5_URL" "content" "all" 2>/dev/null)
 if grep -q "<j2xml" <<< "$REEXPORT_XML" 2>/dev/null; then
     REEXPORT_COUNT=$(echo "$REEXPORT_XML" | grep -c "<content>")
-    if [ "$REEXPORT_COUNT" -ge "$ARTICLE_COUNT" ] 2>/dev/null; then
+    if [[ "$REEXPORT_COUNT" -ge "$ARTICLE_COUNT" ]] 2>/dev/null; then
         pass "Round-trip: Re-export contains $REEXPORT_COUNT articles (>= $ARTICLE_COUNT imported)"
     else
         fail "Round-trip: Re-export only has $REEXPORT_COUNT articles (expected >= $ARTICLE_COUNT)"
@@ -770,7 +770,7 @@ info "Re-exporting users from Joomla 5..."
 REEXPORT_USERS=$(joomla_export "$JOOMLA5_URL" "users" "all" 2>/dev/null)
 if grep -q "<j2xml" <<< "$REEXPORT_USERS" 2>/dev/null; then
     REEXPORT_USER_COUNT=$(echo "$REEXPORT_USERS" | grep -c "<user>")
-    if [ "$REEXPORT_USER_COUNT" -ge "$USER_COUNT" ] 2>/dev/null; then
+    if [[ "$REEXPORT_USER_COUNT" -ge "$USER_COUNT" ]] 2>/dev/null; then
         pass "Round-trip: Re-export contains $REEXPORT_USER_COUNT users (>= $USER_COUNT imported)"
     else
         fail "Round-trip: Re-export only has $REEXPORT_USER_COUNT users (expected >= $USER_COUNT)"
@@ -780,7 +780,7 @@ else
 fi
 
 # Verify the re-exported XML contains both default and imported articles
-if [ -f /tmp/j2xml-export-after-import-j5.xml ]; then
+if [[ -f /tmp/j2xml-export-after-import-j5.xml ]]; then
     if grep -q "Fixture Article One" /tmp/j2xml-export-after-import-j5.xml && \
        grep -q "Fixture Article Two" /tmp/j2xml-export-after-import-j5.xml; then
         pass "Round-trip: Re-exported XML contains imported fixture articles"
@@ -815,7 +815,7 @@ REST_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$REST_URL" \
     -H "X-Joomla-Token: $J6_TOKEN" \
     -d '<?xml version="1.0"?><j2xml version="21.12.0"></j2xml>' \
     2>/dev/null)
-if [ "$REST_CODE" != "404" ] && [ "$REST_CODE" != "000" ]; then
+if [[ "$REST_CODE" != "404" ]] && [[ "$REST_CODE" != "000" ]]; then
     pass "Send: REST API endpoint reachable on Joomla 6 (HTTP $REST_CODE)"
 else
     fail "Send: REST API endpoint not found on Joomla 6 (HTTP $REST_CODE)"
@@ -833,7 +833,7 @@ REST_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$REST_URL" \
 REST_HTTP_CODE=$(echo "$REST_RESPONSE" | tail -1)
 REST_BODY=$(echo "$REST_RESPONSE" | sed '$d')
 
-if [ "$REST_HTTP_CODE" = "200" ]; then
+if [[ "$REST_HTTP_CODE" = "200" ]]; then
     pass "Send: REST API response received from Joomla 6 (HTTP $REST_HTTP_CODE)"
     # Check that J6 has articles (either default or imported via REST API).
     # On a fresh CI install the fixture may import only 1-2 articles (it
@@ -841,7 +841,7 @@ if [ "$REST_HTTP_CODE" = "200" ]; then
     # imports will have added more.  Either way, >=1 proves the endpoint
     # is wired correctly.
     J6_ARTICLES=$(db_count "$J6_CONTAINER" "joomla6" "joom_content")
-    if [ "$J6_ARTICLES" -ge 1 ] 2>/dev/null; then
+    if [[ "$J6_ARTICLES" -ge 1 ]] 2>/dev/null; then
         pass "Send: $J6_ARTICLES article(s) in Joomla 6 after REST API send"
     else
         fail "Send: No articles in Joomla 6 after send"
@@ -861,7 +861,7 @@ ALL_SEND_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$REST_URL" \
     -H "X-Joomla-Token: $J6_TOKEN" \
     -d "$ALL_CONTENT_XML" 2>/dev/null)
 ALL_SEND_CODE=$(echo "$ALL_SEND_RESPONSE" | tail -1)
-if [ "$ALL_SEND_CODE" = "200" ]; then
+if [[ "$ALL_SEND_CODE" = "200" ]]; then
     pass "Send: Comprehensive users/articles/categories/contacts/modules/menus/tags/fields payload accepted"
     # Check total counts on J6.  On a fresh CI install some entities may
     # not import fully (e.g. contacts need their category to exist first),
@@ -880,7 +880,7 @@ if [ "$ALL_SEND_CODE" = "200" ]; then
         send_table=$(echo "$send_check" | awk '{print $2}')
         send_min=$(echo "$send_check" | awk '{print $3}')
         send_count=$(db_count "$J6_CONTAINER" "joomla6" "$send_table")
-        if [ "$send_count" -ge "$send_min" ] 2>/dev/null; then
+        if [[ "$send_count" -ge "$send_min" ]] 2>/dev/null; then
             pass "Send: $send_name available on Joomla 6 ($send_count records)"
         else
             fail "Send: $send_name missing on Joomla 6 (found $send_count, expected $send_min+)"
@@ -899,10 +899,10 @@ joomla_login "$JOOMLA6_URL" "Joomla 6" || { skip "Cannot login to Joomla 6"; }
 
 info "Importing the selected UI export into Joomla 6 with images enabled..."
 SELECTED_IMPORT_CODE=$(joomla_import "$JOOMLA6_URL" /tmp/j2xml-selected-ui.xml 1 0 0 0 0 0 0 0 0 1)
-if [ "$SELECTED_IMPORT_CODE" = "200" ] || [ "$SELECTED_IMPORT_CODE" = "303" ]; then
+if [[ "$SELECTED_IMPORT_CODE" = "200" ]] || [[ "$SELECTED_IMPORT_CODE" = "303" ]]; then
     J6_SELECTED_COUNT=$(docker exec "$J6_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla6");$r=$m->query("SELECT COUNT(*) FROM joom_content WHERE alias IN (\"j2xml-ui-selection-two\",\"j2xml-ui-selection-three\")");echo $r->fetch_row()[0];' 2>/dev/null)
     J6_IMAGE_CONTENT=$(docker exec "$J6_CONTAINER" cat /var/www/html/images/j2xml-tests/export-image.png 2>/dev/null)
-    if [ "$J6_SELECTED_COUNT" -eq 2 ] && [ "$J6_IMAGE_CONTENT" = "j2xml-export-image-fixture" ]; then
+    if [[ "$J6_SELECTED_COUNT" -eq 2 ]] && [[ "$J6_IMAGE_CONTENT" = "j2xml-export-image-fixture" ]]; then
         pass "Import J6: Selected articles and exported image were restored"
     else
         fail "Import J6: Selected articles or exported image was not restored"
@@ -916,7 +916,7 @@ info "Importing all content types into Joomla 6..."
 HTTP_CODE=$(joomla_import "$JOOMLA6_URL" "$FIXTURES_DIR/all-content-types.xml" \
     1 1 1 1 1 1 1 1 1)
 
-if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "303" ]; then
+if [[ "$HTTP_CODE" = "200" ]] || [[ "$HTTP_CODE" = "303" ]]; then
     pass "J6: All content types imported (HTTP $HTTP_CODE)"
 else
     fail "J6: Failed to import all content types (HTTP $HTTP_CODE)"
@@ -924,7 +924,7 @@ fi
 
 # Verify articles on J6
 J6_ARTICLE_COUNT=$(db_count "$J6_CONTAINER" "joomla6" "joom_content")
-if [ "$J6_ARTICLE_COUNT" -ge 4 ] 2>/dev/null; then
+if [[ "$J6_ARTICLE_COUNT" -ge 4 ]] 2>/dev/null; then
     pass "J6: $J6_ARTICLE_COUNT articles in database"
 else
     fail "J6: Only $J6_ARTICLE_COUNT articles in database (expected 4+)"
@@ -983,7 +983,7 @@ if grep -q 'Joomla\.Modal\.getCurrent()\.close' <<< "$ARTICLES_HTML_J6"; then
     fail "Modal J6: Uses deprecated Joomla.Modal.getCurrent().close() pattern"
     DEPRECATED_COUNT_J6=$((DEPRECATED_COUNT_J6 + 1))
 fi
-if [ "$DEPRECATED_COUNT_J6" -eq 0 ]; then
+if [[ "$DEPRECATED_COUNT_J6" -eq 0 ]]; then
     pass "Modal J6: No deprecated Joomla 4 / Bootstrap 4 patterns in modal HTML"
 fi
 
@@ -1093,7 +1093,7 @@ J6_EXPORT_HTTP=$(curl -s -b "$COOKIE_FILE" -D /tmp/j2xml-e2e-export-j6-headers.t
 J6_EXPORT_CD=$(grep -i 'Content-disposition' /tmp/j2xml-e2e-export-j6-headers.txt 2>/dev/null)
 J6_EXPORT_CT=$(grep -i 'Content-Type' /tmp/j2xml-e2e-export-j6-headers.txt 2>/dev/null)
 J6_EXPORT_SIZE=$(wc -c < /tmp/j2xml-e2e-export-j6-response.txt 2>/dev/null)
-if [ "$J6_EXPORT_HTTP" = "200" ] && grep -q 'attachment.*\.xml' <<< "$J6_EXPORT_CD" && grep -q 'text/xml' <<< "$J6_EXPORT_CT"; then
+if [[ "$J6_EXPORT_HTTP" = "200" ]] && grep -q 'attachment.*\.xml' <<< "$J6_EXPORT_CD" && grep -q 'text/xml' <<< "$J6_EXPORT_CT"; then
     pass "E2E J6: Export produces XML download (HTTP $J6_EXPORT_HTTP, ${J6_EXPORT_SIZE} bytes)"
 else
     fail "E2E J6: Export failed (HTTP $J6_EXPORT_HTTP, CD: $J6_EXPORT_CD, CT: $J6_EXPORT_CT)"
@@ -1101,7 +1101,7 @@ fi
 
 # Check for PHP deprecation warnings
 DEPRECATIONS=$(docker exec "$J6_CONTAINER" bash -c 'grep -c "Deprecated" /var/log/apache2/error.log 2>/dev/null || echo 0')
-if [ "$DEPRECATIONS" -eq 0 ] 2>/dev/null; then
+if [[ "$DEPRECATIONS" -eq 0 ]] 2>/dev/null; then
     pass "J6: No deprecation warnings in Apache error log"
 else
     info "J6: $DEPRECATIONS deprecation warnings in Apache log (may be from Joomla core)"
@@ -1155,7 +1155,7 @@ echo "  Skipped: $SKIP"
 echo "  Total:  $((PASS+FAIL+SKIP))"
 echo ""
 
-if [ $FAIL -gt 0 ]; then
+if [[ $FAIL -gt 0 ]]; then
     exit 1
 fi
 exit 0

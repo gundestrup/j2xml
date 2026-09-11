@@ -109,7 +109,7 @@ echo "  J6 articles after: $AFTER_J6"
 FOUND=$(mysql -h "$JOOMLA6_DB_HOST" -u"$DB_USER" -p"$DB_PASS" "$JOOMLA6_DB" -e "SELECT COUNT(*) FROM _content WHERE alias='roundtrip-test'" -s 2>/dev/null)
 echo "  Roundtrip article found in J6: $FOUND"
 
-if [ "$FOUND" -ge 1 ]; then
+if [[ "$FOUND" -ge 1 ]]; then
     echo "  RESULT: PASS — Export from J5 and import to J6 succeeded"
     exit 0
 else

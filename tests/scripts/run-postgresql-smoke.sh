@@ -21,11 +21,11 @@ login() {
 	local page token code
 	page=$(curl -s -c "$cookie" "$url/administrator/index.php")
 	token=$(echo "$page" | sed -n 's/.*name="\([a-f0-9]\{32\}\)" value="1".*/\1/p' | head -1)
-	[ -n "$token" ]
+	[[ -n "$token" ]]
 	code=$(curl -s -c "$cookie" -b "$cookie" -L -o /dev/null -w '%{http_code}' \
 		-X POST "$url/administrator/index.php" \
 		-d "username=admin&passwd=AdminAdmin123!&option=com_login&task=login&${token}=1")
-	[ "$code" = 200 ]
+	[[ "$code" = 200 ]]
 }
 
 import_fixture() {
@@ -34,7 +34,7 @@ import_fixture() {
 	local page token code body_file
 	page=$(curl -s -c "$cookie" -b "$cookie" "$url/administrator/index.php?option=com_j2xml&view=import")
 	token=$(echo "$page" | grep -o '"csrf\.token"[[:space:]]*:[[:space:]]*"[a-f0-9]\{32\}"' | sed 's/.*"\([a-f0-9]\{32\}\)"/\1/' | head -1)
-	[ -n "$token" ]
+	[[ -n "$token" ]]
 	body_file="/tmp/j2xml-pg-import-response.txt"
 	code=$(curl -s -L -c "$cookie" -b "$cookie" -o "$body_file" -w '%{http_code}' \
 		-X POST "$url/administrator/index.php?option=com_j2xml&task=import.import" \
@@ -44,7 +44,7 @@ import_fixture() {
 		-F jform[import_tags]=0 -F jform[import_menus]=0 -F jform[import_modules]=0 \
 		-F jform[import_contacts]=0 -F jform[import_fields]=0 -F jform[import_viewlevels]=0 \
 		-F jform[import_images]=0 -F "install_package=@$FIXTURE")
-	if [ "$code" = "200" ] || [ "$code" = "303" ]; then
+	if [[ "$code" = "200" ]] || [[ "$code" = "303" ]]; then
 		echo "[pg-smoke] Import succeeded (HTTP $code)"
 		return 0
 	fi
@@ -65,20 +65,20 @@ export_articles() {
 	local prefix="$4"
 	local page token ids code
 	ids=$(docker exec j2xml-postgres psql -U joomla -d "$db" -Atc "SELECT string_agg(id::text, chr(44)) FROM \"${prefix}content\"" 2>/dev/null || true)
-	if [ -z "$ids" ]; then
+	if [[ -z "$ids" ]]; then
 		echo "[pg-smoke] WARNING: No articles found in $db database (import may have failed)"
 		# Fall back to exporting with cid=0 which exports all articles
 		ids="0"
 	fi
 	page=$(curl -s -c "$cookie" -b "$cookie" "$url/administrator/index.php?option=com_j2xml&view=export&layout=content")
 	token=$(echo "$page" | grep -o '"csrf\.token"[[:space:]]*:[[:space:]]*"[a-f0-9]\{32\}"' | sed 's/.*"\([a-f0-9]\{32\}\)"/\1/' | head -1)
-	[ -n "$token" ]
+	[[ -n "$token" ]]
 	code=$(curl -s -L -c "$cookie" -b "$cookie" -o /tmp/j2xml-pg-export.xml -w '%{http_code}' \
 		-X POST "$url/administrator/index.php?option=com_j2xml&task=content.display&format=raw" \
 		-H "X-CSRF-Token: $token" -F "task=content.display" -F "${token}=1" \
 		-F "jform[cid]=$ids" -F jform[export_compression]=0 -F jform[export_categories]=1 \
 		-F jform[export_fields]=0 -F jform[export_images]=0 -F jform[export_tags]=0)
-	if [ "$code" != "200" ]; then
+	if [[ "$code" != "200" ]]; then
 		echo "[pg-smoke] WARNING: Export returned HTTP $code for $db"
 		return 0
 	fi

@@ -55,7 +55,7 @@ echo "  Deprecation warnings: $DEPRECATIONS"
 FATALS=$(echo "$OUTPUT" | grep -ci "fatal error\|parse error" || true)
 echo "  Fatal errors: $FATALS"
 
-if [ "$DEPRECATIONS" -eq 0 ] && [ "$FATALS" -eq 0 ]; then
+if [[ "$DEPRECATIONS" -eq 0 ]] && [[ "$FATALS" -eq 0 ]]; then
     echo "  RESULT: PASS — No deprecations or fatal errors on PHP 8.4"
     exit 0
 else
