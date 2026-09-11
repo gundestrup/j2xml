@@ -31,274 +31,274 @@ use Joomla\Component\Fields\Administrator\Table\FieldTable;
 class Field extends Table
 {
 
-	/**
-	 * Constructor
-	 *
-	 * @param \Joomla\Database\DatabaseDriver $db
-	 *			A database connector object
-	 *
-	 * @since 17.6.299
-	 */
-	public function __construct (\Joomla\Database\DatabaseDriver $db)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Constructor
+     *
+     * @param \Joomla\Database\DatabaseDriver $db
+     *          A database connector object
+     *
+     * @since 17.6.299
+     */
+    public function __construct (\Joomla\Database\DatabaseDriver $db)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		parent::__construct('#__fields', 'id', $db);
-	}
+        parent::__construct('#__fields', 'id', $db);
+    }
 
-	/**
-	 *
-	 * {@inheritdoc}
-	 * @see Table::toXML()
-	 */
-	function toXML ($mapKeysToText = false)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     *
+     * {@inheritdoc}
+     * @see Table::toXML()
+     */
+    function toXML ($mapKeysToText = false)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$this->_excluded = array_merge($this->_excluded, [
-				'group_id'
-		]);
+        $this->_excluded = array_merge($this->_excluded, [
+                'group_id'
+        ]);
 
-		if ($this->group_id)
-		{
-			// $this->_aliases['group'] = 'SELECT title FROM #__fields_groups
-			// WHERE id = '. (int)$this->group_id;
-			$this->_aliases['group'] = (string) $this->_db->getQuery(true)
-				->select($this->_db->quoteName('title'))
-				->from($this->_db->quoteName('#__fields_groups'))
-				->where($this->_db->quoteName('id') . ' = ' . (int) $this->group_id);
-		}
+        if ($this->group_id)
+        {
+            // $this->_aliases['group'] = 'SELECT title FROM #__fields_groups
+            // WHERE id = '. (int)$this->group_id;
+            $this->_aliases['group'] = (string) $this->_db->getQuery(true)
+                ->select($this->_db->quoteName('title'))
+                ->from($this->_db->quoteName('#__fields_groups'))
+                ->where($this->_db->quoteName('id') . ' = ' . (int) $this->group_id);
+        }
 
-		// $this->_aliases['category'] = 'SELECT c.path FROM #__categories c,
-		// #__fields_categories fc WHERE c.id = fc.category_id AND fc.field_id
-		// ='.(int)$this->id;
-		$this->_aliases['category'] = (string) $this->_db->getQuery(true)
-			->select($this->_db->quoteName('c.path'))
-			->from($this->_db->quoteName('#__categories', 'c'))
-			->from($this->_db->quoteName('#__fields_categories', 'fc'))
-			->where($this->_db->quoteName('c.id') . ' = ' . $this->_db->quoteName('fc.category_id'))
-			->where($this->_db->quoteName('fc.field_id') . ' = ' . (int) $this->id);
+        // $this->_aliases['category'] = 'SELECT c.path FROM #__categories c,
+        // #__fields_categories fc WHERE c.id = fc.category_id AND fc.field_id
+        // ='.(int)$this->id;
+        $this->_aliases['category'] = (string) $this->_db->getQuery(true)
+            ->select($this->_db->quoteName('c.path'))
+            ->from($this->_db->quoteName('#__categories', 'c'))
+            ->from($this->_db->quoteName('#__fields_categories', 'fc'))
+            ->where($this->_db->quoteName('c.id') . ' = ' . $this->_db->quoteName('fc.category_id'))
+            ->where($this->_db->quoteName('fc.field_id') . ' = ' . (int) $this->id);
 
-		if ($this->type == 'subform')
-		{
-			$query = $this->_db->getQuery(true)
-				->select($this->_db->quoteName('id'))
-				->select($this->_db->quoteName('name'))
-				->from($this->_db->quoteName('#__fields'));
-			$fields = [];
-			foreach ($this->_db->setQuery($query)->loadObjectList() as $field)
-			{
-				$fields[$field->id] = $field->name;
-			}
+        if ($this->type == 'subform')
+        {
+            $query = $this->_db->getQuery(true)
+                ->select($this->_db->quoteName('id'))
+                ->select($this->_db->quoteName('name'))
+                ->from($this->_db->quoteName('#__fields'));
+            $fields = [];
+            foreach ($this->_db->setQuery($query)->loadObjectList() as $field)
+            {
+                $fields[$field->id] = $field->name;
+            }
 
-			$fieldparams = json_decode($this->fieldparams, true);
-			array_walk_recursive($fieldparams, function(&$value, $key, $fields)
-			{
-				if (($key == "customfield") && isset($fields[$value]))
-				{
-					$value = $fields[$value];
-				}
-			}, $fields);
-			$this->fieldparams = json_encode($fieldparams, true);
-		}
+            $fieldparams = json_decode($this->fieldparams, true);
+            array_walk_recursive($fieldparams, function(&$value, $key, $fields)
+            {
+                if (($key == "customfield") && isset($fields[$value]))
+                {
+                    $value = $fields[$value];
+                }
+            }, $fields);
+            $this->fieldparams = json_encode($fieldparams, true);
+        }
 
-		return parent::toXML($mapKeysToText);
-	}
+        return parent::toXML($mapKeysToText);
+    }
 
-	/**
-	 * Import data
-	 *
-	 * @param \SimpleXMLElement $xml
-	 *			xml
-	 * @param \JRegistry $params
-	 *			@option int 'fields' 0: No | 1: Yes, if not exists | 2: Yes,
-	 *			overwrite if exists
-	 *			@option string 'context'
-	 *
-	 * @throws
-	 * @return void
-	 * @access public
-	 *
-	 * @since 18.8.310
-	 */
-	public static function import ($xml, &$params, $db = null, $userId = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Import data
+     *
+     * @param \SimpleXMLElement $xml
+     *          xml
+     * @param \JRegistry $params
+     *          @option int 'fields' 0: No | 1: Yes, if not exists | 2: Yes,
+     *          overwrite if exists
+     *          @option string 'context'
+     *
+     * @throws
+     * @return void
+     * @access public
+     *
+     * @since 18.8.310
+     */
+    public static function import ($xml, &$params, $db = null, $userId = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$import_fields = $params->get('fields', 0);
-		if ($import_fields == 0)
-			return;
+        $import_fields = $params->get('fields', 0);
+        if ($import_fields == 0)
+            return;
 
-		$context = $params->get('context');
-		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-		$nullDate = $db->getNullDate();
-		$userid = $userId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
+        $context = $params->get('context');
+        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $nullDate = $db->getNullDate();
+        $userid = $userId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 
-		foreach ($xml->xpath("//j2xml/field") as $record)
-		{
-			self::prepareData($record, $data, $params);
+        foreach ($xml->xpath("//j2xml/field") as $record)
+        {
+            self::prepareData($record, $data, $params);
 
-			$field = $db->setQuery(
-				$db->getQuery(true)
-					->select($db->quoteName('id'))
-					->select($db->quoteName('name'))
-					->from($db->quoteName('#__fields'))
-					->where($db->quoteName('context') . ' = ' . $db->quote($data['context']))
-					->where($db->quoteName('name') . ' = ' . $db->quote($data['name'])))
-			->loadObject();
+            $field = $db->setQuery(
+                $db->getQuery(true)
+                    ->select($db->quoteName('id'))
+                    ->select($db->quoteName('name'))
+                    ->from($db->quoteName('#__fields'))
+                    ->where($db->quoteName('context') . ' = ' . $db->quote($data['context']))
+                    ->where($db->quoteName('name') . ' = ' . $db->quote($data['name'])))
+            ->loadObject();
 
-			if (!$field || ($import_fields == 2))
-			{
-				$table = new FieldTable($db);
+            if (!$field || ($import_fields == 2))
+            {
+                $table = new FieldTable($db);
 
-				if (!$field)
-				{ // new field
-					$data['id'] = null;
-				}
-				else
-				{ // field already exists
-					$data['id'] = $field->id;
-					$table->load($data['id']);
-				}
+                if (!$field)
+                { // new field
+                    $data['id'] = null;
+                }
+                else
+                { // field already exists
+                    $data['id'] = $field->id;
+                    $table->load($data['id']);
+                }
 
-				// Note: could trigger onContentBeforeSave event here.
-				$table->bind($data);
-				if ($table->store())
-				{
-					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FIELD_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
-					// Note: could trigger onContentAfterSave event here.
-				}
-				else
-				{
-					\Joomla\CMS\Log\Log::add(
-							new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FIELD_NOT_IMPORTED', $data['title'], $table->getError()), \Joomla\CMS\Log\Log::ERROR,
-									'lib_j2xml'));
-				}
-				$table = null;
-			}
-		}
-	}
+                // Note: could trigger onContentBeforeSave event here.
+                $table->bind($data);
+                if ($table->store())
+                {
+                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FIELD_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
+                    // Note: could trigger onContentAfterSave event here.
+                }
+                else
+                {
+                    \Joomla\CMS\Log\Log::add(
+                            new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FIELD_NOT_IMPORTED', $data['title'], $table->getError()), \Joomla\CMS\Log\Log::ERROR,
+                                    'lib_j2xml'));
+                }
+                $table = null;
+            }
+        }
+    }
 
-	/**
-	 *
-	 * {@inheritdoc}
-	 * @see Table::prepareData()
-	 */
-	public static function prepareData ($record, &$data, $params, $userId = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     *
+     * {@inheritdoc}
+     * @see Table::prepareData()
+     */
+    public static function prepareData ($record, &$data, $params, $userId = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$params->set('extension', 'com_fields');
-		parent::prepareData($record, $data, $params);
+        $params->set('extension', 'com_fields');
+        parent::prepareData($record, $data, $params);
 
-		if (!isset($data['description']))
-		{
-			$data['description'] = '';
-		}
+        if (!isset($data['description']))
+        {
+            $data['description'] = '';
+        }
 
-		if (!isset($data['params']))
-		{
-			$data['params'] = '{}';
-		}
+        if (!isset($data['params']))
+        {
+            $data['params'] = '{}';
+        }
 
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-		if (isset($data['modified_time']) && ($data['modified_time'] != $db->getNullDate()))
-		{
-			$data['modified_time'] = self::fixDate($data['modified_time']);
-		}
+        $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        if (isset($data['modified_time']) && ($data['modified_time'] != $db->getNullDate()))
+        {
+            $data['modified_time'] = self::fixDate($data['modified_time']);
+        }
 
-		if ($data['type'] == 'subform')
-		{
-			$query = $db->getQuery(true)
-				->select($db->quoteName('id'))
-				->select($db->quoteName('name'))
-				->from($db->quoteName('#__fields'))
-				->where($db->quoteName('context') . ' = ' . $db->quote($data['context']));
-			$fields = [];
-			foreach ($db->setQuery($query)->loadObjectList() as $field)
-			{
-				$fields[$field->name] = $field->id;
-			}
+        if ($data['type'] == 'subform')
+        {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('id'))
+                ->select($db->quoteName('name'))
+                ->from($db->quoteName('#__fields'))
+                ->where($db->quoteName('context') . ' = ' . $db->quote($data['context']));
+            $fields = [];
+            foreach ($db->setQuery($query)->loadObjectList() as $field)
+            {
+                $fields[$field->name] = $field->id;
+            }
 
-			$fieldparams = json_decode($data['fieldparams'], true);
-			array_walk_recursive($fieldparams, function(&$value, $key, $fields)
-			{
-				if (($key == "customfield") && isset($fields[$value]))
-				{
-					$value = $fields[$value];
-				}
-			}, $fields);
-			$data['fieldparams'] = json_encode($fieldparams, true);
-		}
-	}
+            $fieldparams = json_decode($data['fieldparams'], true);
+            array_walk_recursive($fieldparams, function(&$value, $key, $fields)
+            {
+                if (($key == "customfield") && isset($fields[$value]))
+                {
+                    $value = $fields[$value];
+                }
+            }, $fields);
+            $data['fieldparams'] = json_encode($fieldparams, true);
+        }
+    }
 
-	/**
-	 * Export data
-	 *
-	 * @param int $id
-	 *			the id of the item to be exported
-	 * @param \SimpleXMLElement $xml
-	 *			xml
-	 * @param array $options
-	 *
-	 * @throws
-	 * @return void
-	 * @access public
-	 *
-	 * @since 18.8.310
-	 */
-	public static function export ($id, &$xml, $options, $db = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Export data
+     *
+     * @param int $id
+     *          the id of the item to be exported
+     * @param \SimpleXMLElement $xml
+     *          xml
+     * @param array $options
+     *
+     * @throws
+     * @return void
+     * @access public
+     *
+     * @since 18.8.310
+     */
+    public static function export ($id, &$xml, $options, $db = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		if ($xml->xpath("//j2xml/field/id[text() = '" . $id . "']"))
-		{
-			return;
-		}
+        if ($xml->xpath("//j2xml/field/id[text() = '" . $id . "']"))
+        {
+            return;
+        }
 
-		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-		$item = new Field($db);
-		if (!$item->load($id))
-		{
-			return;
-		}
+        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $item = new Field($db);
+        if (!$item->load($id))
+        {
+            return;
+        }
 
-		$doc = dom_import_simplexml($xml)->ownerDocument;
-		$fragment = $doc->createDocumentFragment();
+        $doc = dom_import_simplexml($xml)->ownerDocument;
+        $fragment = $doc->createDocumentFragment();
 
-		$fragment->appendXML($item->toXML());
-		$doc->documentElement->appendChild($fragment);
+        $fragment->appendXML($item->toXML());
+        $doc->documentElement->appendChild($fragment);
 
-		if ($item->group_id)
-		{
-			Fieldgroup::export($item->group_id, $xml, $options);
-		}
+        if ($item->group_id)
+        {
+            Fieldgroup::export($item->group_id, $xml, $options);
+        }
 
-		if (isset($options['users']) && $options['users'])
-		{
-			if ($item->created_user_id)
-			{
-				User::export($item->created_user_id, $xml, $options);
-			}
-			if ($item->modified_by)
-			{
-				User::export($item->modified_by, $xml, $options);
-			}
-		}
+        if (isset($options['users']) && $options['users'])
+        {
+            if ($item->created_user_id)
+            {
+                User::export($item->created_user_id, $xml, $options);
+            }
+            if ($item->modified_by)
+            {
+                User::export($item->modified_by, $xml, $options);
+            }
+        }
 
-		if (isset($options['categories']) && $options['categories'])
-		{
-			$query = $db->getQuery(true)
-				->select('category_id')
-				->from('#__fields_categories')
-				->where('field_id = ' . $id);
-			$db->setQuery($query);
+        if (isset($options['categories']) && $options['categories'])
+        {
+            $query = $db->getQuery(true)
+                ->select('category_id')
+                ->from('#__fields_categories')
+                ->where('field_id = ' . $id);
+            $db->setQuery($query);
 
-			$ids_category = $db->loadColumn();
-			foreach ($ids_category as $id_category)
-			{
-				Category::export($id_category, $xml, $options);
-			}
-		}
-	}
+            $ids_category = $db->loadColumn();
+            foreach ($ids_category as $id_category)
+            {
+                Category::export($id_category, $xml, $options);
+            }
+        }
+    }
 }

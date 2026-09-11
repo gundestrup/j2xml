@@ -20,5 +20,5 @@ namespace Joomla\Component\J2xml\Administrator\Controller;
  */
 class WeblinksController extends ExportController
 {
-	protected $viewName = 'weblinks';
+    protected $viewName = 'weblinks';
 }

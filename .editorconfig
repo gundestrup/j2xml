@@ -1,0 +1,24 @@
+# EditorConfig — https://editorconfig.org
+# Enforces PSR-12 coding style (Joomla 4.2+ standard)
+
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+
+[*.{php}]
+indent_style = space
+indent_size = 4
+
+[*.{xml,xml.dist}]
+indent_style = tab
+indent_size = 4
+
+[*.{yml,yaml,json,sh}]
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = true

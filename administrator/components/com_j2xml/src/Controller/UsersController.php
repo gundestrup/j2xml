@@ -20,5 +20,5 @@ namespace Joomla\Component\J2xml\Administrator\Controller;
  */
 class UsersController extends ExportController
 {
-	protected $viewName = 'users';
+    protected $viewName = 'users';
 }

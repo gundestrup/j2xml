@@ -34,53 +34,53 @@ use Joomla\CMS\Toolbar\ToolbarHelper;
  */
 class HtmlView extends \Joomla\Component\J2xml\Administrator\View\DefaultHtmlView
 {
-	/**
-	 * Display the view
-	 *
-	 * @param   string  $tpl  Template
-	 *
-	 * @return  void
-	 *
-	 * @since   3.9
-	 */
-	public function display($tpl = null)
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
+    /**
+     * Display the view
+     *
+     * @param   string  $tpl  Template
+     *
+     * @return  void
+     *
+     * @since   3.9
+     */
+    public function display($tpl = null)
+    {
+        Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$this->form = $this->get('Form');
+        $this->form = $this->get('Form');
 
-		$paths = new \stdClass;
-		$paths->first = '';
-		$state = $this->get('state');
+        $paths = new \stdClass;
+        $paths->first = '';
+        $state = $this->get('state');
 
-		$this->paths = $paths;
-		$this->state = $state;
+        $this->paths = $paths;
+        $this->state = $state;
 
-		PluginHelper::importPlugin('installer');
+        PluginHelper::importPlugin('installer');
 
-		parent::display($tpl);
-	}
+        parent::display($tpl);
+    }
 
-	/**
-	 * Add the page title and toolbar.
-	 *
-	 * @since 1.6
-	 */
-	protected function addToolbar()
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
+    /**
+     * Add the page title and toolbar.
+     *
+     * @since 1.6
+     */
+    protected function addToolbar()
+    {
+        Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		ToolbarHelper::title(Text::_('COM_J2XML_TOOLBAR_J2XML'), 'upload import');
+        ToolbarHelper::title(Text::_('COM_J2XML_TOOLBAR_J2XML'), 'upload import');
 
-		if (\Joomla\CMS\Factory::getApplication()->getIdentity()->authorise('core.admin'))
-		{
-			ToolbarHelper::preferences('com_j2xml');
-		}
+        if (\Joomla\CMS\Factory::getApplication()->getIdentity()->authorise('core.admin'))
+        {
+            ToolbarHelper::preferences('com_j2xml');
+        }
 
-		// Load the admin stylesheet (includes toolbar-credit styling)
-		$this->document->getWebAssetManager()->useStyle('com_j2xml.admin');
+        // Load the admin stylesheet (includes toolbar-credit styling)
+        $this->document->getWebAssetManager()->useStyle('com_j2xml.admin');
 
-		$toolbar = Toolbar::getInstance('toolbar');
-		$toolbar->appendButton('Popup', 'credit', 'COM_J2XML_DONATE', 'https://www.eshiol.it/' . Text::_('COM_J2XML_DONATE_1') . '?tmpl=component', 550, 350);
-	}
+        $toolbar = Toolbar::getInstance('toolbar');
+        $toolbar->appendButton('Popup', 'credit', 'COM_J2XML_DONATE', 'https://www.eshiol.it/' . Text::_('COM_J2XML_DONATE_1') . '?tmpl=component', 550, 350);
+    }
 }

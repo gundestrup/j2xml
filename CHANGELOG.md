@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **SonarCloud integration** — `sonar-project.properties` with project key `gundestrup_j2xml`; excludes `media/**`, `build/**`, `tests/**`, `vendor/**`, `node_modules/**`. Badge added to README.
 - **AGENTS.md updated** — documented Semgrep, CodeFactor, and SonarCloud services, suppression syntax (`nosemgrep` / `NOSONAR`), and SonarCloud REST API access for local finding retrieval.
+- **`.editorconfig`** — enforces PSR-12 indentation (4 spaces for PHP, tabs for XML manifests) in supported IDEs.
+
+### Changed
+
+- **PSR-12 indentation** — converted all 79 PHP files from tabs to 4 spaces, aligning with Joomla 4.2+ / PSR-12 coding standard. XML manifests remain tab-indented per Joomla convention.
 
 ### Fixed
 

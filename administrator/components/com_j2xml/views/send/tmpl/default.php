@@ -31,10 +31,10 @@ $tabSetId = 'j2xml' . ucfirst($layout);
 /** @var \Joomla\CMS\WebAsset\WebAssetManager $wa */
 $wa = $this->document->getWebAssetManager();
 $wa->useScript('webcomponent.toolbar-button')
-	->useScript('showon')
-	->useScript('form.validate')
-	->useScript('keepalive')
-	->useScript('com_j2xml.admin');
+    ->useScript('showon')
+    ->useScript('form.validate')
+    ->useScript('keepalive')
+    ->useScript('com_j2xml.admin');
 
 $this->document->addScriptOptions('progressBarContainerClass', 'progress');
 $this->document->addScriptOptions('progressBarClass', 'progress-bar progress-bar-striped progress-bar-animated bg-success');
@@ -47,14 +47,14 @@ Text::script('LIB_J2XML_ERROR_UNKNOWN');
 Text::script('LIB_J2XML_ERROR_STATUS0');
 ?>
 <form action="<?php echo Route::_('index.php?option=com_j2xml'); ?>"
-	id="adminForm" method="post" name="adminForm"
-	class="form-horizontal form-validate">
+    id="adminForm" method="post" name="adminForm"
+    class="form-horizontal form-validate">
 
-	<?php echo LayoutHelper::render('j2xml.fieldsets', ['form' => $this->form, 'tabSetId' => $tabSetId, 'ui' => $ui], JPATH_ADMINISTRATOR . "/components/com_j2xml"); ?>
+    <?php echo LayoutHelper::render('j2xml.fieldsets', ['form' => $this->form, 'tabSetId' => $tabSetId, 'ui' => $ui], JPATH_ADMINISTRATOR . "/components/com_j2xml"); ?>
 
-	<button class="hidden" id="j2xmlSendOkBtn" type="button"
-		data-j2xml-task="send-submit"
-		data-j2xml-export-url="<?php echo Route::_('index.php?option=com_j2xml&task=' . $layout . '.export&format=json&' . Session::getFormToken() . '=1'); ?>"
-		data-j2xml-token="<?php echo Session::getFormToken(); ?>">
-	</button>
+    <button class="hidden" id="j2xmlSendOkBtn" type="button"
+        data-j2xml-task="send-submit"
+        data-j2xml-export-url="<?php echo Route::_('index.php?option=com_j2xml&task=' . $layout . '.export&format=json&' . Session::getFormToken() . '=1'); ?>"
+        data-j2xml-token="<?php echo Session::getFormToken(); ?>">
+    </button>
 </form>

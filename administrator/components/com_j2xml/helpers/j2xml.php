@@ -28,100 +28,100 @@ use Joomla\CMS\Language\Text;
 class J2xmlHelper
 {
 
-	public static $extension = 'com_j2xml';
+    public static $extension = 'com_j2xml';
 
-	/**
-	 * Gets a list of the actions that can be performed.
-	 *
-	 * @return \stdClass
-	 * @since 2.5
-	 */
-	public static function getActions ()
-	{
-		$user = \Joomla\CMS\Factory::getApplication()->getIdentity();
-		$result = new \stdClass();
+    /**
+     * Gets a list of the actions that can be performed.
+     *
+     * @return \stdClass
+     * @since 2.5
+     */
+    public static function getActions ()
+    {
+        $user = \Joomla\CMS\Factory::getApplication()->getIdentity();
+        $result = new \stdClass();
 
-		$assetName = 'com_content';
+        $assetName = 'com_content';
 
-		$actions = [
-				'core.admin',
-				'core.manage',
-				'core.create',
-				'core.edit',
-				'core.edit.own',
-				'core.edit.state',
-				'core.delete'
-		];
+        $actions = [
+                'core.admin',
+                'core.manage',
+                'core.create',
+                'core.edit',
+                'core.edit.own',
+                'core.edit.state',
+                'core.delete'
+        ];
 
-		foreach ($actions as $action)
-		{
-			$result->{$action} = $user->authorise($action, $assetName);
-		}
+        foreach ($actions as $action)
+        {
+            $result->{$action} = $user->authorise($action, $assetName);
+        }
 
-		return $result;
-	}
+        return $result;
+    }
 
-	/**
-	 *
-	 * @return boolean
-	 * @since 2.5
-	 */
-	public static function updateReset ()
-	{
-		return true;
-	}
+    /**
+     *
+     * @return boolean
+     * @since 2.5
+     */
+    public static function updateReset ()
+    {
+        return true;
+    }
 
-	public static function copyright ()
-	{
-		$xml = simplexml_load_file(JPATH_ADMINISTRATOR . "/components/com_j2xml/j2xml.xml", 'SimpleXMLElement', LIBXML_NONET);
-		if ($xml)
-		{
-			return '<div class="clearfix"> </div><div style="text-align:center;font-size:xx-small">' . Text::_($xml->name) . ' ' . $xml->version .
-					 ' ' . str_replace('(C)', '&copy;', $xml->copyright) . '</div>';
-		}
-	}
+    public static function copyright ()
+    {
+        $xml = simplexml_load_file(JPATH_ADMINISTRATOR . "/components/com_j2xml/j2xml.xml", 'SimpleXMLElement', LIBXML_NONET);
+        if ($xml)
+        {
+            return '<div class="clearfix"> </div><div style="text-align:center;font-size:xx-small">' . Text::_($xml->name) . ' ' . $xml->version .
+                     ' ' . str_replace('(C)', '&copy;', $xml->copyright) . '</div>';
+        }
+    }
 
-	/**
-	 * Configure the Linkbar.
-	 *
-	 * @param
-	 *        	string The name of the active view.
-	 */
-	public static function addSubmenu ($vName = 'cpanel')
-	{
-		Sidebar::addEntry(Text::_('COM_J2XML_SUBMENU_CPANEL'), 'index.php?option=com_j2xml&view=cpanel', $vName == 'cpanel');
-		Sidebar::addEntry(Text::_('COM_J2XML_SUBMENU_WEBSITES'), 'index.php?option=com_j2xml&view=websites', $vName == 'websites');
-	}
+    /**
+     * Configure the Linkbar.
+     *
+     * @param
+     *          string The name of the active view.
+     */
+    public static function addSubmenu ($vName = 'cpanel')
+    {
+        Sidebar::addEntry(Text::_('COM_J2XML_SUBMENU_CPANEL'), 'index.php?option=com_j2xml&view=cpanel', $vName == 'cpanel');
+        Sidebar::addEntry(Text::_('COM_J2XML_SUBMENU_WEBSITES'), 'index.php?option=com_j2xml&view=websites', $vName == 'websites');
+    }
 
-	/**
-	 * Removes invalid XML
-	 *
-	 * @access public
-	 * @param string $value
-	 * @return string
-	 */
-	public static function stripInvalidXml ($value)
-	{
-		$ret = "";
-		if (empty($value))
-		{
-			return $ret;
-		}
+    /**
+     * Removes invalid XML
+     *
+     * @access public
+     * @param string $value
+     * @return string
+     */
+    public static function stripInvalidXml ($value)
+    {
+        $ret = "";
+        if (empty($value))
+        {
+            return $ret;
+        }
 
-		$length = strlen($value);
-		for ($i = 0; $i < $length; $i ++)
-		{
-			$current = ord($value[$i]);
-			if (($current == 0x9) || ($current == 0xA) || ($current == 0xD) || (($current >= 0x20) && ($current <= 0xD7FF)) ||
-					 (($current >= 0xE000) && ($current <= 0xFFFD)) || (($current >= 0x10000) && ($current <= 0x10FFFF)))
-			{
-				$ret .= chr($current);
-			}
-			else
-			{
-				$ret .= " ";
-			}
-		}
-		return $ret;
-	}
+        $length = strlen($value);
+        for ($i = 0; $i < $length; $i ++)
+        {
+            $current = ord($value[$i]);
+            if (($current == 0x9) || ($current == 0xA) || ($current == 0xD) || (($current >= 0x20) && ($current <= 0xD7FF)) ||
+                     (($current >= 0xE000) && ($current <= 0xFFFD)) || (($current >= 0x10000) && ($current <= 0x10FFFF)))
+            {
+                $ret .= chr($current);
+            }
+            else
+            {
+                $ret .= " ";
+            }
+        }
+        return $ret;
+    }
 }

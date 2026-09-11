@@ -97,6 +97,8 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
 
 ### PHP style
 
+- **Indentation:** **4 spaces** (PSR-12, Joomla 4.2+ standard). NOT tabs.
+  A `.editorconfig` file at the repo root enforces this in supported IDEs.
 - **Namespacing:** the library uses `eshiol\J2xml` (lowercase `xml`) and
   `eshiol\J2xml\Table`, `eshiol\J2xml\Helper`. Plugin helpers use
   `eshiol\J2xml\Helper`. Match the existing casing exactly — PHP namespacing
@@ -128,7 +130,7 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
 
 ### XML / manifests
 
-- Indent with **tabs**, not spaces (matches existing manifests).
+- Indent XML/manifests with **tabs** (Joomla manifest convention). PHP files use 4 spaces (PSR-12).
 - Keep `method="upgrade"` on extensions so users can install over an existing
   copy without uninstalling.
 - Keep the `<files folder="…">` mapping accurate — the `folder` attribute is

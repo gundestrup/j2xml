@@ -46,204 +46,204 @@ use Joomla\Database\DatabaseInterface;
 class Importer
 {
 
-	protected $_nullDate;
+    protected $_nullDate;
 
-	protected $_user;
+    protected $_user;
 
-	protected $_user_id;
+    protected $_user_id;
 
-	protected $_now;
+    protected $_now;
 
-	protected $_option;
+    protected $_option;
 
-	protected $_usergroups;
+    protected $_usergroups;
 
-	/**
-	 * The application instance.
-	 *
-	 * @var CMSApplicationInterface
-	 * @since __DEPLOY_VERSION__
-	 */
-	protected $app;
+    /**
+     * The application instance.
+     *
+     * @var CMSApplicationInterface
+     * @since __DEPLOY_VERSION__
+     */
+    protected $app;
 
-	/**
-	 * CONSTRUCTOR
-	 *
-	 * @param   DatabaseInterface           $db   Optional database instance.
-	 * @param   CMSApplicationInterface     $app  Optional application instance.
-	 *
-	 * @since 1.6.0
-	 */
-	function __construct (?DatabaseInterface $db = null, ?CMSApplicationInterface $app = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * CONSTRUCTOR
+     *
+     * @param   DatabaseInterface           $db   Optional database instance.
+     * @param   CMSApplicationInterface     $app  Optional application instance.
+     *
+     * @since 1.6.0
+     */
+    function __construct (?DatabaseInterface $db = null, ?CMSApplicationInterface $app = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$db         = $db ?? \Joomla\CMS\Factory::getContainer()->get(DatabaseInterface::class);
-		$app        = $app ?? \Joomla\CMS\Factory::getApplication();
-		$this->app  = $app;
-		$serverType = $db->getServerType();
+        $db         = $db ?? \Joomla\CMS\Factory::getContainer()->get(DatabaseInterface::class);
+        $app        = $app ?? \Joomla\CMS\Factory::getApplication();
+        $this->app  = $app;
+        $serverType = $db->getServerType();
 
-		// Merge the default translation with the current translation
-		$jlang = $app->getLanguage();
-		$jlang->load('lib_j2xml', JPATH_SITE, 'en-GB', true);
-		$jlang->load('lib_j2xml', JPATH_SITE, $jlang->getDefault(), true);
-		$jlang->load('lib_j2xml', JPATH_SITE, null, true);
+        // Merge the default translation with the current translation
+        $jlang = $app->getLanguage();
+        $jlang->load('lib_j2xml', JPATH_SITE, 'en-GB', true);
+        $jlang->load('lib_j2xml', JPATH_SITE, $jlang->getDefault(), true);
+        $jlang->load('lib_j2xml', JPATH_SITE, null, true);
 
-		$this->_user     = $app->getIdentity();
-		$this->_nullDate = $db->getNullDate();
-		$this->_user_id  = $this->_user->get('id');
-		$this->_now      = (new \Joomla\CMS\Date\Date("now"))->format("%Y-%m-%d-%H-%M-%S");
-		$this->_option   = (PHP_SAPI != 'cli') ? $app->getInput()->getCmd('option') : 'cli_' .
-				 strtolower(get_class($app));
+        $this->_user     = $app->getIdentity();
+        $this->_nullDate = $db->getNullDate();
+        $this->_user_id  = $this->_user->get('id');
+        $this->_now      = (new \Joomla\CMS\Date\Date("now"))->format("%Y-%m-%d-%H-%M-%S");
+        $this->_option   = (PHP_SAPI != 'cli') ? $app->getInput()->getCmd('option') : 'cli_' .
+                 strtolower(get_class($app));
 
-		try {
-			$query = "CREATE TABLE IF NOT EXISTS " . $db->quoteName("#__j2xml_usergroups");
-			if ($serverType == 'postgresql')
-			{
-				$query .= " (" .
-					$db->quoteName("id") . " serial NOT NULL," .
-					$db->quoteName("parent_id") . " bigint DEFAULT 0 NOT NULL," .
-					$db->quoteName("title") . " varchar(100) DEFAULT '' NOT NULL," .
-					"PRIMARY KEY (" . $db->quoteName("id") . "));";
-				$db->setQuery($query)->execute();
-			}
-			else
-			{
-				$query .= " (" .
-					$db->quoteName("id") . " int(10) unsigned NOT NULL," .
-					$db->quoteName("parent_id") . " int(10) unsigned NOT NULL DEFAULT '0'," .
-					$db->quoteName("title") . " varchar(100) NOT NULL DEFAULT ''," .
-					"PRIMARY KEY (" . $db->quoteName("id") . ")) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 DEFAULT COLLATE = utf8mb4_unicode_ci;";
-			}
-			$db->setQuery($query)->execute();
+        try {
+            $query = "CREATE TABLE IF NOT EXISTS " . $db->quoteName("#__j2xml_usergroups");
+            if ($serverType == 'postgresql')
+            {
+                $query .= " (" .
+                    $db->quoteName("id") . " serial NOT NULL," .
+                    $db->quoteName("parent_id") . " bigint DEFAULT 0 NOT NULL," .
+                    $db->quoteName("title") . " varchar(100) DEFAULT '' NOT NULL," .
+                    "PRIMARY KEY (" . $db->quoteName("id") . "));";
+                $db->setQuery($query)->execute();
+            }
+            else
+            {
+                $query .= " (" .
+                    $db->quoteName("id") . " int(10) unsigned NOT NULL," .
+                    $db->quoteName("parent_id") . " int(10) unsigned NOT NULL DEFAULT '0'," .
+                    $db->quoteName("title") . " varchar(100) NOT NULL DEFAULT ''," .
+                    "PRIMARY KEY (" . $db->quoteName("id") . ")) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 DEFAULT COLLATE = utf8mb4_unicode_ci;";
+            }
+            $db->setQuery($query)->execute();
 
-			User::syncUsergroupsTable($db);
-		}
-		catch (\Joomla\Database\Exception\ExecutionFailureException $e)
-		{
-			// If the query fails we will go on
-		}
+            User::syncUsergroupsTable($db);
+        }
+        catch (\Joomla\Database\Exception\ExecutionFailureException $e)
+        {
+            // If the query fails we will go on
+        }
 
-	}
+    }
 
-	/**
-	 * Import data
-	 *
-	 * @param \SimpleXMLElement $xml
-	 *			xml
-	 * @param \Joomla\Registry\Registry $options
-	 *			An optional associative array of settings.
-	 *			@option boolean 'import_content' import articles
-	 *			@option int 'default_category'
-	 *			@option int 'content_category'
-	 *
-	 * @throws
-	 * @return boolean
-	 * @access public
-	 *
-	 * @since 1.6.0
-	 */
-	function import ($xml, $params)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Import data
+     *
+     * @param \SimpleXMLElement $xml
+     *          xml
+     * @param \Joomla\Registry\Registry $options
+     *          An optional associative array of settings.
+     *          @option boolean 'import_content' import articles
+     *          @option int 'default_category'
+     *          @option int 'content_category'
+     *
+     * @throws
+     * @return boolean
+     * @access public
+     *
+     * @since 1.6.0
+     */
+    function import ($xml, $params)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$import_viewlevels = $params->get('viewlevels');
-		if ($import_viewlevels)
-		{
-			Viewlevel::import($xml, $params);
-		}
+        $import_viewlevels = $params->get('viewlevels');
+        if ($import_viewlevels)
+        {
+            Viewlevel::import($xml, $params);
+        }
 
-		$import_fields = $params->get('fields', 0);
-		if ($import_fields)
-		{
-			Fieldgroup::import($xml, $params);
-			Field::import($xml, $params);
-		}
+        $import_fields = $params->get('fields', 0);
+        if ($import_fields)
+        {
+            Fieldgroup::import($xml, $params);
+            Field::import($xml, $params);
+        }
 
-		$import_users = $params->get('users');
-		if ($import_users)
-		{
-			User::import($xml, $params);
-		}
+        $import_users = $params->get('users');
+        if ($import_users)
+        {
+            User::import($xml, $params);
+        }
 
-		$import_tags = $params->get('tags', 1);
-		if ($import_tags)
-		{
-			Tag::import($xml, $params);
-		}
+        $import_tags = $params->get('tags', 1);
+        if ($import_tags)
+        {
+            Tag::import($xml, $params);
+        }
 
-		$import_content = $params->get('content');
-		$import_categories = $params->get('categories', 1);
-		if ($import_categories && !$import_content)
-		{
-			Category::import($xml, $params);
-		}
-		if ($import_content)
-		{
-			Content::import($xml, $params);
-		}
+        $import_content = $params->get('content');
+        $import_categories = $params->get('categories', 1);
+        if ($import_categories && !$import_content)
+        {
+            Category::import($xml, $params);
+        }
+        if ($import_content)
+        {
+            Content::import($xml, $params);
+        }
 
-		$import_images = $params->get('images', 0);
-		if ($import_images)
-		{
-			Image::import($xml, $params);
-		}
+        $import_images = $params->get('images', 0);
+        if ($import_images)
+        {
+            Image::import($xml, $params);
+        }
 
-		$import_usernotes = $params->get('usernotes', 0);
-		if ($import_usernotes)
-		{
-			Usernote::import($xml, $params);
-		}
+        $import_usernotes = $params->get('usernotes', 0);
+        if ($import_usernotes)
+        {
+            Usernote::import($xml, $params);
+        }
 
-		$import_contacts = $params->get('contacts', 0);
-		if ($import_contacts)
-		{
-			Contact::import($xml, $params);
-		}
+        $import_contacts = $params->get('contacts', 0);
+        if ($import_contacts)
+        {
+            Contact::import($xml, $params);
+        }
 
-		$import_weblinks = $params->get('weblinks');
-		if ($import_weblinks)
-		{
-			Weblink::import($xml, $params);
-		}
+        $import_weblinks = $params->get('weblinks');
+        if ($import_weblinks)
+        {
+            Weblink::import($xml, $params);
+        }
 
-		$import_menus = $params->get('menus', 1);
-		if ($import_menus)
-		{
-			Menutype::import($xml, $params);
-			Menu::import($xml, $params);
-		}
+        $import_menus = $params->get('menus', 1);
+        if ($import_menus)
+        {
+            Menutype::import($xml, $params);
+            Menu::import($xml, $params);
+        }
 
-		$import_modules = $params->get('modules', 1);
-		if ($import_modules)
-		{
-			Module::import($xml, $params);
-		}
+        $import_modules = $params->get('modules', 1);
+        if ($import_modules)
+        {
+            Module::import($xml, $params);
+        }
 
-		if ($params->get('fire', 1))
-		{
-			\Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
-			// Trigger the onAfterImport event.
-			$results = $this->app->triggerEvent('onContentAfterImport', [
-				'com_j2xml.import',
-				&$xml,
-				$params
-			]);
-		}
+        if ($params->get('fire', 1))
+        {
+            \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
+            // Trigger the onAfterImport event.
+            $results = $this->app->triggerEvent('onContentAfterImport', [
+                'com_j2xml.import',
+                &$xml,
+                $params
+            ]);
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	/**
-	 * Return true if the file is supported
-	 *
-	 * @param String $version
-	 *
-	 * @return boolean
-	 * @since  21.12.353
-	 */
-	public function isSupported(String $version)
-	{
-		return in_array($version, ["211200", "190200", "150900", "120500"]);
-	}
+    /**
+     * Return true if the file is supported
+     *
+     * @param String $version
+     *
+     * @return boolean
+     * @since  21.12.353
+     */
+    public function isSupported(String $version)
+    {
+        return in_array($version, ["211200", "190200", "150900", "120500"]);
+    }
 }

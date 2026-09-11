@@ -32,47 +32,47 @@ class Com_J2xmlInstallerScript
      */
     protected $fromVersion = null;
 
-	/**
-	 * Database object.
-	 *
-	 * @var    \Joomla\Database\DatabaseDriver
-	 * @since  3.9.232
-	 */
-	protected $db;
+    /**
+     * Database object.
+     *
+     * @var    \Joomla\Database\DatabaseDriver
+     * @since  3.9.232
+     */
+    protected $db;
 
-	/**
-	 * This method is called after a extension is installed.
-	 *
-	 * @param  \stdClass $parent - Parent object calling this method.
-	 *
-	 * @return void
-	 */
-	public function install($parent)
-	{
-	}
+    /**
+     * This method is called after a extension is installed.
+     *
+     * @param  \stdClass $parent - Parent object calling this method.
+     *
+     * @return void
+     */
+    public function install($parent)
+    {
+    }
  
-	/**
-	 * This method is called after a extension is uninstalled.
-	 *
-	 * @param  \stdClass $parent - Parent object calling this method.
-	 *
-	 * @return void
-	 */
-	public function uninstall($parent) 
-	{
-	}
+    /**
+     * This method is called after a extension is uninstalled.
+     *
+     * @param  \stdClass $parent - Parent object calling this method.
+     *
+     * @return void
+     */
+    public function uninstall($parent) 
+    {
+    }
 
-	/**
-	 * This method is called after a extension is updated.
-	 *
-	 * @param  \stdClass $parent - Parent object calling object.
-	 *
-	 * @return void
-	 */
-	public function update($parent) 
-	{
-		$this->deleteUnexistingFiles();
-	}
+    /**
+     * This method is called after a extension is updated.
+     *
+     * @param  \stdClass $parent - Parent object calling object.
+     *
+     * @return void
+     */
+    public function update($parent) 
+    {
+        $this->deleteUnexistingFiles();
+    }
 
     /**
      * Function to act prior to installation process begins
@@ -85,32 +85,32 @@ class Com_J2xmlInstallerScript
     public function preflight($action, $installer)
     {
        if ($action === 'update')
-		{
-			$db    = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-			$query = $db->getQuery(true)
-				->select('*')
-				->from($db->quoteName('#__extensions'))
-				->where($db->quoteName('type') . ' = ' . $db->quote('component'))
-				->where($db->quoteName('element') . ' = ' . $db->quote('com_j2xml'));
+        {
+            $db    = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $query = $db->getQuery(true)
+                ->select('*')
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
+                ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2xml'));
 
-			$db->setQuery($query);
+            $db->setQuery($query);
 
-			$j2xml = $db->loadObject();
-		
-			if ($j2xml)
-			{
-				$manifestValues = json_decode($j2xml->manifest_cache, true);
+            $j2xml = $db->loadObject();
+        
+            if ($j2xml)
+            {
+                $manifestValues = json_decode($j2xml->manifest_cache, true);
 
                 if (array_key_exists('version', $manifestValues))
-				{
+                {
                     $this->fromVersion = $manifestValues['version'];
 
-					if (version_compare($this->fromVersion, '3.9.3', '<'))
-					{
-						Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2XML_NOTINSTALLED'));
+                    if (version_compare($this->fromVersion, '3.9.3', '<'))
+                    {
+                        Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_J2XML_NOTINSTALLED'));
 
-						return false;
-					}
+                        return false;
+                    }
                 }
             }
         }
@@ -118,95 +118,95 @@ class Com_J2xmlInstallerScript
         return true;
     }
 
-	/**
-	 * Runs right after any installation action is preformed on the extension.
-	 *
-	 * @param  string	$type	 - Type of PostFlight action. Possible values are:
-	 *							 - * install
-	 *							 - * update
-	 *							 - * discover_install
-	 * @param  \stdClass $parent - Parent object calling object.
-	 *
-	 * @return void
-	 */
-	function postflight($type, $parent)
-	{
-		// Add token column to #__j2xml_websites if the table exists
-		// (created by J2XML Pro).
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-		$tables = $db->getTableList();
-		$prefix = $db->getPrefix();
-		$tableName = $prefix . 'j2xml_websites';
+    /**
+     * Runs right after any installation action is preformed on the extension.
+     *
+     * @param  string   $type    - Type of PostFlight action. Possible values are:
+     *                           - * install
+     *                           - * update
+     *                           - * discover_install
+     * @param  \stdClass $parent - Parent object calling object.
+     *
+     * @return void
+     */
+    function postflight($type, $parent)
+    {
+        // Add token column to #__j2xml_websites if the table exists
+        // (created by J2XML Pro).
+        $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $tables = $db->getTableList();
+        $prefix = $db->getPrefix();
+        $tableName = $prefix . 'j2xml_websites';
 
-		if (in_array($tableName, $tables))
-		{
-			$columns = $db->getTableColumns('#__j2xml_websites');
-			if (!isset($columns['token']))
-			{
-				$db->setQuery(
-					'ALTER TABLE ' . $db->quoteName('#__j2xml_websites')
-					. ' ADD COLUMN ' . $db->quoteName('token') . ' TEXT NULL AFTER '
-					. $db->quoteName('password')
-				)->execute();
-			}
-		}
-	}
+        if (in_array($tableName, $tables))
+        {
+            $columns = $db->getTableColumns('#__j2xml_websites');
+            if (!isset($columns['token']))
+            {
+                $db->setQuery(
+                    'ALTER TABLE ' . $db->quoteName('#__j2xml_websites')
+                    . ' ADD COLUMN ' . $db->quoteName('token') . ' TEXT NULL AFTER '
+                    . $db->quoteName('password')
+                )->execute();
+            }
+        }
+    }
 
-	/**
-	 * Delete files that should not exist
-	 *
-	 * @return  void
-	 */
-	public function deleteUnexistingFiles()
-	{
-		$files = [
-			/*
-			 * 3.9.232
-			 */
-			'/administrator/components/com_j2xml/controllers/cpanel.json.php',
-			'/administrator/components/com_j2xml/controllers/cpanel.php',
-			'/language/en-GB/en-GB.lib_eshiol.ini',
-			'/language/en-GB/en-GB.lib_eshiol.sys.ini',
-		];
+    /**
+     * Delete files that should not exist
+     *
+     * @return  void
+     */
+    public function deleteUnexistingFiles()
+    {
+        $files = [
+            /*
+             * 3.9.232
+             */
+            '/administrator/components/com_j2xml/controllers/cpanel.json.php',
+            '/administrator/components/com_j2xml/controllers/cpanel.php',
+            '/language/en-GB/en-GB.lib_eshiol.ini',
+            '/language/en-GB/en-GB.lib_eshiol.sys.ini',
+        ];
 
-		// Note: there is an issue while deleting folders using the ftp mode
-		$folders = [
-			/*
-			 * 3.9.232
-			 */
-			'/administrator/components/com_j2xml/views/cpanel',
-		];
+        // Note: there is an issue while deleting folders using the ftp mode
+        $folders = [
+            /*
+             * 3.9.232
+             */
+            '/administrator/components/com_j2xml/views/cpanel',
+        ];
 
-		Factory::getApplication()->getLanguage()->load('com_j2xml', JPATH_ADMINISTRATOR);
+        Factory::getApplication()->getLanguage()->load('com_j2xml', JPATH_ADMINISTRATOR);
 
-		foreach ($files as $file)
-		{
-		    if (\Joomla\Filesystem\File::exists(JPATH_ROOT . $file))
-			{
-				if (\Joomla\Filesystem\File::delete(JPATH_ROOT . $file))
-				{
-					Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('COM_J2XML_FILE_DELETED', $file));
-				}
-				else
-				{
-					Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('FILES_JOOMLA_ERROR_FILE_FOLDER', $file));
-				}
-			}
-		}
+        foreach ($files as $file)
+        {
+            if (\Joomla\Filesystem\File::exists(JPATH_ROOT . $file))
+            {
+                if (\Joomla\Filesystem\File::delete(JPATH_ROOT . $file))
+                {
+                    Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('COM_J2XML_FILE_DELETED', $file));
+                }
+                else
+                {
+                    Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('FILES_JOOMLA_ERROR_FILE_FOLDER', $file));
+                }
+            }
+        }
 
-		foreach ($folders as $folder)
-		{
-		    if (\Joomla\Filesystem\Folder::exists(JPATH_ROOT . $folder))
-			{
-				if (\Joomla\Filesystem\Folder::delete(JPATH_ROOT . $folder))
-				{
-					Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('COM_J2XML_FOLDER_DELETED', $folder));
-				}
-				else
-			    {
-			        Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('FILES_JOOMLA_ERROR_FILE_FOLDER', $folder));
-				}
-		    }
-		}
-	}
+        foreach ($folders as $folder)
+        {
+            if (\Joomla\Filesystem\Folder::exists(JPATH_ROOT . $folder))
+            {
+                if (\Joomla\Filesystem\Folder::delete(JPATH_ROOT . $folder))
+                {
+                    Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('COM_J2XML_FOLDER_DELETED', $folder));
+                }
+                else
+                {
+                    Factory::getApplication()->enqueueMessage(\Joomla\CMS\Language\Text::sprintf('FILES_JOOMLA_ERROR_FILE_FOLDER', $folder));
+                }
+            }
+        }
+    }
 }

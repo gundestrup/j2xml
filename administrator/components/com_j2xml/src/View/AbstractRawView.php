@@ -30,102 +30,102 @@ use Joomla\Registry\Registry;
  */
 class AbstractRawView extends HtmlView
 {
-	/**
-	 * The list of IDs to be exported.
-	 *
-	 * @var array
-	 */
-	protected $ids;
+    /**
+     * The list of IDs to be exported.
+     *
+     * @var array
+     */
+    protected $ids;
 
-	/**
-	 * The params object.
-	 *
-	 * @var Registry
-	 */
-	protected $params;
+    /**
+     * The params object.
+     *
+     * @var Registry
+     */
+    protected $params;
 
-	/**
-	 * The export method name (e.g. 'content', 'categories').
-	 *
-	 * @var string
-	 */
-	protected $exportMethod = '';
+    /**
+     * The export method name (e.g. 'content', 'categories').
+     *
+     * @var string
+     */
+    protected $exportMethod = '';
 
-	/**
-	 * Constructor.
-	 *
-	 * @param   array  $config  Configuration array
-	 */
-	public function __construct($config = [])
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
+    /**
+     * Constructor.
+     *
+     * @param   array  $config  Configuration array
+     */
+    public function __construct($config = [])
+    {
+        Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		parent::__construct($config);
+        parent::__construct($config);
 
-		$app = Factory::getApplication();
-		$jform = $app->getInput()->post->get('jform', [], 'array');
+        $app = Factory::getApplication();
+        $jform = $app->getInput()->post->get('jform', [], 'array');
 
-		$this->ids = explode(',', $jform['cid'] ?? '');
-		unset($jform['cid']);
+        $this->ids = explode(',', $jform['cid'] ?? '');
+        unset($jform['cid']);
 
-		$this->params = new Registry();
-		$this->params->loadArray($jform);
-	}
+        $this->params = new Registry();
+        $this->params->loadArray($jform);
+    }
 
-	/**
-	 * Execute and display a template script.
-	 *
-	 * @param   string  $tpl  The name of the template file to parse
-	 *
-	 * @return  boolean
-	 */
-	public function display($tpl = null)
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
+    /**
+     * Execute and display a template script.
+     *
+     * @param   string  $tpl  The name of the template file to parse
+     *
+     * @return  boolean
+     */
+    public function display($tpl = null)
+    {
+        Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$params = new Registry();
-		foreach ($this->params->toArray() as $k => $v)
-		{
-			$params->set(str_starts_with($k, 'export_') ? substr($k, 7) : $k, $v);
-		}
+        $params = new Registry();
+        foreach ($this->params->toArray() as $k => $v)
+        {
+            $params->set(str_starts_with($k, 'export_') ? substr($k, 7) : $k, $v);
+        }
 
-		$app = Factory::getApplication();
-		$db = Factory::getContainer()->get(DatabaseInterface::class);
-		$j2xml = new \eshiol\J2xml\Exporter($db, $app);
-		$exportMethod = $this->exportMethod ?: strtolower($this->getName());
-		$xml = null;
-		$j2xml->$exportMethod($this->ids, $xml, $params);
+        $app = Factory::getApplication();
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $j2xml = new \eshiol\J2xml\Exporter($db, $app);
+        $exportMethod = $this->exportMethod ?: strtolower($this->getName());
+        $xml = null;
+        $j2xml->$exportMethod($this->ids, $xml, $params);
 
-		$out = 'j2xml' . str_replace('.', '', \eshiol\J2xml\Version::$DOCVERSION) . (new \Joomla\CMS\Date\Date('now'))->format('YmdHis');
+        $out = 'j2xml' . str_replace('.', '', \eshiol\J2xml\Version::$DOCVERSION) . (new \Joomla\CMS\Date\Date('now'))->format('YmdHis');
 
-		$dom = new \DOMDocument('1.0');
-		$dom->preserveWhiteSpace = false;
-		$dom->formatOutput = true;
-		$dom->loadXML($xml->asXML());
-		$data = $dom->saveXML();
+        $dom = new \DOMDocument('1.0');
+        $dom->preserveWhiteSpace = false;
+        $dom->formatOutput = true;
+        $dom->loadXML($xml->asXML());
+        $data = $dom->saveXML();
 
-		$document = $app->getDocument();
-		$compression = $params->get('compression', 0);
+        $document = $app->getDocument();
+        $compression = $params->get('compression', 0);
 
-		if (!\extension_loaded('zlib') || ini_get('zlib.output_compression'))
-		{
-			$document->setMimeEncoding('text/xml', true);
-			$app->setHeader('Content-disposition', 'attachment; filename="' . $out . '.xml"', true);
-		}
-		elseif ($compression)
-		{
-			$document->setMimeEncoding('application/gzip', true);
-			$app->setHeader('Content-disposition', 'attachment; filename="' . $out . '.gz"', true);
-			$data = gzencode($data, 4);
-		}
-		else
-		{
-			$document->setMimeEncoding('text/xml', true);
-			$app->setHeader('Content-disposition', 'attachment; filename="' . $out . '.xml"', true);
-		}
+        if (!\extension_loaded('zlib') || ini_get('zlib.output_compression'))
+        {
+            $document->setMimeEncoding('text/xml', true);
+            $app->setHeader('Content-disposition', 'attachment; filename="' . $out . '.xml"', true);
+        }
+        elseif ($compression)
+        {
+            $document->setMimeEncoding('application/gzip', true);
+            $app->setHeader('Content-disposition', 'attachment; filename="' . $out . '.gz"', true);
+            $data = gzencode($data, 4);
+        }
+        else
+        {
+            $document->setMimeEncoding('text/xml', true);
+            $app->setHeader('Content-disposition', 'attachment; filename="' . $out . '.xml"', true);
+        }
 
-		echo $data;
+        echo $data;
 
-		return true;
-	}
+        return true;
+    }
 }

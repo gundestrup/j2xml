@@ -29,47 +29,47 @@ use Joomla\CMS\Toolbar\ToolbarHelper;
  */
 class DefaultHtmlView extends HtmlView
 {
-	public function __construct($config = null)
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
+    public function __construct($config = null)
+    {
+        Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$app = \Joomla\CMS\Factory::getApplication();
-		parent::__construct($config);
-		$this->_addPath('template', $this->_basePath . '/views/default/tmpl');
-		$this->_addPath('template', JPATH_THEMES . '/' . $app->getTemplate() . '/html/com_j2xml/default');
-	}
+        $app = \Joomla\CMS\Factory::getApplication();
+        parent::__construct($config);
+        $this->_addPath('template', $this->_basePath . '/views/default/tmpl');
+        $this->_addPath('template', JPATH_THEMES . '/' . $app->getTemplate() . '/html/com_j2xml/default');
+    }
 
-	public function display($tpl = null)
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
+    public function display($tpl = null)
+    {
+        Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$state = $this->get('State');
+        $state = $this->get('State');
 
-		$showMessage = false;
-		if (is_object($state))
-		{
-			$message = $state->get('message');
-			$showMessage = (bool) $message;
-		}
+        $showMessage = false;
+        if (is_object($state))
+        {
+            $message = $state->get('message');
+            $showMessage = (bool) $message;
+        }
 
-		$this->showMessage = $showMessage;
-		$this->state = &$state;
+        $this->showMessage = $showMessage;
+        $this->state = &$state;
 
-		$this->addToolbar();
-		parent::display($tpl);
-	}
+        $this->addToolbar();
+        parent::display($tpl);
+    }
 
-	protected function addToolbar()
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
+    protected function addToolbar()
+    {
+        Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$canDo = ContentHelper::getActions('com_j2xml');
-		ToolbarHelper::title(Text::_('COM_J2XML_HEADER_' . $this->getName()), 'upload import');
+        $canDo = ContentHelper::getActions('com_j2xml');
+        ToolbarHelper::title(Text::_('COM_J2XML_HEADER_' . $this->getName()), 'upload import');
 
-		if ($canDo->get('core.admin') || $canDo->get('core.options'))
-		{
-			ToolbarHelper::preferences('com_j2xml');
-			ToolbarHelper::divider();
-		}
-	}
+        if ($canDo->get('core.admin') || $canDo->get('core.options'))
+        {
+            ToolbarHelper::preferences('com_j2xml');
+            ToolbarHelper::divider();
+        }
+    }
 }

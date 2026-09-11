@@ -28,48 +28,48 @@ $ui = 'uitab';
 /** @var Joomla\CMS\WebAsset\WebAssetManager $wa */
 $wa = $this->document->getWebAssetManager();
 $wa->useScript('showon')
-	->useScript('form.validate');
+    ->useScript('form.validate');
 ?>
 
 <form
-	action="<?php echo Route::_('index.php?option=com_j2xml'); ?>"
-	id="adminForm" method="post" name="adminForm" autocomplete="off">
+    action="<?php echo Route::_('index.php?option=com_j2xml'); ?>"
+    id="adminForm" method="post" name="adminForm" autocomplete="off">
 
-	<?php $fieldsets = $this->form->getFieldsets(); ?>
+    <?php $fieldsets = $this->form->getFieldsets(); ?>
 
-	<?php echo HTMLHelper::_($ui . '.startTabSet', 'j2xmlImport', ['active' => 'export']); ?>
+    <?php echo HTMLHelper::_($ui . '.startTabSet', 'j2xmlImport', ['active' => 'export']); ?>
 
-	<?php foreach ($fieldsets as $name => $fieldSet) : ?>
-		<?php if ($name == 'details') continue; ?>
+    <?php foreach ($fieldsets as $name => $fieldSet) : ?>
+        <?php if ($name == 'details') continue; ?>
 
-		<?php $label = empty($fieldSet->label) ? 'COM_J2XML_' . $name . '_FIELDSET_LABEL' : $fieldSet->label; ?>
-		<?php echo HTMLHelper::_($ui . '.addTab', 'j2xmlImport', $name, Text::_($label)); ?>
+        <?php $label = empty($fieldSet->label) ? 'COM_J2XML_' . $name . '_FIELDSET_LABEL' : $fieldSet->label; ?>
+        <?php echo HTMLHelper::_($ui . '.addTab', 'j2xmlImport', $name, Text::_($label)); ?>
 
-		<?php foreach ($this->form->getFieldset($name) as $field) : ?>
-			<?php
-				$dataShowOn = '';
-				$groupClass = $field->type === 'Spacer' ? ' field-spacer' : '';
-			?>
-			<?php if ($field->showon) : ?>
-				<?php $dataShowOn = ' data-showon=\'' . json_encode(FormHelper::parseShowOnConditions($field->showon, $field->formControl, $field->group)) . '\''; ?>
-			<?php endif; ?>
-			<?php if ($field->hidden) : ?>
-				<?php echo $field->input; ?>
-			<?php else : ?>
-				<div class="control-group<?php echo $groupClass; ?>"<?php echo $dataShowOn; ?>>
-					<?php if ($name != 'permissions') : ?>
-						<div class="control-label">
-							<?php echo $field->label; ?>
-						</div>
-					<?php endif; ?>
-					<div class="<?php if ($name != 'permissions') : ?>controls<?php endif; ?>">
-						<?php echo $field->input; ?>
-					</div>
-				</div>
-			<?php endif; ?>
-		<?php endforeach; ?>
+        <?php foreach ($this->form->getFieldset($name) as $field) : ?>
+            <?php
+                $dataShowOn = '';
+                $groupClass = $field->type === 'Spacer' ? ' field-spacer' : '';
+            ?>
+            <?php if ($field->showon) : ?>
+                <?php $dataShowOn = ' data-showon=\'' . json_encode(FormHelper::parseShowOnConditions($field->showon, $field->formControl, $field->group)) . '\''; ?>
+            <?php endif; ?>
+            <?php if ($field->hidden) : ?>
+                <?php echo $field->input; ?>
+            <?php else : ?>
+                <div class="control-group<?php echo $groupClass; ?>"<?php echo $dataShowOn; ?>>
+                    <?php if ($name != 'permissions') : ?>
+                        <div class="control-label">
+                            <?php echo $field->label; ?>
+                        </div>
+                    <?php endif; ?>
+                    <div class="<?php if ($name != 'permissions') : ?>controls<?php endif; ?>">
+                        <?php echo $field->input; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+        <?php endforeach; ?>
 
-		<?php echo HTMLHelper::_($ui . '.endTab'); ?>
-	<?php endforeach; ?>
-	<?php echo HTMLHelper::_($ui . '.endTabSet'); ?>
+        <?php echo HTMLHelper::_($ui . '.endTab'); ?>
+    <?php endforeach; ?>
+    <?php echo HTMLHelper::_($ui . '.endTabSet'); ?>
 </form>

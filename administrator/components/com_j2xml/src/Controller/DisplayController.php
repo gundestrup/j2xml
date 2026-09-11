@@ -25,10 +25,10 @@ use Joomla\CMS\MVC\Controller\BaseController;
  */
 class DisplayController extends BaseController
 {
-	/**
-	 * The default view.
-	 *
-	 * @var string
-	 */
-	protected $default_view = 'import';
+    /**
+     * The default view.
+     *
+     * @var string
+     */
+    protected $default_view = 'import';
 }

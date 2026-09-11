@@ -32,35 +32,35 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 class HtmlView extends BaseHtmlView
 {
 
-	/**
-	 * The JForm object
-	 *
-	 * @var JForm
-	 */
-	protected $form;
+    /**
+     * The JForm object
+     *
+     * @var JForm
+     */
+    protected $form;
 
-	/**
-	 * Display the view
-	 *
-	 * @param string $tpl
-	 *			The name of the template file to parse; automatically searches through the template paths.
-	 *
-	 * @return mixed A string if successful, otherwise an Error object.
-	 */
-	public function display($tpl = null)
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
+    /**
+     * Display the view
+     *
+     * @param string $tpl
+     *          The name of the template file to parse; automatically searches through the template paths.
+     *
+     * @return mixed A string if successful, otherwise an Error object.
+     */
+    public function display($tpl = null)
+    {
+        Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		// Initialiase variables.
-		$this->form  = $this->get('Form');
+        // Initialiase variables.
+        $this->form  = $this->get('Form');
 
-		// Check for errors.
-		$errors = $this->get('Errors');
-		if (count($errors))
-		{
-			throw new \Exception(implode("\n", $errors), 500);
-		}
+        // Check for errors.
+        $errors = $this->get('Errors');
+        if (count($errors))
+        {
+            throw new \Exception(implode("\n", $errors), 500);
+        }
 
-		return parent::display($tpl);
-	}
+        return parent::display($tpl);
+    }
 }

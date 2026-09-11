@@ -33,124 +33,124 @@ use Joomla\CMS\MVC\Model\FormModel;
 class ExportModel extends FormModel
 {
 
-	/**
-	 * The model context
-	 *
-	 * @var string
-	 */
-	protected $context = 'j2xml';
+    /**
+     * The model context
+     *
+     * @var string
+     */
+    protected $context = 'j2xml';
 
-	/**
-	 * Constructor.
-	 *
-	 * @param array $config
-	 *			An optional associative array of configuration settings.
-	 *
-	 * @see \Joomla\CMS\MVC\Model\BaseModel
-	 * @since 3.9.0
-	 */
-	public function __construct($config = [])
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
+    /**
+     * Constructor.
+     *
+     * @param array $config
+     *          An optional associative array of configuration settings.
+     *
+     * @see \Joomla\CMS\MVC\Model\BaseModel
+     * @since 3.9.0
+     */
+    public function __construct($config = [])
+    {
+        Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		$layout = \Joomla\CMS\Factory::getApplication()->getInput()->get('layout', 'default');
-		if ($layout != 'default')
-		{
-			$this->context .= '.' . $layout;
-		}
+        $layout = \Joomla\CMS\Factory::getApplication()->getInput()->get('layout', 'default');
+        if ($layout != 'default')
+        {
+            $this->context .= '.' . $layout;
+        }
 
-		parent::__construct($config);
-	}
+        parent::__construct($config);
+    }
 
-	/**
-	 * Method to get the record form.
-	 *
-	 * @param array $data
-	 *			Data for the form.
-	 * @param boolean $loadData
-	 *			True if the form is to load its own data (default case), false if not.
-	 *
-	 * @return JForm|boolean A JForm object on success, false on failure
-	 *
-	 * @since 3.9.0
-	 */
-	public function getForm($data = [], $loadData = true)
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
+    /**
+     * Method to get the record form.
+     *
+     * @param array $data
+     *          Data for the form.
+     * @param boolean $loadData
+     *          True if the form is to load its own data (default case), false if not.
+     *
+     * @return JForm|boolean A JForm object on success, false on failure
+     *
+     * @since 3.9.0
+     */
+    public function getForm($data = [], $loadData = true)
+    {
+        Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		try
-		{
-			$form = $this->loadForm($this->context, 'export', [
-				'control' => 'jform',
-				'load_data' => false
-			]);
+        try
+        {
+            $form = $this->loadForm($this->context, 'export', [
+                'control' => 'jform',
+                'load_data' => false
+            ]);
 
-			$layout = \Joomla\CMS\Factory::getApplication()->getInput()->get('layout', 'default');
-			if ($layout != 'default')
-			{
-				$form->loadFile('export_' . $layout);
+            $layout = \Joomla\CMS\Factory::getApplication()->getInput()->get('layout', 'default');
+            if ($layout != 'default')
+            {
+                $form->loadFile('export_' . $layout);
 
-				if ($layout != 'users')
-				{
-					$form->loadFile('export_users');
-				}
-			}
+                if ($layout != 'users')
+                {
+                    $form->loadFile('export_users');
+                }
+            }
 
 
 
-			if ($loadData)
-			{
-				// Get the data for the form.
-				$data = $this->loadFormData();
-			}
-			else
-			{
-				$data = [];
-			}
+            if ($loadData)
+            {
+                // Get the data for the form.
+                $data = $this->loadFormData();
+            }
+            else
+            {
+                $data = [];
+            }
 
-			// Allow for additional modification of the form to be triggered.
-			// We pass the data because plugins may require it.
-			$this->preprocessForm($form, $data);
+            // Allow for additional modification of the form to be triggered.
+            // We pass the data because plugins may require it.
+            $this->preprocessForm($form, $data);
 
-			// Load the data into the form after the plugins have operated.
-			$form->bind($data);
-		}
-		catch (\Exception $e)
-		{
-			$this->setError($e->getMessage());
+            // Load the data into the form after the plugins have operated.
+            $form->bind($data);
+        }
+        catch (\Exception $e)
+        {
+            $this->setError($e->getMessage());
 
-			return false;
-		}
+            return false;
+        }
 
-		return $form;
-	}
+        return $form;
+    }
 
-	/**
-	 * Method to get the data that should be injected in the form.
-	 *
-	 * @return mixed The data for the form.
-	 *
-	 * @since 3.9.0
-	 */
-	protected function loadFormData()
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
+    /**
+     * Method to get the data that should be injected in the form.
+     *
+     * @return mixed The data for the form.
+     *
+     * @since 3.9.0
+     */
+    protected function loadFormData()
+    {
+        Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-		// Check the session for previously entered form data.
-		$data   = \Joomla\CMS\Factory::getApplication()->getUserState('com_j2xml.export.data', []);
-		Log::add(new LogEntry('getUserState(\'com_j2xml.export.data\'): ' . print_r($data, true), Log::DEBUG, 'com_j2xml'));
-		$jform  = [];
-		foreach($data as $k => $v)
-		{
-			$jform['export_' . $k] = $v;
-		}
+        // Check the session for previously entered form data.
+        $data   = \Joomla\CMS\Factory::getApplication()->getUserState('com_j2xml.export.data', []);
+        Log::add(new LogEntry('getUserState(\'com_j2xml.export.data\'): ' . print_r($data, true), Log::DEBUG, 'com_j2xml'));
+        $jform  = [];
+        foreach($data as $k => $v)
+        {
+            $jform['export_' . $k] = $v;
+        }
 
-		$params = ComponentHelper::getParams('com_j2xml');
-		$data   = array_merge($params->toArray(), $jform);
-		Log::add(new LogEntry('data: ' . print_r($data, true), Log::DEBUG, 'com_j2xml'));
+        $params = ComponentHelper::getParams('com_j2xml');
+        $data   = array_merge($params->toArray(), $jform);
+        Log::add(new LogEntry('data: ' . print_r($data, true), Log::DEBUG, 'com_j2xml'));
 
-		$this->preprocessData($this->context, $data);
+        $this->preprocessData($this->context, $data);
 
-		return $data;
-	}
+        return $data;
+    }
 }

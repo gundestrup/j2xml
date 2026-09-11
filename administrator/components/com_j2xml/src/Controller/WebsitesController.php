@@ -22,14 +22,14 @@ use Joomla\CMS\MVC\Controller\AdminController;
  */
 class WebsitesController extends AdminController
 {
-	protected $text_prefix = 'COM_J2XML_WEBSITES';
+    protected $text_prefix = 'COM_J2XML_WEBSITES';
 
-	/**
-	 * Return the singular Website model (not the plural Websites model
-	 * that AdminController would derive from the controller name).
-	 */
-	public function getModel($name = 'Website', $prefix = '', $config = ['ignore_request' => true])
-	{
-		return parent::getModel($name, $prefix, $config);
-	}
+    /**
+     * Return the singular Website model (not the plural Websites model
+     * that AdminController would derive from the controller name).
+     */
+    public function getModel($name = 'Website', $prefix = '', $config = ['ignore_request' => true])
+    {
+        return parent::getModel($name, $prefix, $config);
+    }
 }

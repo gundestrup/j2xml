@@ -23,17 +23,17 @@ defined('_JEXEC') or die();
 class PlgSystemJ2xmlInstallerScript
 {
 
-	public function install ($parent)
-	{
-		// Enable plugin
-		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-		$query = $db->getQuery(true)
-			->update('#__extensions')
-			->set($db->quoteName('enabled') . ' = 1')
-			->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
-			->where($db->quoteName('element') . ' = ' . $db->quote('j2xml'))
-			->where($db->quoteName('folder') . ' = ' . $db->quote('system'));
-		$db->setQuery($query);
-		$db->execute();
-	}
+    public function install ($parent)
+    {
+        // Enable plugin
+        $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->update('#__extensions')
+            ->set($db->quoteName('enabled') . ' = 1')
+            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+            ->where($db->quoteName('element') . ' = ' . $db->quote('j2xml'))
+            ->where($db->quoteName('folder') . ' = ' . $db->quote('system'));
+        $db->setQuery($query);
+        $db->execute();
+    }
 }

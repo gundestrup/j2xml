@@ -30,290 +30,290 @@ use Joomla\Component\Tags\Administrator\Table\TagTable;
 class Tag extends Table
 {
 
-	/**
-	 * Constructor
-	 *
-	 * @param \Joomla\Database\DatabaseDriver $db
-	 *			A database connector object
-	 *
-	 * @since 14.8.240
-	 */
-	public function __construct (\Joomla\Database\DatabaseDriver $db)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Constructor
+     *
+     * @param \Joomla\Database\DatabaseDriver $db
+     *          A database connector object
+     *
+     * @since 14.8.240
+     */
+    public function __construct (\Joomla\Database\DatabaseDriver $db)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		parent::__construct('#__tags', 'id', $db);
-	}
+        parent::__construct('#__tags', 'id', $db);
+    }
 
-	/**
-	 * Import data
-	 *
-	 * @param \SimpleXMLElement $xml
-	 *			xml
-	 * @param \JRegistry $params
-	 *			@option int 'tags' 1: Yes, if not exists; 2: Yes, overwrite if
-	 *			exists
-	 *			@option string 'context'
-	 *
-	 * @throws
-	 * @return void
-	 * @access public
-	 *
-	 * @since 18.8.310
-	 */
-	public static function import ($xml, &$params, $db = null, $userId = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Import data
+     *
+     * @param \SimpleXMLElement $xml
+     *          xml
+     * @param \JRegistry $params
+     *          @option int 'tags' 1: Yes, if not exists; 2: Yes, overwrite if
+     *          exists
+     *          @option string 'context'
+     *
+     * @throws
+     * @return void
+     * @access public
+     *
+     * @since 18.8.310
+     */
+    public static function import ($xml, &$params, $db = null, $userId = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$import_tags = $params->get('tags', 0);
-		if ($import_tags == 0)
-			return;
+        $import_tags = $params->get('tags', 0);
+        if ($import_tags == 0)
+            return;
 
-		$context = $params->get('context');
-		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-		$nullDate = $db->getNullDate();
-		$userid = $userId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
+        $context = $params->get('context');
+        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $nullDate = $db->getNullDate();
+        $userid = $userId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 
-		foreach ($xml->xpath("//j2xml/tag") as $record)
-		{
-			self::prepareData($record, $data, $params);
+        foreach ($xml->xpath("//j2xml/tag") as $record)
+        {
+            self::prepareData($record, $data, $params);
 
-			$id = $data['id'];
-			$path = $data['path'];
-			$i = strrpos($path, '/');
-			if ($i === false)
-			{
-				$data['parent_id'] = 1;
-			}
-			else
-			{
-				$parent_path = substr($path, 0, $i);
-				$data['parent_id'] = self::getTagId($parent_path);
-			}
+            $id = $data['id'];
+            $path = $data['path'];
+            $i = strrpos($path, '/');
+            if ($i === false)
+            {
+                $data['parent_id'] = 1;
+            }
+            else
+            {
+                $parent_path = substr($path, 0, $i);
+                $data['parent_id'] = self::getTagId($parent_path);
+            }
 
-			$tag = $db->setQuery(
-					$db->getQuery(true)
-						->select([
-							$db->quoteName('id'),
-							$db->quoteName('title')
-					])
-						->from($db->quoteName('#__tags'))
-						->where($db->quoteName('path') . ' = ' . $db->quote($data['path'])))
-				->loadObject();
+            $tag = $db->setQuery(
+                    $db->getQuery(true)
+                        ->select([
+                            $db->quoteName('id'),
+                            $db->quoteName('title')
+                    ])
+                        ->from($db->quoteName('#__tags'))
+                        ->where($db->quoteName('path') . ' = ' . $db->quote($data['path'])))
+                ->loadObject();
 
-			$table = new TagTable($db);
+            $table = new TagTable($db);
 
-			if (!$tag || ($import_tags == 2))
-			{
-				if (!$tag)
-				{ // new tag
-					$isNew = true;
-					$data['id'] = null;
-				}
-				else
-				{ // tag already exists
-					$isNew = false;
-					$data['id'] = $tag->id;
-				}
+            if (!$tag || ($import_tags == 2))
+            {
+                if (!$tag)
+                { // new tag
+                    $isNew = true;
+                    $data['id'] = null;
+                }
+                else
+                { // tag already exists
+                    $isNew = false;
+                    $data['id'] = $tag->id;
+                }
 
-				$table->bind($data);
-				$table->setLocation($data['parent_id'], 'last-child');
+                $table->bind($data);
+                $table->setLocation($data['parent_id'], 'last-child');
 
-				if ($table->store())
-				{
-					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_TAG_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
-				}
-				else
-				{
-					\Joomla\CMS\Log\Log::add(
-							new \Joomla\CMS\Log\LogEntry(
-									\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_TAG_NOT_IMPORTED', $data['title'] . ' (id = ' . $id . ')', $table->getError()),
-									\Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
-				}
-			}
-		}
-	}
+                if ($table->store())
+                {
+                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_TAG_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
+                }
+                else
+                {
+                    \Joomla\CMS\Log\Log::add(
+                            new \Joomla\CMS\Log\LogEntry(
+                                    \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_TAG_NOT_IMPORTED', $data['title'] . ' (id = ' . $id . ')', $table->getError()),
+                                    \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
+                }
+            }
+        }
+    }
 
-	/**
-	 * Function that converts tags paths into array of ids
-	 *
-	 * @param array $tags
-	 *			Array of tags paths
-	 *
-	 * @return array
-	 *
-	 * @since 18.8.310
-	 */
-	public static function convertPathsToIds ($tags, $db = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Function that converts tags paths into array of ids
+     *
+     * @param array $tags
+     *          Array of tags paths
+     *
+     * @return array
+     *
+     * @since 18.8.310
+     */
+    public static function convertPathsToIds ($tags, $db = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		if ($tags)
-		{
-			// Remove duplicates
-			$tags = array_unique((array) $tags);
+        if ($tags)
+        {
+            // Remove duplicates
+            $tags = array_unique((array) $tags);
 
-			$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
-			$query = $db->getQuery(true)
-				->select('id')
-				->from('#__tags')
-				->where('path IN (' . implode(',', array_map([
-					$db,
-					'quote'
-			], $tags)) . ')');
-			$db->setQuery($query);
+            $query = $db->getQuery(true)
+                ->select('id')
+                ->from('#__tags')
+                ->where('path IN (' . implode(',', array_map([
+                    $db,
+                    'quote'
+            ], $tags)) . ')');
+            $db->setQuery($query);
 
-			try
-			{
-				$ids = $db->loadColumn();
-				return $ids;
-			}
-			catch (RuntimeException $e)
-			{
-				return false;
-			}
-		}
+            try
+            {
+                $ids = $db->loadColumn();
+                return $ids;
+            }
+            catch (RuntimeException $e)
+            {
+                return false;
+            }
+        }
 
-		return $tags;
-	}
+        return $tags;
+    }
 
-	/**
-	 * Export data
-	 *
-	 * @param int $id
-	 *			the id of the item to be exported
-	 * @param \SimpleXMLElement $xml
-	 *			xml
-	 * @param array $options
-	 *
-	 * @throws
-	 * @return void
-	 * @access public
-	 *
-	 * @since 18.8.310
-	 */
-	public static function export ($id, &$xml, $options, $db = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Export data
+     *
+     * @param int $id
+     *          the id of the item to be exported
+     * @param \SimpleXMLElement $xml
+     *          xml
+     * @param array $options
+     *
+     * @throws
+     * @return void
+     * @access public
+     *
+     * @since 18.8.310
+     */
+    public static function export ($id, &$xml, $options, $db = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		if ($xml->xpath("//j2xml/tag/id[text() = '" . $id . "']"))
-		{
-			return;
-		}
+        if ($xml->xpath("//j2xml/tag/id[text() = '" . $id . "']"))
+        {
+            return;
+        }
 
-		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-		$item = new Tag($db);
-		if (!$item->load($id))
-		{
-			return;
-		}
+        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $item = new Tag($db);
+        if (!$item->load($id))
+        {
+            return;
+        }
 
-		if ($item->parent_id > 1)
-		{
-			Tag::export($item->parent_id, $xml, $options);
-		}
+        if ($item->parent_id > 1)
+        {
+            Tag::export($item->parent_id, $xml, $options);
+        }
 
-		$doc = dom_import_simplexml($xml)->ownerDocument;
-		$fragment = $doc->createDocumentFragment();
+        $doc = dom_import_simplexml($xml)->ownerDocument;
+        $fragment = $doc->createDocumentFragment();
 
-		$fragment->appendXML($item->toXML());
-		$doc->documentElement->appendChild($fragment);
+        $fragment->appendXML($item->toXML());
+        $doc->documentElement->appendChild($fragment);
 
-		if (isset($options['users']) && $options['users'])
-		{
-			if ($item->created_user_id)
-			{
-				User::export($item->created_user_id, $xml, $options);
-			}
+        if (isset($options['users']) && $options['users'])
+        {
+            if ($item->created_user_id)
+            {
+                User::export($item->created_user_id, $xml, $options);
+            }
 
-			if ($item->modified_user_id)
-			{
-				User::export($item->modified_user_id, $xml, $options);
-			}
-		}
+            if ($item->modified_user_id)
+            {
+                User::export($item->modified_user_id, $xml, $options);
+            }
+        }
 
-		if (isset($options['images']) && $options['images'])
-		{
-			$text = html_entity_decode($item->description);
-			$_image = preg_match_all(self::IMAGE_MATCH_STRING, $text, $matches, PREG_PATTERN_ORDER);
-			if (count($matches[1]) > 0)
-			{
-				for ($i = 0; $i < count($matches[1]); $i ++)
-				{
-					$_image = $matches[1][$i];
-					if ($_image)
-					{
-						Image::export($_image, $xml, $options);
-					}
-				}
-			}
-			$imgs = json_decode($item->images);
-			if ($imgs)
-			{
-				if (isset($imgs->image_fulltext))
-				{
-					Image::export($imgs->image_fulltext, $xml, $options);
-				}
+        if (isset($options['images']) && $options['images'])
+        {
+            $text = html_entity_decode($item->description);
+            $_image = preg_match_all(self::IMAGE_MATCH_STRING, $text, $matches, PREG_PATTERN_ORDER);
+            if (count($matches[1]) > 0)
+            {
+                for ($i = 0; $i < count($matches[1]); $i ++)
+                {
+                    $_image = $matches[1][$i];
+                    if ($_image)
+                    {
+                        Image::export($_image, $xml, $options);
+                    }
+                }
+            }
+            $imgs = json_decode($item->images);
+            if ($imgs)
+            {
+                if (isset($imgs->image_fulltext))
+                {
+                    Image::export($imgs->image_fulltext, $xml, $options);
+                }
 
-				if (isset($imgs->image_intro))
-				{
-					Image::export($imgs->image_intro, $xml, $options);
-				}
-			}
-		}
+                if (isset($imgs->image_intro))
+                {
+                    Image::export($imgs->image_intro, $xml, $options);
+                }
+            }
+        }
 
-		return $xml;
-	}
+        return $xml;
+    }
 
-	/**
-	 *
-	 * {@inheritdoc}
-	 * @see Table::prepareData()
-	 *
-	 * @since 18.8.310
-	 */
-	public static function prepareData ($record, &$data, $params, $userId = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     *
+     * {@inheritdoc}
+     * @see Table::prepareData()
+     *
+     * @since 18.8.310
+     */
+    public static function prepareData ($record, &$data, $params, $userId = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$params->set('extension', 'com_tags');
-		parent::prepareData($record, $data, $params);
+        $params->set('extension', 'com_tags');
+        parent::prepareData($record, $data, $params);
 
-		if (empty($data['alias']))
-		{
-			$data['alias'] = $data['title'];
-			$data['alias'] = str_replace(' ', '-', $data['alias']);
-		}
+        if (empty($data['alias']))
+        {
+            $data['alias'] = $data['title'];
+            $data['alias'] = str_replace(' ', '-', $data['alias']);
+        }
 
-		if (!isset($data['metakey']))
-		{
-			$data['metakey'] = '';
-		}
-		if (!isset($data['metadesc']))
-		{
-			$data['metadesc'] = '';
-		}
-		if (!isset($data['description']))
-		{
-			$data['description'] = '';
-		}
-		if (!isset($data['images']))
-		{
-			$data['images'] = '{}';
-		}
-		if (!isset($data['urls']))
-		{
-			$data['urls'] = '{}';
-		}
+        if (!isset($data['metakey']))
+        {
+            $data['metakey'] = '';
+        }
+        if (!isset($data['metadesc']))
+        {
+            $data['metadesc'] = '';
+        }
+        if (!isset($data['description']))
+        {
+            $data['description'] = '';
+        }
+        if (!isset($data['images']))
+        {
+            $data['images'] = '{}';
+        }
+        if (!isset($data['urls']))
+        {
+            $data['urls'] = '{}';
+        }
 
-		if (!isset($data['params']))
-		{
-			$data['params'] = '{"tag_layout":"","tag_link_class":""}';
-		}
-		if (!isset($data['metadata']))
-		{
-			$data['metadata'] = '{"author":"","robots":""}';
-		}
-	}
+        if (!isset($data['params']))
+        {
+            $data['params'] = '{"tag_layout":"","tag_link_class":""}';
+        }
+        if (!isset($data['metadata']))
+        {
+            $data['metadata'] = '{"author":"","robots":""}';
+        }
+    }
 }

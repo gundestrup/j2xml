@@ -20,5 +20,5 @@ namespace Joomla\Component\J2xml\Administrator\Controller;
  */
 class FieldsController extends ExportController
 {
-	protected $viewName = 'fields';
+    protected $viewName = 'fields';
 }

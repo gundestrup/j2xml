@@ -20,5 +20,5 @@ namespace Joomla\Component\J2xml\Administrator\Controller;
  */
 class ContentController extends ExportController
 {
-	protected $viewName = 'content';
+    protected $viewName = 'content';
 }

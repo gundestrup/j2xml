@@ -22,5 +22,5 @@ use Joomla\CMS\MVC\Controller\FormController;
  */
 class WebsiteController extends FormController
 {
-	protected $text_prefix = 'COM_J2XML_WEBSITE';
+    protected $text_prefix = 'COM_J2XML_WEBSITE';
 }

@@ -34,35 +34,35 @@ use Joomla\Router\Route;
  */
 class PlgWebservicesJ2xml extends CMSPlugin
 {
-	/**
-	 * Registers the J2XML API routes.
-	 *
-	 * @param   \Joomla\CMS\Router\ApiRouter  &$router  The API routing object
-	 *
-	 * @return  void
-	 *
-	 * @since   __DEPLOY_VERSION__
-	 */
-	public function onBeforeApiRoute(&$router)
-	{
-		$defaults = [
-			'component' => 'com_j2xml',
-			'public'    => false,
-		];
+    /**
+     * Registers the J2XML API routes.
+     *
+     * @param   \Joomla\CMS\Router\ApiRouter  &$router  The API routing object
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function onBeforeApiRoute(&$router)
+    {
+        $defaults = [
+            'component' => 'com_j2xml',
+            'public'    => false,
+        ];
 
-		$routes = [
-			new Route(
-				['POST'],
-				'v1/j2xml/import',
-				'import.import',
-				[],
-				$defaults
-			),
-		];
+        $routes = [
+            new Route(
+                ['POST'],
+                'v1/j2xml/import',
+                'import.import',
+                [],
+                $defaults
+            ),
+        ];
 
-		foreach ($routes as $route)
-		{
-			$router->addRoute($route);
-		}
-	}
+        foreach ($routes as $route)
+        {
+            $router->addRoute($route);
+        }
+    }
 }

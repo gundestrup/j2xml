@@ -22,10 +22,10 @@ $params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
 
 if ($params->get('debug') || defined('JDEBUG') && JDEBUG)
 {
-	\Joomla\CMS\Log\Log::addLogger(
-		['text_file' => $params->get('log', 'eshiol.log.php'), 'extension' => 'com_j2xml_file'],
-		\Joomla\CMS\Log\Log::ALL,
-		['lib_j2xml', 'com_j2xml']);
+    \Joomla\CMS\Log\Log::addLogger(
+        ['text_file' => $params->get('log', 'eshiol.log.php'), 'extension' => 'com_j2xml_file'],
+        \Joomla\CMS\Log\Log::ALL,
+        ['lib_j2xml', 'com_j2xml']);
 }
 
 $headers   = getallheaders();
@@ -40,26 +40,26 @@ header('X-Powered-By: ' . $poweredBy);
 $forceCORS = $app->get('cors', false);
 if ($forceCORS)
 {
-	/**
-	 * Enable CORS (Cross-origin resource sharing)
-	 * Obtain allowed CORS origin from Global Settings.
-	 * Set to * (=all) if not set.
-	 */
-	$allowedOrigin = $app->get('cors_allow_origin', '*');
-	$allowedOrigin = $allowedOrigin != '*' ? $allowedOrigin : $headers['Origin'];
+    /**
+     * Enable CORS (Cross-origin resource sharing)
+     * Obtain allowed CORS origin from Global Settings.
+     * Set to * (=all) if not set.
+     */
+    $allowedOrigin = $app->get('cors_allow_origin', '*');
+    $allowedOrigin = $allowedOrigin != '*' ? $allowedOrigin : $headers['Origin'];
 
-	$allowedHeaders = $app->get('cors_allow_headers', 'Content-Type,X-Joomla-Token');
+    $allowedHeaders = $app->get('cors_allow_headers', 'Content-Type,X-Joomla-Token');
 
-	header('Access-Control-Allow-Origin: ' . $allowedOrigin);
-	header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Allow-Origin: ' . $allowedOrigin);
+    header('Access-Control-Allow-Credentials: true');
 
-	// respond to preflights
-	if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS')
-	{
-		header('Access-Control-Allow-Headers: ' . $allowedHeaders);
+    // respond to preflights
+    if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS')
+    {
+        header('Access-Control-Allow-Headers: ' . $allowedHeaders);
 
-		exit;
-	}
+        exit;
+    }
 }
 
 $jinput = \Joomla\CMS\Factory::getApplication()->getInput();
@@ -68,26 +68,26 @@ $task = $jinput->getCmd('task');
 
 if (!str_contains($task, '.'))
 {
-	$controllerPath = JPATH_COMPONENT . '/controller.php';
+    $controllerPath = JPATH_COMPONENT . '/controller.php';
 }
 else
 {
-	// We have a defined controller/task pair -- lets split them out
-	list ($controllerName, $task) = explode('.', $task);
+    // We have a defined controller/task pair -- lets split them out
+    list ($controllerName, $task) = explode('.', $task);
 
-	// Define the controller name and path
-	$controllerName = strtolower($controllerName);
+    // Define the controller name and path
+    $controllerName = strtolower($controllerName);
 
-	$controllerPath = JPATH_COMPONENT . '/controllers/' . $controllerName;
+    $controllerPath = JPATH_COMPONENT . '/controllers/' . $controllerName;
 
-	\Joomla\CMS\Log\Log::addLogger(
-		['logger' => 'messagequeue', 'extension' => 'com_j2xml'],
-		\Joomla\CMS\Log\Log::ALL & ~ \Joomla\CMS\Log\Log::DEBUG,
-		['lib_j2xml', 'com_j2xml']);
+    \Joomla\CMS\Log\Log::addLogger(
+        ['logger' => 'messagequeue', 'extension' => 'com_j2xml'],
+        \Joomla\CMS\Log\Log::ALL & ~ \Joomla\CMS\Log\Log::DEBUG,
+        ['lib_j2xml', 'com_j2xml']);
 
-	$controllerPath .= '.php';
-	// Set the name for the controller and instantiate it
-	$controllerClass .= ucfirst($controllerName);
+    $controllerPath .= '.php';
+    // Set the name for the controller and instantiate it
+    $controllerClass .= ucfirst($controllerName);
 }
 
 \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($controllerPath, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
@@ -96,20 +96,20 @@ else
 // If the controller file path exists, include it ... else lets die with a 500 error
 if (file_exists($controllerPath))
 {
-	require_once $controllerPath;
+    require_once $controllerPath;
 }
 else
 {
-	throw new Exception('Invalid Controller ' . $controllerName, 500);
+    throw new Exception('Invalid Controller ' . $controllerName, 500);
 }
 
 if (class_exists($controllerClass))
 {
-	$controller = new $controllerClass();
+    $controller = new $controllerClass();
 }
 else
 {
-	throw new Exception('Invalid Controller Class - ' . $controllerName, 500);
+    throw new Exception('Invalid Controller Class - ' . $controllerName, 500);
 }
 
 $lang = \Joomla\CMS\Factory::getApplication()->getLanguage();

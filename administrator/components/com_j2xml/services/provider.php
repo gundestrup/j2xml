@@ -32,28 +32,28 @@ use Joomla\DI\ServiceProviderInterface;
  * @since   __DEPLOY_VERSION__
  */
 return new class () implements ServiceProviderInterface {
-	/**
-	 * Registers the service provider with a DI container.
-	 *
-	 * @param   Container  $container  The DI container.
-	 *
-	 * @return  void
-	 *
-	 * @since   __DEPLOY_VERSION__
-	 */
-	public function register(Container $container): void
-	{
-		$container->registerServiceProvider(new MVCFactory('\\Joomla\\Component\\J2xml'));
-		$container->registerServiceProvider(new ComponentDispatcherFactory('\\Joomla\\Component\\J2xml'));
+    /**
+     * Registers the service provider with a DI container.
+     *
+     * @param   Container  $container  The DI container.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    public function register(Container $container): void
+    {
+        $container->registerServiceProvider(new MVCFactory('\\Joomla\\Component\\J2xml'));
+        $container->registerServiceProvider(new ComponentDispatcherFactory('\\Joomla\\Component\\J2xml'));
 
-		$container->set(
-			ComponentInterface::class,
-			function (Container $container) {
-				$component = new J2xmlComponent($container->get(ComponentDispatcherFactoryInterface::class));
-				$component->setMVCFactory($container->get(MVCFactoryInterface::class));
+        $container->set(
+            ComponentInterface::class,
+            function (Container $container) {
+                $component = new J2xmlComponent($container->get(ComponentDispatcherFactoryInterface::class));
+                $component->setMVCFactory($container->get(MVCFactoryInterface::class));
 
-				return $component;
-			}
-		);
-	}
+                return $component;
+            }
+        );
+    }
 };

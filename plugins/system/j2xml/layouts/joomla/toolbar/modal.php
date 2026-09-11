@@ -24,61 +24,61 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 
 Factory::getApplication()->getDocument()->getWebAssetManager()
-	->useScript('webcomponent.toolbar-button');
+    ->useScript('webcomponent.toolbar-button');
 
 /**
  * Generic toolbar button layout to open a modal
  * -----------------------------------------------
- * @param   array   $displayData	Button parameters. Default supported parameters:
- *								  - selector  string  Unique DOM identifier for the modal. CSS id without #
- *								  - class	 string  Button class
- *								  - icon	  string  Button icon
- *								  - text	  string  Button text
+ * @param   array   $displayData    Button parameters. Default supported parameters:
+ *                                - selector  string  Unique DOM identifier for the modal. CSS id without #
+ *                                - class    string  Button class
+ *                                - icon      string  Button icon
+ *                                - text      string  Button text
  */
 
 $tagName = $tagName ?? 'button';
 
 $selector = $displayData['selector'];
-$id	   = isset($displayData['id']) ? $displayData['id'] : '';
-$class	= isset($displayData['class']) ? $displayData['class'] : 'btn btn-sm btn-primary';
-$icon	 = isset($displayData['icon']) ? $displayData['icon'] : 'fas fa-download';
-$title	= $displayData['title'];
-$text	 = isset($displayData['text']) ? $displayData['text'] : '';
+$id    = isset($displayData['id']) ? $displayData['id'] : '';
+$class  = isset($displayData['class']) ? $displayData['class'] : 'btn btn-sm btn-primary';
+$icon    = isset($displayData['icon']) ? $displayData['icon'] : 'fas fa-download';
+$title  = $displayData['title'];
+$text    = isset($displayData['text']) ? $displayData['text'] : '';
 $cancel   = isset($displayData['cancel']) ? $displayData['cancel'] : Text::_('JCANCEL');
-$ok	   = isset($displayData['ok']) ? $displayData['ok'] : Text::_('JOK');
+$ok    = isset($displayData['ok']) ? $displayData['ok'] : Text::_('JOK');
 $onclick  = isset($displayData['onclick']) ? $displayData['onclick'] : '';
 $validate = !empty($formValidation) ? ' form-validation' : '';
 ?>
 
 <joomla-toolbar-button<?php echo $id; ?> onclick="document.getElementById('<?php echo $selector; ?>Modal').open();
-	document.body.appendChild(document.getElementById('<?php echo $selector; ?>Modal'));">
+    document.body.appendChild(document.getElementById('<?php echo $selector; ?>Modal'));">
 <<?php echo $tagName; ?>
-	class="<?php echo $class ?? ''; ?>"
-	<?php echo $htmlAttributes ?? ''; ?>
-	<?php echo $title; ?>
-	>
-	<span class="<?php echo $icon; ?>" aria-hidden="true"></span>
-	<?php echo $text ?? ''; ?>
+    class="<?php echo $class ?? ''; ?>"
+    <?php echo $htmlAttributes ?? ''; ?>
+    <?php echo $title; ?>
+    >
+    <span class="<?php echo $icon; ?>" aria-hidden="true"></span>
+    <?php echo $text ?? ''; ?>
 </<?php echo $tagName; ?>>
 </joomla-toolbar-button>
 
 <!-- Render the modal -->
 <?php
 echo HTMLHelper::_('bootstrap.renderModal',
-	$selector . 'Modal',
-	[
-		'url'		 => $displayData['doTask'],
-		'title'	   => $title,
-		'modalWidth'  => '40',
-		'height'	  => '310px',
-		'closeButton' => true,
-		'footer'	  => '<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">'
-					. $cancel . '</button>'
-					.'<joomla-toolbar-button' . $validate
-					. ' onclick="' . $onclick . 'var iframe=document.querySelector(\'#' . $selector . 'Modal iframe\');if(iframe&&iframe.contentWindow){iframe.contentWindow.document.getElementById(\'' . $selector . 'OkBtn\').click();}"'
-					. '>'
-					. '<button class="btn btn-success" type="button">'
-					. $ok . '</button>'
-					.'</joomla-toolbar-button>'
-	]
+    $selector . 'Modal',
+    [
+        'url'        => $displayData['doTask'],
+        'title'    => $title,
+        'modalWidth'  => '40',
+        'height'      => '310px',
+        'closeButton' => true,
+        'footer'      => '<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">'
+                    . $cancel . '</button>'
+                    .'<joomla-toolbar-button' . $validate
+                    . ' onclick="' . $onclick . 'var iframe=document.querySelector(\'#' . $selector . 'Modal iframe\');if(iframe&&iframe.contentWindow){iframe.contentWindow.document.getElementById(\'' . $selector . 'OkBtn\').click();}"'
+                    . '>'
+                    . '<button class="btn btn-success" type="button">'
+                    . $ok . '</button>'
+                    .'</joomla-toolbar-button>'
+    ]
 );

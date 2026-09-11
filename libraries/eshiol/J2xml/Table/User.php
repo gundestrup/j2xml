@@ -32,512 +32,512 @@ use Joomla\CMS\Factory;
 class User extends Table
 {
 
-	/**
-	 * Constructor
-	 *
-	 * @param \Joomla\Database\DatabaseDriver $db
-	 *			A database connector object
-	 *
-	 * @since 1.5.3beta4.39
-	 */
-	public function __construct (\Joomla\Database\DatabaseDriver $db)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Constructor
+     *
+     * @param \Joomla\Database\DatabaseDriver $db
+     *          A database connector object
+     *
+     * @since 1.5.3beta4.39
+     */
+    public function __construct (\Joomla\Database\DatabaseDriver $db)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		parent::__construct('#__users', 'id', $db);
-	}
+        parent::__construct('#__users', 'id', $db);
+    }
 
-	/**
-	 * Rebuild the #__j2xml_usergroups helper table from #__usergroups.
-	 *
-	 * Truncates the table, copies usergroup IDs/parents/titles (JSON-encoded),
-	 * then iteratively flattens the parent-child hierarchy into a single
-	 * JSON array of titles per group. Shared by Exporter and Importer
-	 * constructors to avoid code duplication.
-	 *
-	 * @param \Joomla\Database\DatabaseDriver $db Database driver
-	 *
-	 * @return void
-	 * @since 4.0.0
-	 */
-	public static function syncUsergroupsTable($db): void
-	{
-		try {
-			$db->truncateTable("#__j2xml_usergroups");
+    /**
+     * Rebuild the #__j2xml_usergroups helper table from #__usergroups.
+     *
+     * Truncates the table, copies usergroup IDs/parents/titles (JSON-encoded),
+     * then iteratively flattens the parent-child hierarchy into a single
+     * JSON array of titles per group. Shared by Exporter and Importer
+     * constructors to avoid code duplication.
+     *
+     * @param \Joomla\Database\DatabaseDriver $db Database driver
+     *
+     * @return void
+     * @since 4.0.0
+     */
+    public static function syncUsergroupsTable($db): void
+    {
+        try {
+            $db->truncateTable("#__j2xml_usergroups");
 
-			$query = $db->getQuery(true)
-			//	->insert($db->quoteName("#__j2xml_usergroups"))
-				->select($db->quoteName("id"))
-				->select($db->quoteName("parent_id"))
-				->select("CONCAT('[\"',REPLACE(" . $db->quoteName("title") . ",'\"','\\\"'),'\"]')")
-				->from($db->quoteName("#__usergroups"));
-			$query = "INSERT INTO " . $db->quoteName("#__j2xml_usergroups") . $query;
-			$db->setQuery($query)->execute();
+            $query = $db->getQuery(true)
+            //  ->insert($db->quoteName("#__j2xml_usergroups"))
+                ->select($db->quoteName("id"))
+                ->select($db->quoteName("parent_id"))
+                ->select("CONCAT('[\"',REPLACE(" . $db->quoteName("title") . ",'\"','\\\"'),'\"]')")
+                ->from($db->quoteName("#__usergroups"));
+            $query = "INSERT INTO " . $db->quoteName("#__j2xml_usergroups") . $query;
+            $db->setQuery($query)->execute();
 
-			do {
-				$query = $db->getQuery(true)
-					->update($db->quoteName("#__j2xml_usergroups", "j"))
-					->join("INNER", $db->quoteName("#__usergroups", "g"), $db->quoteName("j.parent_id") . " = " . $db->quoteName("g.id"))
-					->set($db->quoteName("j.parent_id") . " = " . $db->quoteName("g.parent_id"))
-					->set($db->quoteName("j.title") . " = CONCAT('[\"',REPLACE(" . $db->quoteName("g.title") . ",'\"','\\\"'), '\",', SUBSTR(" . $db->quoteName("j.title") . ",2))");
-				$db->setQuery($query)->execute();
+            do {
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName("#__j2xml_usergroups", "j"))
+                    ->join("INNER", $db->quoteName("#__usergroups", "g"), $db->quoteName("j.parent_id") . " = " . $db->quoteName("g.id"))
+                    ->set($db->quoteName("j.parent_id") . " = " . $db->quoteName("g.parent_id"))
+                    ->set($db->quoteName("j.title") . " = CONCAT('[\"',REPLACE(" . $db->quoteName("g.title") . ",'\"','\\\"'), '\",', SUBSTR(" . $db->quoteName("j.title") . ",2))");
+                $db->setQuery($query)->execute();
 
-				$query = $db->getQuery(true)
-					->select("COUNT(*)")
-					->from($db->quoteName("#__j2xml_usergroups"))
-					->where($db->quoteName("parent_id") . " > 0");
-				$n = $db->setQuery($query)->loadResult();
-			} while ($n > 0);
-		}
-		catch (\Joomla\Database\Exception\ExecutionFailureException $e)
-		{
-			// If the query fails we will go on
-		}
-	}
+                $query = $db->getQuery(true)
+                    ->select("COUNT(*)")
+                    ->from($db->quoteName("#__j2xml_usergroups"))
+                    ->where($db->quoteName("parent_id") . " > 0");
+                $n = $db->setQuery($query)->loadResult();
+            } while ($n > 0);
+        }
+        catch (\Joomla\Database\Exception\ExecutionFailureException $e)
+        {
+            // If the query fails we will go on
+        }
+    }
 
-	/**
-	 * Export item list to xml
-	 *
-	 * @access public
-	 */
-	function toXML ($mapKeysToText = false)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Export item list to xml
+     *
+     * @access public
+     */
+    function toXML ($mapKeysToText = false)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$serverType = $this->_db->getServerType();
+        $serverType = $this->_db->getServerType();
 
-		if ($serverType === 'postgresql')
-		{
-			$this->_aliases['group'] = '
-				WITH RECURSIVE usergroups(id, title, parent_id, depth, path) AS (
-				  SELECT tn.id, tn.title, tn.parent_id, 1::INT AS depth, tn.title::TEXT AS path
-				  FROM #__usergroups AS tn
-				  WHERE tn.parent_id = 0
-				UNION ALL
-				  SELECT c.id, c.title, c.parent_id, p.depth + 1 AS depth,
-						(p.path || \'","\' || c.title) AS path
-				  FROM usergroups AS p, #__usergroups AS c
-				  WHERE c.parent_id = p.id
-				)
-				SELECT (\'["\' || path || \'"]\')
-				FROM usergroups g INNER JOIN #__user_usergroup_map m ON g.id = m.group_id
-				WHERE m.user_id = ' . (int) $this->id;
-		}
-		else
-		{
-			$this->_aliases['group'] = (string) $this->_db->getQuery(true)
-				->select($this->_db->quoteName('title'))
-				->from($this->_db->quoteName('#__j2xml_usergroups', 'g'))
-				->from($this->_db->quoteName('#__user_usergroup_map', 'm'))
-				->where($this->_db->quoteName('g.id') . ' = ' . $this->_db->quoteName('m.group_id'))
-				->where($this->_db->quoteName('m.user_id') . ' = ' . (int) $this->id);
-		}
+        if ($serverType === 'postgresql')
+        {
+            $this->_aliases['group'] = '
+                WITH RECURSIVE usergroups(id, title, parent_id, depth, path) AS (
+                  SELECT tn.id, tn.title, tn.parent_id, 1::INT AS depth, tn.title::TEXT AS path
+                  FROM #__usergroups AS tn
+                  WHERE tn.parent_id = 0
+                UNION ALL
+                  SELECT c.id, c.title, c.parent_id, p.depth + 1 AS depth,
+                        (p.path || \'","\' || c.title) AS path
+                  FROM usergroups AS p, #__usergroups AS c
+                  WHERE c.parent_id = p.id
+                )
+                SELECT (\'["\' || path || \'"]\')
+                FROM usergroups g INNER JOIN #__user_usergroup_map m ON g.id = m.group_id
+                WHERE m.user_id = ' . (int) $this->id;
+        }
+        else
+        {
+            $this->_aliases['group'] = (string) $this->_db->getQuery(true)
+                ->select($this->_db->quoteName('title'))
+                ->from($this->_db->quoteName('#__j2xml_usergroups', 'g'))
+                ->from($this->_db->quoteName('#__user_usergroup_map', 'm'))
+                ->where($this->_db->quoteName('g.id') . ' = ' . $this->_db->quoteName('m.group_id'))
+                ->where($this->_db->quoteName('m.user_id') . ' = ' . (int) $this->id);
+        }
 
-		$this->buildFieldAliases();
+        $this->buildFieldAliases();
 
-		// $this->_aliases['profile'] = 'SELECT profile_key name, profile_value
-		// value FROM #__user_profiles WHERE user_id = '. (int)$this->id;
-		$this->_aliases['profile'] = (string) $this->_db->getQuery(true)
-			->select($this->_db->quoteName('profile_key', 'name'))
-			->select($this->_db->quoteName('profile_value', 'value'))
-			->from($this->_db->quoteName('#__user_profiles'))
-			->where($this->_db->quoteName('user_id') . ' = ' . $this->_db->quote($this->id));
+        // $this->_aliases['profile'] = 'SELECT profile_key name, profile_value
+        // value FROM #__user_profiles WHERE user_id = '. (int)$this->id;
+        $this->_aliases['profile'] = (string) $this->_db->getQuery(true)
+            ->select($this->_db->quoteName('profile_key', 'name'))
+            ->select($this->_db->quoteName('profile_value', 'value'))
+            ->from($this->_db->quoteName('#__user_profiles'))
+            ->where($this->_db->quoteName('user_id') . ' = ' . $this->_db->quote($this->id));
 
-		return parent::toXML($mapKeysToText);
-	}
+        return parent::toXML($mapKeysToText);
+    }
 
-	/**
-	 * Import data
-	 *
-	 * @param \SimpleXMLElement $xml
-	 *			xml
-	 * @param \JRegistry $params
-	 *			@option int 'tags' 1: Yes, if not exists; 2: Yes, overwrite if
-	 *			exists
-	 *			@option string 'context'
-	 *
-	 * @throws
-	 * @return void
-	 * @access public
-	 *
-	 * @since 18.8.310
-	 */
-	public static function import ($xml, &$params, $db = null, $userId = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Import data
+     *
+     * @param \SimpleXMLElement $xml
+     *          xml
+     * @param \JRegistry $params
+     *          @option int 'tags' 1: Yes, if not exists; 2: Yes, overwrite if
+     *          exists
+     *          @option string 'context'
+     *
+     * @throws
+     * @return void
+     * @access public
+     *
+     * @since 18.8.310
+     */
+    public static function import ($xml, &$params, $db = null, $userId = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$import_users = $params->get('users', 1);
-		$import_superusers = $params->get('superusers', 0);
-		$import_password = $params->get('password', 0);
-		if (!$import_users)
-			return;
+        $import_users = $params->get('users', 1);
+        $import_superusers = $params->get('superusers', 0);
+        $import_password = $params->get('password', 0);
+        if (!$import_users)
+            return;
 
-		$keepId = $params->get('keep_user_id', '0');
-		$keep_user_attribs = $params->get('keep_user_attribs', '1');
+        $keepId = $params->get('keep_user_id', '0');
+        $keep_user_attribs = $params->get('keep_user_attribs', '1');
 
-		\Joomla\CMS\Factory::getApplication()->getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
+        \Joomla\CMS\Factory::getApplication()->getLanguage()->load('com_users', JPATH_ADMINISTRATOR);
 
-		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
-		$autoincrement = 0;
-		$maxid = $db->setQuery($db->getQuery(true)
-			->select('MAX(' . $db->quoteName('id') . ')')
-			->from($db->quoteName('#__users')))
-			->loadResult();
+        $autoincrement = 0;
+        $maxid = $db->setQuery($db->getQuery(true)
+            ->select('MAX(' . $db->quoteName('id') . ')')
+            ->from($db->quoteName('#__users')))
+            ->loadResult();
 
-		$mvcFactory = Factory::getApplication()->bootComponent('com_users')->getMVCFactory();
+        $mvcFactory = Factory::getApplication()->bootComponent('com_users')->getMVCFactory();
 
-		$users = [];
-		foreach ($xml->xpath("//j2xml/user[not(username = '')]") as $record)
-		{
-			self::prepareData($record, $data, $params);
+        $users = [];
+        foreach ($xml->xpath("//j2xml/user[not(username = '')]") as $record)
+        {
+            self::prepareData($record, $data, $params);
 
-			if (isset($data['group']))
-			{
-				// group can be a single value or an array (multiple <group> elements)
-				$groups = (array) $data['group'];
-				foreach ($groups as $g)
-				{
-					$data['groups'][] = parent::getUsergroupId($g);
-				}
-				unset($data['group']);
-			}
-			elseif (isset($data['grouplist']))
-			{
-				$data['groups'] = [];
-				foreach ($data['grouplist']['group'] as $v)
-				{
-					$data['groups'][] = parent::getUsergroupId($v);
-				}
-				unset($data['grouplist']);
-			}
+            if (isset($data['group']))
+            {
+                // group can be a single value or an array (multiple <group> elements)
+                $groups = (array) $data['group'];
+                foreach ($groups as $g)
+                {
+                    $data['groups'][] = parent::getUsergroupId($g);
+                }
+                unset($data['group']);
+            }
+            elseif (isset($data['grouplist']))
+            {
+                $data['groups'] = [];
+                foreach ($data['grouplist']['group'] as $v)
+                {
+                    $data['groups'][] = parent::getUsergroupId($v);
+                }
+                unset($data['grouplist']);
+            }
 
-			if (!$import_superusers && isset($data['groups']) && in_array(8, $data['groups']))
-			{
-				\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_SKIPPED', $data['name']), \Joomla\CMS\Log\Log::NOTICE, 'lib_j2xml'));
-				continue;
-			}
+            if (!$import_superusers && isset($data['groups']) && in_array(8, $data['groups']))
+            {
+                \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_SKIPPED', $data['name']), \Joomla\CMS\Log\Log::NOTICE, 'lib_j2xml'));
+                continue;
+            }
 
-			$existingUserId = $db->setQuery(
-					$db->getQuery(true)
-						->select($db->quoteName('id'))
-						->from($db->quoteName('#__users'))
-						->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
-				->loadResult();
+            $existingUserId = $db->setQuery(
+                    $db->getQuery(true)
+                        ->select($db->quoteName('id'))
+                        ->from($db->quoteName('#__users'))
+                        ->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
+                ->loadResult();
 
-			if ($import_password && isset($data['password']))
-			{
-				$data['password_crypted'] = $data['password'];
-				$data['password2'] = $data['password'] = \Joomla\CMS\Language\Text::_('LIB_J2XML_PASSWORD_NOT_AVAILABLE');
-			}
-			elseif ($import_password && isset($data['password_clear']))
-			{
-				$data['password'] = $data['password2'] = $data['password_clear'];
-			}
-			elseif (!$existingUserId)
-			{
-				$data['password'] = $data['password2'] = \Joomla\CMS\User\UserHelper::genRandomPassword();
-			}
-			else
-			{
-				unset($data['password'], $data['password2'], $data['password_clear'], $data['password_crypted']);
-			}
+            if ($import_password && isset($data['password']))
+            {
+                $data['password_crypted'] = $data['password'];
+                $data['password2'] = $data['password'] = \Joomla\CMS\Language\Text::_('LIB_J2XML_PASSWORD_NOT_AVAILABLE');
+            }
+            elseif ($import_password && isset($data['password_clear']))
+            {
+                $data['password'] = $data['password2'] = $data['password_clear'];
+            }
+            elseif (!$existingUserId)
+            {
+                $data['password'] = $data['password2'] = \Joomla\CMS\User\UserHelper::genRandomPassword();
+            }
+            else
+            {
+                unset($data['password'], $data['password2'], $data['password_clear'], $data['password_crypted']);
+            }
 
-			$userId = $data['id'];
-			unset($data['id']);
+            $userId = $data['id'];
+            unset($data['id']);
 
-			$data['id'] = $db->setQuery(
-					$db->getQuery(true)
-						->select($db->quoteName('id'))
-						->from($db->quoteName('#__users'))
-						->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
-				->loadResult();
+            $data['id'] = $db->setQuery(
+                    $db->getQuery(true)
+                        ->select($db->quoteName('id'))
+                        ->from($db->quoteName('#__users'))
+                        ->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
+                ->loadResult();
 
-			if (!$data['id'] || ($import_users == 2))
-			{
-				$user = $mvcFactory->createModel('User', 'Administrator', ['ignore_request' => true]);
-				$result = $user->save($data);
+            if (!$data['id'] || ($import_users == 2))
+            {
+                $user = $mvcFactory->createModel('User', 'Administrator', ['ignore_request' => true]);
+                $result = $user->save($data);
 
-				$id = $db->setQuery(
-						$db->getQuery(true)
-							->select($db->quoteName('id'))
-							->from($db->quoteName('#__users'))
-							->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
-					->loadResult();
+                $id = $db->setQuery(
+                        $db->getQuery(true)
+                            ->select($db->quoteName('id'))
+                            ->from($db->quoteName('#__users'))
+                            ->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
+                    ->loadResult();
 
-				if ($id)
-				{
-					$users[$id] = !(bool) $data['id'];
+                if ($id)
+                {
+                    $users[$id] = !(bool) $data['id'];
 
-					$error = $user->getError();
-					if ($error)
-					{
-						\Joomla\CMS\Log\Log::add(
-								new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_IMPORTED_WITH_ERRORS', $data['name']), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
-						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($error, \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
-					}
-					else
-					{
-						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_IMPORTED', $data['name']), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
-					}
+                    $error = $user->getError();
+                    if ($error)
+                    {
+                        \Joomla\CMS\Log\Log::add(
+                                new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_IMPORTED_WITH_ERRORS', $data['name']), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
+                        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($error, \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
+                    }
+                    else
+                    {
+                        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_IMPORTED', $data['name']), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
+                    }
 
-					if (isset($data['password_crypted']))
-					{
-						// set password
-						$query = $db->getQuery(true)
-							->update('#__users')
-							->set($db->quoteName('password') . ' = ' . $db->quote($data['password_crypted']))
-							->where($db->quoteName('id') . ' = ' . $id);
-						$db->setQuery($query)->execute();
-					}
+                    if (isset($data['password_crypted']))
+                    {
+                        // set password
+                        $query = $db->getQuery(true)
+                            ->update('#__users')
+                            ->set($db->quoteName('password') . ' = ' . $db->quote($data['password_crypted']))
+                            ->where($db->quoteName('id') . ' = ' . $id);
+                        $db->setQuery($query)->execute();
+                    }
 
-					if (($userId != $id) && ($keepId == 1))
-					{
-						$id = $user->getState('user.id');
-						$query = $db->getQuery(true)
-							->update('#__users')
-							->set($db->quoteName('id') . ' = ' . $userId)
-							->where($db->quoteName('id') . ' = ' . $id);
-						$db->setQuery($query)->execute();
+                    if (($userId != $id) && ($keepId == 1))
+                    {
+                        $id = $user->getState('user.id');
+                        $query = $db->getQuery(true)
+                            ->update('#__users')
+                            ->set($db->quoteName('id') . ' = ' . $userId)
+                            ->where($db->quoteName('id') . ' = ' . $id);
+                        $db->setQuery($query)->execute();
 
-						$query = $db->getQuery(true)
-							->update('#__user_usergroup_map')
-							->set($db->quoteName('user_id') . ' = ' . $userId)
-							->where($db->quoteName('user_id') . ' = ' . $id);
-						$db->setQuery($query)->execute();
+                        $query = $db->getQuery(true)
+                            ->update('#__user_usergroup_map')
+                            ->set($db->quoteName('user_id') . ' = ' . $userId)
+                            ->where($db->quoteName('user_id') . ' = ' . $id);
+                        $db->setQuery($query)->execute();
 
-						if ($userId >= $autoincrement)
-						{
-							$autoincrement = $userId + 1;
-						}
+                        if ($userId >= $autoincrement)
+                        {
+                            $autoincrement = $userId + 1;
+                        }
 
-						$id = $userId;
-					}
+                        $id = $userId;
+                    }
 
-					try
-					{
-						$query = $db->getQuery(true)
-							->delete($db->quoteName('#__user_profiles'))
-							->where($db->quoteName('user_id') . ' = ' . $id);
-						$db->setQuery($query)->execute();
+                    try
+                    {
+                        $query = $db->getQuery(true)
+                            ->delete($db->quoteName('#__user_profiles'))
+                            ->where($db->quoteName('user_id') . ' = ' . $id);
+                        $db->setQuery($query)->execute();
 
-						if (isset($data['profile']))
-						{
-							$query = $db->getQuery(true)->insert($db->quoteName('#__user_profiles'));
-							$query->values($id . ', ' . $db->quote($data['profile']['name']) . ', ' . $db->quote($data['profile']['value']) . ', 1');
-							$db->setQuery($query)->execute();
-						}
-						elseif (isset($data['profilelist']))
-						{
-							$query = $db->getQuery(true)->insert($db->quoteName('#__user_profiles'));
-							$order = 1;
-							$query->columns(
-									$db->quoteName(
-											[
-													'user_id',
-													'profile_key',
-													'profile_value',
-													'ordering'
-											]));
-							foreach ($data['profilelist']['profile'] as $v)
-							{
-								$query->values($id . ', ' . $db->quote($v['name']) . ', ' . $db->quote($v['value']) . ', ' . $order ++);
-							}
-							$db->setQuery($query)->execute();
-						}
-					}
-					catch (\Exception $e)
-					{
-						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NO_PROFILE', $data['name']), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
-					}
-				}
-				else
-				{
-					$error = $user->getError();
-					if ($error)
-					{
-						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NOT_IMPORTED', $data['name'], $error), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
-						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($error, \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
-					}
-					else
-					{
-						\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NOT_IMPORTED', $data['name'], \Joomla\CMS\Language\Text::_('LIB_J2XML_MSG_UNKNOWN_ERROR')), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
-					}
+                        if (isset($data['profile']))
+                        {
+                            $query = $db->getQuery(true)->insert($db->quoteName('#__user_profiles'));
+                            $query->values($id . ', ' . $db->quote($data['profile']['name']) . ', ' . $db->quote($data['profile']['value']) . ', 1');
+                            $db->setQuery($query)->execute();
+                        }
+                        elseif (isset($data['profilelist']))
+                        {
+                            $query = $db->getQuery(true)->insert($db->quoteName('#__user_profiles'));
+                            $order = 1;
+                            $query->columns(
+                                    $db->quoteName(
+                                            [
+                                                    'user_id',
+                                                    'profile_key',
+                                                    'profile_value',
+                                                    'ordering'
+                                            ]));
+                            foreach ($data['profilelist']['profile'] as $v)
+                            {
+                                $query->values($id . ', ' . $db->quote($v['name']) . ', ' . $db->quote($v['value']) . ', ' . $order ++);
+                            }
+                            $db->setQuery($query)->execute();
+                        }
+                    }
+                    catch (\Exception $e)
+                    {
+                        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NO_PROFILE', $data['name']), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
+                    }
+                }
+                else
+                {
+                    $error = $user->getError();
+                    if ($error)
+                    {
+                        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NOT_IMPORTED', $data['name'], $error), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
+                        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($error, \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
+                    }
+                    else
+                    {
+                        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NOT_IMPORTED', $data['name'], \Joomla\CMS\Language\Text::_('LIB_J2XML_MSG_UNKNOWN_ERROR')), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
+                    }
 
-				}
-			}
-		}
+                }
+            }
+        }
 
-		$serverType = $db->getServerType();
-		if ($autoincrement > $maxid)
-		{
-			if ($serverType === 'postgresql')
-			{
-				$query = 'ALTER SEQUENCE ' . $db->quoteName('#__users_id_seq') . ' RESTART WITH ' . $autoincrement;
-			}
-			else
-			{
-				$query = 'ALTER TABLE ' . $db->quoteName('#__users') . ' AUTO_INCREMENT = ' . $autoincrement;
-			}
-			$db->setQuery($query)->execute();
-			$maxid = $autoincrement;
-		}
+        $serverType = $db->getServerType();
+        if ($autoincrement > $maxid)
+        {
+            if ($serverType === 'postgresql')
+            {
+                $query = 'ALTER SEQUENCE ' . $db->quoteName('#__users_id_seq') . ' RESTART WITH ' . $autoincrement;
+            }
+            else
+            {
+                $query = 'ALTER TABLE ' . $db->quoteName('#__users') . ' AUTO_INCREMENT = ' . $autoincrement;
+            }
+            $db->setQuery($query)->execute();
+            $maxid = $autoincrement;
+        }
 
-		$params->set('imported_users', json_encode($users));
-	}
+        $params->set('imported_users', json_encode($users));
+    }
 
-	/**
-	 *
-	 * {@inheritdoc}
-	 * @see Table::prepareData()
-	 *
-	 * @since 18.8.301
-	 */
-	public static function prepareData ($record, &$data, $params, $userId = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     *
+     * {@inheritdoc}
+     * @see Table::prepareData()
+     *
+     * @since 18.8.301
+     */
+    public static function prepareData ($record, &$data, $params, $userId = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$params->set('extension', 'com_users');
-		parent::prepareData($record, $data, $params);
+        $params->set('extension', 'com_users');
+        parent::prepareData($record, $data, $params);
 
-		if (!empty($data['lastResetTime']))
-		{
-			$data['lastResetTime'] = self::fixDate($data['lastResetTime']);
-		}
-		if (!empty($data['lastvisitDate']))
-		{
-			$data['lastvisitDate'] = self::fixDate($data['lastvisitDate']);
-		}
+        if (!empty($data['lastResetTime']))
+        {
+            $data['lastResetTime'] = self::fixDate($data['lastResetTime']);
+        }
+        if (!empty($data['lastvisitDate']))
+        {
+            $data['lastvisitDate'] = self::fixDate($data['lastvisitDate']);
+        }
 
-		// set default user group
-		if (empty($data['grouplist']) && empty($data['group']))
-		{
-			$data['group'] = 2;
-		}
+        // set default user group
+        if (empty($data['grouplist']) && empty($data['group']))
+        {
+            $data['group'] = 2;
+        }
 
-		// fix null values
-		if (empty($data['otpKey']))
-		{
-			$data['otpKey'] = '';
-		}
+        // fix null values
+        if (empty($data['otpKey']))
+        {
+            $data['otpKey'] = '';
+        }
 
-		if (empty($data['otep']))
-		{
-			$data['otep'] = '';
-		}
+        if (empty($data['otep']))
+        {
+            $data['otep'] = '';
+        }
 
-		if (empty($data['authProvider']))
-		{
-			$data['authProvider'] = '';
-		}
-		if (empty($data['activation']))
-		{
-			$data['activation'] = '';
-		}
+        if (empty($data['authProvider']))
+        {
+            $data['authProvider'] = '';
+        }
+        if (empty($data['activation']))
+        {
+            $data['activation'] = '';
+        }
 
-		// Ensure params is an array (Joomla 5 User::bind() calls Registry::loadArray)
-		if (!isset($data['params']) || $data['params'] === null || $data['params'] === '')
-		{
-			$data['params'] = [];
-		}
-		elseif (is_string($data['params']))
-		{
-			$decoded = json_decode($data['params'], true);
-			$data['params'] = is_array($decoded) ? $decoded : [];
-		}
-	}
+        // Ensure params is an array (Joomla 5 User::bind() calls Registry::loadArray)
+        if (!isset($data['params']) || $data['params'] === null || $data['params'] === '')
+        {
+            $data['params'] = [];
+        }
+        elseif (is_string($data['params']))
+        {
+            $decoded = json_decode($data['params'], true);
+            $data['params'] = is_array($decoded) ? $decoded : [];
+        }
+    }
 
-	/**
-	 * Export data
-	 *
-	 * @param int $id
-	 *			the id of the item to be exported
-	 * @param \SimpleXMLElement $xml
-	 *			xml
-	 * @param array $options
-	 *
-	 * @throws
-	 * @return void
-	 * @access public
-	 *
-	 * @since 18.8.310
-	 */
-	public static function export ($id, &$xml, $options, $db = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Export data
+     *
+     * @param int $id
+     *          the id of the item to be exported
+     * @param \SimpleXMLElement $xml
+     *          xml
+     * @param array $options
+     *
+     * @throws
+     * @return void
+     * @access public
+     *
+     * @since 18.8.310
+     */
+    public static function export ($id, &$xml, $options, $db = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		if ($xml->xpath("//j2xml/user/id[text() = '" . $id . "']"))
-		{
-			return;
-		}
+        if ($xml->xpath("//j2xml/user/id[text() = '" . $id . "']"))
+        {
+            return;
+        }
 
-		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
-		$item = new User($db);
-		if (!$item->load($id))
-		{
-			return;
-		}
+        $item = new User($db);
+        if (!$item->load($id))
+        {
+            return;
+        }
 
-		if (isset($options['password']) && ($options['password'] == 0))
-		{
-			array_push($item->_excluded, 'password');
-			array_push($item->_excluded, 'otpKey');
-			array_push($item->_excluded, 'otep');
-		}
+        if (isset($options['password']) && ($options['password'] == 0))
+        {
+            array_push($item->_excluded, 'password');
+            array_push($item->_excluded, 'otpKey');
+            array_push($item->_excluded, 'otep');
+        }
 
-		$doc = dom_import_simplexml($xml)->ownerDocument;
-		$fragment = $doc->createDocumentFragment();
+        $doc = dom_import_simplexml($xml)->ownerDocument;
+        $fragment = $doc->createDocumentFragment();
 
-		$fragment->appendXML($item->toXML());
-		$doc->documentElement->appendChild($fragment);
+        $fragment->appendXML($item->toXML());
+        $doc->documentElement->appendChild($fragment);
 
-		/*$query = $db->getQuery(true)
-			->select($db->quoteName('l.id'))
-			->from($db->quoteName('#__viewlevels', 'l'))
-			->join('', $db->quoteName('#__user_usergroup_map', 'm'))
-			->where($db->quoteName('m.user_id') . ' = ' . $id)
-			->where('FIND_IN_SET(' . $db->quoteName('m.group_id') . ', REPLACE(REPLACE(l.rules, "]", ""), "[", ""))');
-		$ids_viewlevel = $db->setQuery($query)->loadColumn();
+        /*$query = $db->getQuery(true)
+            ->select($db->quoteName('l.id'))
+            ->from($db->quoteName('#__viewlevels', 'l'))
+            ->join('', $db->quoteName('#__user_usergroup_map', 'm'))
+            ->where($db->quoteName('m.user_id') . ' = ' . $id)
+            ->where('FIND_IN_SET(' . $db->quoteName('m.group_id') . ', REPLACE(REPLACE(l.rules, "]", ""), "[", ""))');
+        $ids_viewlevel = $db->setQuery($query)->loadColumn();
 
-		foreach ($ids_viewlevel as $id_viewlevel)
-		{
-			Viewlevel::export($id_viewlevel, $xml, $options);
-		}*/
+        foreach ($ids_viewlevel as $id_viewlevel)
+        {
+            Viewlevel::export($id_viewlevel, $xml, $options);
+        }*/
 
-		if (isset($options['contacts']) && $options['contacts'])
-		{
-			$query = $db->getQuery(true)
-				->select('id')
-				->from('#__contact_details')
-				->where('user_id = ' . $id);
-			$db->setQuery($query);
+        if (isset($options['contacts']) && $options['contacts'])
+        {
+            $query = $db->getQuery(true)
+                ->select('id')
+                ->from('#__contact_details')
+                ->where('user_id = ' . $id);
+            $db->setQuery($query);
 
-			$ids_contact = $db->loadColumn();
-			foreach ($ids_contact as $id_contact)
-			{
-				Contact::export($id_contact, $xml, $options);
-			}
-		}
+            $ids_contact = $db->loadColumn();
+            foreach ($ids_contact as $id_contact)
+            {
+                Contact::export($id_contact, $xml, $options);
+            }
+        }
 
-		if (isset($options['usernotes']) && $options['usernotes'])
-		{
-			$query = $db->getQuery(true)
-				->select('id')
-				->from('#__user_notes')
-				->where('user_id = ' . $id);
-			$db->setQuery($query);
+        if (isset($options['usernotes']) && $options['usernotes'])
+        {
+            $query = $db->getQuery(true)
+                ->select('id')
+                ->from('#__user_notes')
+                ->where('user_id = ' . $id);
+            $db->setQuery($query);
 
-			$ids_usernote = $db->loadColumn();
-			foreach ($ids_usernote as $id_usernote)
-			{
-				Usernote::export($id_usernote, $xml, $options);
-			}
-		}
+            $ids_usernote = $db->loadColumn();
+            foreach ($ids_usernote as $id_usernote)
+            {
+                Usernote::export($id_usernote, $xml, $options);
+            }
+        }
 
-		if (isset($options['fields']) && $options['fields'])
-		{
-			self::exportFields($id, $xml, $options, $db);
-		}
-	}
+        if (isset($options['fields']) && $options['fields'])
+        {
+            self::exportFields($id, $xml, $options, $db);
+        }
+    }
 }

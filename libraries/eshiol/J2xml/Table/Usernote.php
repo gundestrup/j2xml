@@ -31,182 +31,182 @@ use Joomla\Component\Users\Administrator\Table\NoteTable;
 class Usernote extends \eshiol\J2xml\Table\Table
 {
 
-	/**
-	 * Constructor
-	 *
-	 * @param \Joomla\Database\DatabaseDriver $db
-	 *			A database connector object
-	 *
-	 * @since 15.3.248
-	 */
-	public function __construct (\Joomla\Database\DatabaseDriver $db)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     * Constructor
+     *
+     * @param \Joomla\Database\DatabaseDriver $db
+     *          A database connector object
+     *
+     * @since 15.3.248
+     */
+    public function __construct (\Joomla\Database\DatabaseDriver $db)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		parent::__construct('#__user_notes', 'id', $db);
-	}
+        parent::__construct('#__user_notes', 'id', $db);
+    }
 
-	/**
-	 *
-	 * {@inheritdoc}
-	 * @see Table::export()
-	 */
-	public static function export ($id, &$xml, $options, $db = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     *
+     * {@inheritdoc}
+     * @see Table::export()
+     */
+    public static function export ($id, &$xml, $options, $db = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		if ($xml->xpath("//j2xml/usernote/id[text() = '" . $id . "']"))
-		{
-			return;
-		}
+        if ($xml->xpath("//j2xml/usernote/id[text() = '" . $id . "']"))
+        {
+            return;
+        }
 
-		$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-		$item = new Usernote($db);
-		if (!$item->load($id))
-		{
-			return;
-		}
+        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $item = new Usernote($db);
+        if (!$item->load($id))
+        {
+            return;
+        }
 
-		$doc = dom_import_simplexml($xml)->ownerDocument;
-		$fragment = $doc->createDocumentFragment();
+        $doc = dom_import_simplexml($xml)->ownerDocument;
+        $fragment = $doc->createDocumentFragment();
 
-		$fragment->appendXML($item->toXML());
-		$doc->documentElement->appendChild($fragment);
+        $fragment->appendXML($item->toXML());
+        $doc->documentElement->appendChild($fragment);
 
-		if (isset($options['users']) && $options['users'])
-		{
-			if ($item->created_user_id)
-			{
-				User::export($item->created_user_id, $xml, $options);
-			}
-			if ($item->modified_user_id)
-			{
-				User::export($item->modified_user_id, $xml, $options);
-			}
-		}
+        if (isset($options['users']) && $options['users'])
+        {
+            if ($item->created_user_id)
+            {
+                User::export($item->created_user_id, $xml, $options);
+            }
+            if ($item->modified_user_id)
+            {
+                User::export($item->modified_user_id, $xml, $options);
+            }
+        }
 
-		if (isset($options['images']) && $options['images'])
-		{
-			$img = null;
-			$text = html_entity_decode($item->body);
-			$_image = preg_match_all(self::IMAGE_MATCH_STRING, $text, $matches, PREG_PATTERN_ORDER);
-			if (count($matches[1]) > 0)
-			{
-				for ($i = 0; $i < count($matches[1]); $i ++)
-				{
-					$_image = $matches[1][$i];
-					if ($_image)
-					{
-						Image::export($_image, $xml, $options);
-					}
-				}
-			}
-		}
+        if (isset($options['images']) && $options['images'])
+        {
+            $img = null;
+            $text = html_entity_decode($item->body);
+            $_image = preg_match_all(self::IMAGE_MATCH_STRING, $text, $matches, PREG_PATTERN_ORDER);
+            if (count($matches[1]) > 0)
+            {
+                for ($i = 0; $i < count($matches[1]); $i ++)
+                {
+                    $_image = $matches[1][$i];
+                    if ($_image)
+                    {
+                        Image::export($_image, $xml, $options);
+                    }
+                }
+            }
+        }
 
-		if (isset($options['categories']) && $options['categories'])
-		{
-			if ($item->catid > 0)
-			{
-				Category::export($item->catid, $xml, $options);
-			}
-		}
-	}
+        if (isset($options['categories']) && $options['categories'])
+        {
+            if ($item->catid > 0)
+            {
+                Category::export($item->catid, $xml, $options);
+            }
+        }
+    }
 
-	/**
-	 *
-	 * {@inheritdoc}
-	 * @see Table::import()
-	 */
-	public static function import ($xml, &$params, $db = null, $userId = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     *
+     * {@inheritdoc}
+     * @see Table::import()
+     */
+    public static function import ($xml, &$params, $db = null, $userId = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$import_usernotes = $params->get('usernotes', 0);
-		if ($import_usernotes == 0)
-		{
-			return;
-		}
+        $import_usernotes = $params->get('usernotes', 0);
+        if ($import_usernotes == 0)
+        {
+            return;
+        }
 
-		$params->set('extension', 'com_users');
-		$import_categories = $params->get('categories');
-		if ($import_categories)
-		{
-			Category::import($xml, $params);
-		}
+        $params->set('extension', 'com_users');
+        $import_categories = $params->get('categories');
+        if ($import_categories)
+        {
+            Category::import($xml, $params);
+        }
 /*
-		$users = json_decode($params->get('imported_users', '[]'), true);
-		foreach ($users as $user_id => $overwrite)
-		{
-			$username = \Joomla\CMS\Factory::getContainer()->get(\Joomla\CMS\User\UserFactoryInterface::class)->loadUserById($user_id)->username;
-			$path = "//j2xml/usernote[user_id='{$username}']";
+        $users = json_decode($params->get('imported_users', '[]'), true);
+        foreach ($users as $user_id => $overwrite)
+        {
+            $username = \Joomla\CMS\Factory::getContainer()->get(\Joomla\CMS\User\UserFactoryInterface::class)->loadUserById($user_id)->username;
+            $path = "//j2xml/usernote[user_id='{$username}']";
 */
-			$path = "//j2xml/usernote[user_id!='']";
-			foreach ($xml->xpath($path) as $record)
-			{
-				self::prepareData($record, $data, $params);
+            $path = "//j2xml/usernote[user_id!='']";
+            foreach ($xml->xpath($path) as $record)
+            {
+                self::prepareData($record, $data, $params);
 
-				unset($data['id']);
+                unset($data['id']);
 
-				$db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-			$table = new NoteTable($db);
+                $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $table = new NoteTable($db);
 
-//				if (!$overwrite)
-//				{
-					$table->load(
-						[
-							'user_id' => $data['user_id'],
-							'catid' => $data['catid'],
-							'subject' => $data['subject']
-						]);
-//				}
+//              if (!$overwrite)
+//              {
+                    $table->load(
+                        [
+                            'user_id' => $data['user_id'],
+                            'catid' => $data['catid'],
+                            'subject' => $data['subject']
+                        ]);
+//              }
 
-				$table->bind($data);
-				if ($table->store())
-				{
-					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERNOTE_IMPORTED', $data['subject']), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
-				}
-				else
-				{
-					\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERNOTE_NOT_IMPORTED', $data['subject'], $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
-				}
-			}
+                $table->bind($data);
+                if ($table->store())
+                {
+                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERNOTE_IMPORTED', $data['subject']), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
+                }
+                else
+                {
+                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERNOTE_NOT_IMPORTED', $data['subject'], $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
+                }
+            }
 /*
-		}
+        }
 */
-	}
+    }
 
-	/**
-	 *
-	 * {@inheritdoc}
-	 * @see Table::prepareData()
-	 */
-	public static function prepareData ($record, &$data, $params, $userId = null)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     *
+     * {@inheritdoc}
+     * @see Table::prepareData()
+     */
+    public static function prepareData ($record, &$data, $params, $userId = null)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$params->set('extension', 'com_users');
-		parent::prepareData($record, $data, $params);
+        $params->set('extension', 'com_users');
+        parent::prepareData($record, $data, $params);
 
-		if (isset($data['user_id']))
-		{
-			$data['user_id'] = self::getUserId($data['user_id']);
-		}
-	}
+        if (isset($data['user_id']))
+        {
+            $data['user_id'] = self::getUserId($data['user_id']);
+        }
+    }
 
-	/**
-	 *
-	 * {@inheritdoc}
-	 * @see Table::toXML()
-	 */
-	function toXML ($mapKeysToText = false)
-	{
-		\Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
+    /**
+     *
+     * {@inheritdoc}
+     * @see Table::toXML()
+     */
+    function toXML ($mapKeysToText = false)
+    {
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-		$this->_aliases['user_id'] = (string) $this->_db->getQuery(true)
-			->select($this->_db->quoteName('username'))
-			->from($this->_db->quoteName('#__users'))
-			->where($this->_db->quoteName('id') . ' = ' . (int) $this->user_id);
+        $this->_aliases['user_id'] = (string) $this->_db->getQuery(true)
+            ->select($this->_db->quoteName('username'))
+            ->from($this->_db->quoteName('#__users'))
+            ->where($this->_db->quoteName('id') . ' = ' . (int) $this->user_id);
 
-		return parent::toXML($mapKeysToText);
-	}
+        return parent::toXML($mapKeysToText);
+    }
 }
