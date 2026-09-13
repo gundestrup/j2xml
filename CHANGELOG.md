@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [4.5.1] - 2026-09-13
+
 ### Added
 
 - **SonarCloud integration** — `sonar-project.properties` with project key `gundestrup_j2xml`; excludes `media/**`, `build/**`, `tests/**`, `vendor/**`, `node_modules/**`. Badge added to README.
@@ -57,13 +61,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Tests
 
-- **All tests passed** (2026-09-11):
+- **All tests passed** (2026-09-13):
   - PHP lint: PHP 8.4 + 8.5 — all files clean (0 deprecation warnings).
   - PHPStan: 0 errors.
-  - Semgrep: 0 findings (4 rules, 73 files).
+  - Semgrep: 0 findings (4 rules, 74 files).
+  - ShellCheck: clean.
   - Shell syntax: 12/12 scripts pass `bash -n`.
-  - MySQL integration (Joomla 5 + 6): **82/82 passed**, 0 failed.
-  - PostgreSQL smoke (Joomla 5 + 6): **passed**.
+  - XML validation: all files valid.
+  - PHPUnit: 76 tests, 214 assertions — all passed.
+  - MySQL integration (Joomla 5.4.8 + 6.1.3): **82/82 passed**, 0 failed.
+  - PostgreSQL smoke (Joomla 5.4.8 + 6.1.3): **passed**.
 
 ---
 
