@@ -41,7 +41,7 @@ function versionCompare(v1, v2, options) {
 	}
 
 	if (!v1parts.every(isValidPart) || !v2parts.every(isValidPart)) {
-		return NaN;
+		return Number.NaN;
 	}
 
 	if (zeroExtend) {

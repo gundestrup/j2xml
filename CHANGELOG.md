@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **PSR-12 indentation** — converted all 79 PHP files from tabs to 4 spaces, aligning with Joomla 4.2+ / PSR-12 coding standard. XML manifests remain tab-indented per Joomla convention.
+- **Eliminated SendModel/ExportModel duplication** — extracted shared `AbstractFormModel` base class (~300 lines of duplication eliminated). SendModel and ExportModel now only declare their `$formType` ('send' / 'export').
 
 ### Fixed
 
@@ -47,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **ci.yml YAML syntax** — fixed `pip3 install` line that confused YAML parsers (colons in `:all:`); switched to block scalar syntax.
 - **PHP 8.5 deprecation** — `$http_response_header` in `Sender.php` replaced with `http_get_last_response_headers()` (PHP 8.4+ API).
 - **SonarCloud `shelldre:S7688`** — converted all `[` → `[[` conditional tests in `tests/scripts/*.sh` (89 lines across 10 files, using exact SonarCloud API line data).
+- **SonarCloud `javascript:S7773`** — `isNaN()` → `typeof x !== 'number' || Number.isNaN(x)` in `j2xml.js` (preserves undefined check semantics); `NaN` → `Number.NaN` in `version_compare.js`.
 
 ### Note
 

@@ -247,7 +247,7 @@ eshiol.j2xml.sendItem = function (options, params) {
     }
 
     const cid = options.cids.shift();
-    if (isNaN(options.n)) {
+    if (typeof options.n !== 'number' || Number.isNaN(options.n)) {
         options.n = 0;
     }
 
