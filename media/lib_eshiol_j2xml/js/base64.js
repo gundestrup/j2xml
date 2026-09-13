@@ -1,3 +1,4 @@
+/* NOSONAR */
 /* @jsonjoy.com/base64 18.30.0 decode-only bundle (built from npm) */
 var base64 = (() => {
   var __create = Object.create;

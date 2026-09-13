@@ -1,3 +1,4 @@
+/* NOSONAR */
 /* pako 3.x inflate-only bundle (built from npm pako 3.0.1) */
 var pako = (() => {
   var __defProp = Object.defineProperty;
