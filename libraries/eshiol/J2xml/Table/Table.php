@@ -75,7 +75,7 @@ class Table extends \Joomla\CMS\Table\Table
      *          object JDatabase connector object.
      * @since 1.0
      */
-    function __construct ($table, $key, &$db)
+    public function __construct ($table, $key, &$db)
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
@@ -272,9 +272,6 @@ class Table extends \Joomla\CMS\Table\Table
             }
             if (isset($this->access))
             {
-                // $this->_aliases['access']='SELECT IF(f.id<=6,f.id,f.title)
-                // FROM #__viewlevels f RIGHT JOIN '.$this->_tbl.' a ON f.id =
-                // a.access WHERE a.id = '. (int)$this->id;
                 $query = $this->_db->getQuery(true);
                 $serverType = $this->_db->getServerType();
 
@@ -332,7 +329,7 @@ class Table extends \Joomla\CMS\Table\Table
             {
                 continue;
             }
-            else if ($this->_jsonEncode && in_array($k, $this->_jsonEncode))
+            elseif ($this->_jsonEncode && in_array($k, $this->_jsonEncode))
             {
                 $v = json_encode($v, JSON_NUMERIC_CHECK);
             }
@@ -340,7 +337,7 @@ class Table extends \Joomla\CMS\Table\Table
             if ($v)
             {
                 $x = json_decode($v);
-                if (($x != NULL) && ($x != $v))
+                if (($x != null) && ($x != $v))
                 {
                     $v = json_encode($x, JSON_NUMERIC_CHECK);
                 }
@@ -388,15 +385,6 @@ class Table extends \Joomla\CMS\Table\Table
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
         $kOpen = $k;
-        /**
-        if (!is_null($attributes))
-        {
-            foreach ($attributes as $ak => $av)
-            {
-                $kOpen .= ' ' . $ak . '="' . $av . '"';
-            }
-        }
-         */
         $xml = '';
         if (is_object($v))
         {
@@ -422,11 +410,11 @@ class Table extends \Joomla\CMS\Table\Table
                 $xml = '<' . $kOpen . '>' . $xml . '</' . $k . '>';
             }
         }
-        else if (is_numeric($v))
+        elseif (is_numeric($v))
         {
             $xml = '<' . $kOpen . '>' . $v . '</' . $k . '>';
         }
-        else if ($v != '')
+        elseif ($v != '')
         {
             $v = htmlentities($v, ENT_NOQUOTES | ENT_SUBSTITUTE, "UTF-8");
             $length = strlen($v);
@@ -460,7 +448,7 @@ class Table extends \Joomla\CMS\Table\Table
      *
      * @access public
      */
-    function toXML ($mapKeysToText = false)
+    public function toXML ($mapKeysToText = false)
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 

@@ -29,7 +29,7 @@ services:
       "psql -h postgres -U joomla -d joomla5 -c 'CREATE DATABASE joomla6' || true"
 
   joomla5:
-    image: joomla:5.4.7-php8.3-apache
+    image: joomla:5.4.8-php8.3-apache
     container_name: j2xml-joomla5-pg
     depends_on:
       postgres-init:
@@ -49,7 +49,7 @@ services:
       - "8185:80"
 
   joomla6:
-    image: joomla:6.1.2-php8.4-apache
+    image: joomla:6.1.3-php8.4-apache
     container_name: j2xml-joomla6-pg
     depends_on:
       postgres-init:
