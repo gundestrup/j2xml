@@ -156,13 +156,17 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
 
 ## 4. Build & Release
 
-There is **no build script** in this repository.
-Releases are produced externally (eshiol.it tooling) which:
+`scripts/build-package.sh [output_dir]` builds the installable packages
+locally. It substitutes `__DEPLOY_VERSION__` (hardcoded `VERSION` at the top
+of the script — bump it per release) and `__DEPLOY_DATE__`, then zips each
+extension into `com_j2xml.zip`, `lib_eshiol_J2xml.zip`,
+`plg_system_j2xml.zip`, `plg_webservices_j2xml.zip`, and bundles them into
+`pkg_j2xml.zip` under `build/` (or the given output dir).
 
-1. Substitutes `__DEPLOY_VERSION__` and `__DEPLOY_DATE__` in manifests/headers.
-2. Zips each extension into `com_j2xml.zip`, `lib_eshiol_J2xml.zip`,
-   `plg_system_j2xml.zip`, `plg_system_basicauth.zip`, and bundles them
-   into `pkg_j2xml.zip`.
+The integration test suite rebuilds the package automatically
+(`run-all-tests.sh` Phase 2), so `build/*.zip` is **gitignored** — never
+commit the zips. For a release, run the build script and attach
+`pkg_j2xml.zip` (plus sub-zips if desired) to the GitHub release as assets.
 
 **CI** runs on every push and pull request via GitHub Actions
 (`.github/workflows/ci.yml`) with three jobs:
