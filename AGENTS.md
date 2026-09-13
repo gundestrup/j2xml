@@ -194,7 +194,17 @@ Releases are produced externally (eshiol.it tooling) which:
   (no CI failure on coverage drop). Excludes the same vendored/generated
   paths as SonarCloud.
 
-For local checks, use the **pre-commit hook** (below).
+For local checks, use the **pre-commit hook** (below) or the unified scripts:
+
+### Unified check scripts
+
+```bash
+./scripts/check-quality.sh          # PHP lint, PHPStan, Semgrep, ShellCheck, XML, PHPUnit+coverage
+./scripts/check-quality.sh --quick   # same but skips coverage (faster)
+./scripts/check-tests.sh             # MySQL + PostgreSQL integration tests (starts/stops Docker)
+./scripts/check-tests.sh --mysql     # MySQL only (faster)
+./scripts/check-all.sh               # quality + tests (full pre-release validation)
+```
 
 ### Pre-commit hook
 

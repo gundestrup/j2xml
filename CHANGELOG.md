@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **PSR-12 indentation** — converted all 79 PHP files from tabs to 4 spaces, aligning with Joomla 4.2+ / PSR-12 coding standard. XML manifests remain tab-indented per Joomla convention.
 - **Eliminated SendModel/ExportModel duplication** — extracted shared `AbstractFormModel` base class (~300 lines of duplication eliminated). SendModel and ExportModel now only declare their `$formType` ('send' / 'export').
+- **Unified check scripts** — `scripts/check-quality.sh` (PHP lint, PHPStan, Semgrep, ShellCheck, XML validation, PHPUnit+coverage), `scripts/check-tests.sh` (MySQL + PostgreSQL Docker integration tests), `scripts/check-all.sh` (full pre-release validation running both). All scripts are executable and documented in `AGENTS.md`.
 
 ### Fixed
 
