@@ -60,6 +60,7 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
 ├── .semgrep.yml                # Semgrep security rules (local + CI)
 ├── .codefactor.yml             # CodeFactor exclude paths
 ├── sonar-project.properties    # SonarCloud configuration (exclusions, project key)
+├── codecov.yml                 # Codecov configuration (coverage targets, ignores)
 ├── AGENTS.md                   # THIS FILE — single source of truth for AI tools
 ├── CLAUDE.md                   # Pointer → AGENTS.md (Claude Code)
 └── .windsurfrules              # Pointer → AGENTS.md (Windsurf)
@@ -187,6 +188,11 @@ Releases are produced externally (eshiol.it tooling) which:
   Findings are accessible via the SonarCloud REST API (no auth needed for
   public projects):
   `https://sonarcloud.io/api/issues/search?componentKeys=gundestrup_j2xml`
+- **Codecov** — code coverage via `codecov.yml` + GitHub Actions
+  (`codecov/codecov-action@v5`). PHPUnit runs with `--coverage-clover` and
+  uploads `coverage.xml` on every CI run. Coverage targets are informational
+  (no CI failure on coverage drop). Excludes the same vendored/generated
+  paths as SonarCloud.
 
 For local checks, use the **pre-commit hook** (below).
 

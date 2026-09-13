@@ -22,7 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **SonarCloud integration** — `sonar-project.properties` with project key `gundestrup_j2xml`; excludes `media/**`, `build/**`, `tests/**`, `vendor/**`, `node_modules/**`. Badge added to README.
-- **AGENTS.md updated** — documented Semgrep, CodeFactor, and SonarCloud services, suppression syntax (`nosemgrep` / `NOSONAR`), and SonarCloud REST API access for local finding retrieval.
+- **Codecov integration** — `codecov.yml` with informational coverage targets; PHPUnit runs with `--coverage-clover` in CI and uploads to Codecov via `codecov/codecov-action@v5.5.1`. Badge added to README.
+- **AGENTS.md updated** — documented Semgrep, CodeFactor, SonarCloud, and Codecov services, suppression syntax (`nosemgrep` / `NOSONAR`), and SonarCloud REST API access for local finding retrieval.
 - **`.editorconfig`** — enforces PSR-12 indentation (4 spaces for PHP, tabs for XML manifests) in supported IDEs.
 
 ### Changed

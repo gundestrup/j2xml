@@ -21,7 +21,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: dom,mbstring,xml,zip
-          coverage: none
+          coverage: pcov
       - name: Install development tools
         run: composer install --no-interaction --no-progress --prefer-dist
       - name: Validate Composer configuration
@@ -34,7 +34,13 @@ jobs:
       - name: PHPStan
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
       - name: PHPUnit
-        run: vendor/bin/phpunit --configuration phpunit.xml.dist
+        run: vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-clover coverage.xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@af09b5e394c93991b95a5e7646aeb90c1917f78f # v5.5.1
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          fail_ci_if_error: false
       - name: ShellCheck
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
         with:

@@ -5,4 +5,9 @@
 			<directory>tests/unit</directory>
 		</testsuite>
 	</testsuites>
+	<coverage>
+		<report>
+			<clover outputFile="coverage.xml"/>
+		</report>
+	</coverage>
 </phpunit>
