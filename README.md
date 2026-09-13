@@ -128,11 +128,21 @@ in this fork:
 ### Running the tests
 
 ```bash
-# Start Joomla 5 (port 8085) and Joomla 6 (port 8086) containers
+# Quick: quality checks only (PHP lint, PHPStan, Semgrep, ShellCheck, XML, PHPUnit)
+./scripts/check-quality.sh
+
+# Full: integration tests against Docker Joomla 5 + 6
+./scripts/check-tests.sh
+
+# Everything: quality + tests (pre-release validation)
+./scripts/check-all.sh
+```
+
+Or run the integration tests manually:
+
+```bash
 cd tests/docker
 docker compose up -d
-
-# Wait for Joomla to finish installing, then run all tests
 cd ../..
 bash tests/scripts/run-all-tests.sh
 ```
