@@ -21,8 +21,8 @@ yellow='\033[0;33m'
 nc='\033[0m'
 pass=0; fail=0
 
-ok()   { printf "${green}PASS${nc}  %s\n" "$*"; ((pass++)); }
-fail() { printf "${red}FAIL${nc}  %s\n" "$*"; ((fail++)); }
+ok()   { printf "${green}PASS${nc}  %s\n" "$*"; pass=$((pass + 1)); }
+fail() { printf "${red}FAIL${nc}  %s\n" "$*"; fail=$((fail + 1)); }
 info() { printf "${yellow}  →${nc}  %s\n" "$*"; }
 
 MYSQL_ONLY=0
