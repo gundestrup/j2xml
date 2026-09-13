@@ -56,6 +56,12 @@ CHANGELOG
 vendor/
 
 # =========================
+# PHPUnit coverage output
+# =========================
+coverage.xml
+.phpunit.result.cache
+
+# =========================
 # Node.js / npm build tooling
 # =========================
 # Build tooling for vendored JS bundles (e.g. pako, base64)

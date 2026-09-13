@@ -63,43 +63,9 @@ namespace
         public static function load(string $class): bool { return true; }
     }
 
-    class JApplicationCli extends \Joomla\CMS\Application\CliApplication
-    {
-        public static function getInstance(?string $name = null): self { return new self(); }
-    }
-
-    class JText extends \Joomla\CMS\Language\Text {}
-
-    class JTable extends \Joomla\CMS\Table\Table {}
-
-    class JModelLegacy extends \Joomla\CMS\MVC\Model\BaseModel {}
-
-    class JPlugin extends \Joomla\CMS\Plugin\CMSPlugin {}
-
-    class JHtml extends \Joomla\CMS\HTML\HTMLHelper {}
-
-    class JRegistry extends \Joomla\Registry\Registry {}
-
-    class JFactory extends \Joomla\CMS\Factory
-    {
-        public static $application = null;
-    }
-
-    class JResponseJson extends \Joomla\CMS\Response\JsonResponse {}
-
-    // Additional legacy aliases and helper classes used by J2XML
-
-    /** @deprecated Legacy alias for Joomla\CMS\Log\Log */
-    class JLog extends \Joomla\CMS\Log\Log {}
-
-    /** @deprecated Legacy alias for Joomla\CMS\Plugin\PluginHelper */
-    class JPluginHelper extends \Joomla\CMS\Plugin\PluginHelper {}
-
-    /** @deprecated Legacy alias for Joomla\CMS\Router\Route */
-    class JRouter extends \Joomla\CMS\Router\Route
-    {
-        public static function getInstance(string $client = 'site'): self { return new self(); }
-    }
+    // Legacy aliases (JText, JTable, JModelLegacy, JPlugin, JHtml, JRegistry,
+    // JFactory, JResponseJson, JLog, JPluginHelper, JRouter) moved to end of
+    // file — they extend namespaced classes defined below.
 
     /** @deprecated Legacy error handling class */
     class JError
@@ -154,10 +120,10 @@ namespace
     class JException extends \Exception {}
 
     /** @deprecated Legacy database driver alias */
-    class JDatabaseDriver extends \Joomla\Database\JDatabaseDriver {}
+    // JDatabaseDriver moved to end of file (depends on Joomla\Database\JDatabaseDriver)
 
     /** @deprecated Legacy database exception */
-    class JDatabaseExceptionExecuting extends \Joomla\Database\JDatabaseExceptionExecuting {}
+    // JDatabaseExceptionExecuting moved to end of file
 
     /** @deprecated Legacy event dispatcher */
     class JEventDispatcher
@@ -560,6 +526,7 @@ namespace Joomla\CMS\MVC\View
 
 namespace Joomla\CMS\Table
 {
+    #[\AllowDynamicProperties]
     class Table
     {
         public int $id = 0;
@@ -941,6 +908,7 @@ namespace Joomla\Registry
         public function loadObject(object $object): self { return $this; }
         public function merge($source): self { return $this; }
         public function offsetExists($offset): bool { return false; }
+        #[\ReturnTypeWillChange]
         public function offsetGet($offset) { return null; }
         public function offsetSet($offset, $value): void {}
         public function offsetUnset($offset): void {}
@@ -1225,15 +1193,6 @@ namespace Joomla\DI
     {
         public function register(\Joomla\DI\Container $container): void;
     }
-
-    class Container
-    {
-        public function set(string $id, $value): void {}
-        public function get(string $id) {}
-        public function has(string $id): bool { return true; }
-        public function registerServiceProvider($provider): void {}
-        public function createChild(): \Joomla\DI\Container { return new self(); }
-    }
 }
 
 // ===========================================================================
@@ -1312,4 +1271,63 @@ namespace Joomla\Component\Users\Administrator\Table
     {
         public function __construct($db) { parent::__construct('#__user_notes', 'id', $db); }
     }
+}
+
+// ===========================================================================
+// Global namespace — legacy aliases that depend on namespaced classes
+// defined above.  Must come after all namespace blocks.
+// ===========================================================================
+
+namespace
+{
+    /** @deprecated Legacy alias for Joomla\CMS\Application\CliApplication */
+    class JApplicationCli extends \Joomla\CMS\Application\CliApplication
+    {
+        public static function getInstance(?string $name = null): self { return new self(); }
+    }
+
+    /** @deprecated Legacy alias for Joomla\CMS\Language\Text */
+    class JText extends \Joomla\CMS\Language\Text {}
+
+    /** @deprecated Legacy alias for Joomla\CMS\Table\Table */
+    class JTable extends \Joomla\CMS\Table\Table {}
+
+    /** @deprecated Legacy alias for Joomla\CMS\MVC\Model\BaseModel */
+    class JModelLegacy extends \Joomla\CMS\MVC\Model\BaseModel {}
+
+    /** @deprecated Legacy alias for Joomla\CMS\Plugin\CMSPlugin */
+    class JPlugin extends \Joomla\CMS\Plugin\CMSPlugin {}
+
+    /** @deprecated Legacy alias for Joomla\CMS\HTML\HTMLHelper */
+    class JHtml extends \Joomla\CMS\HTML\HTMLHelper {}
+
+    /** @deprecated Legacy alias for Joomla\Registry\Registry */
+    class JRegistry extends \Joomla\Registry\Registry {}
+
+    /** @deprecated Legacy alias for Joomla\CMS\Factory */
+    class JFactory extends \Joomla\CMS\Factory
+    {
+        public static $application = null;
+    }
+
+    /** @deprecated Legacy alias for Joomla\CMS\Response\JsonResponse */
+    class JResponseJson extends \Joomla\CMS\Response\JsonResponse {}
+
+    /** @deprecated Legacy alias for Joomla\CMS\Log\Log */
+    class JLog extends \Joomla\CMS\Log\Log {}
+
+    /** @deprecated Legacy alias for Joomla\CMS\Plugin\PluginHelper */
+    class JPluginHelper extends \Joomla\CMS\Plugin\PluginHelper {}
+
+    /** @deprecated Legacy alias for Joomla\CMS\Router\Route */
+    class JRouter extends \Joomla\CMS\Router\Route
+    {
+        public static function getInstance(string $client = 'site'): self { return new self(); }
+    }
+
+    /** @deprecated Legacy alias for Joomla\Database\JDatabaseDriver */
+    class JDatabaseDriver extends \Joomla\Database\JDatabaseDriver {}
+
+    /** @deprecated Legacy alias for Joomla\Database\JDatabaseExceptionExecuting */
+    class JDatabaseExceptionExecuting extends \Joomla\Database\Exception\ExecutionFailureException {}
 }

@@ -5,6 +5,21 @@
 			<directory>tests/unit</directory>
 		</testsuite>
 	</testsuites>
+	<source>
+		<include>
+			<directory>libraries/eshiol/J2xml</directory>
+			<directory>administrator/components/com_j2xml/src</directory>
+			<directory>components/com_j2xml</directory>
+			<directory>cli</directory>
+		</include>
+		<exclude>
+			<directory>tests</directory>
+			<directory>vendor</directory>
+			<directory>media</directory>
+			<directory>build</directory>
+			<directory>stubs</directory>
+		</exclude>
+	</source>
 	<coverage>
 		<report>
 			<clover outputFile="coverage.xml"/>

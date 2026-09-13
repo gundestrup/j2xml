@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Codecov integration** — `codecov.yml` with informational coverage targets; PHPUnit runs with `--coverage-clover` in CI and uploads to Codecov via `codecov/codecov-action@v5.5.1`. Badge added to README.
 - **AGENTS.md updated** — documented Semgrep, CodeFactor, SonarCloud, and Codecov services, suppression syntax (`nosemgrep` / `NOSONAR`), and SonarCloud REST API access for local finding retrieval.
 - **`.editorconfig`** — enforces PSR-12 indentation (4 spaces for PHP, tabs for XML manifests) in supported IDEs.
+- **Unit tests** — 76 PHPUnit tests covering `Version`, `Messages`, `Table` (xml2array, _setValue, _serialize, fixDate, toXML, IMAGE_MATCH_STRING), `Exporter` (_root), `Importer` (isSupported), and `Tag` (convertPathsToIds edge cases). Coverage: 3.20% (110/3440 lines). Stubs updated to fix class ordering and `#[\AllowDynamicProperties]` on Joomla\CMS\Table\Table.
 
 ### Changed
 
