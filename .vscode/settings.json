@@ -1,4 +1,9 @@
 {
     "json.schemaDownload.enabled": true,
-    "json.validate.enable": true
+    "json.validate.enable": true,
+    "sonarlint.connectedMode.project": {
+        "connectionId": "default",
+        "projectKey": "gundestrup_j2xml"
+    },
+    "sonarlint.testFilePattern": "{stubs,tests}/**"
 }

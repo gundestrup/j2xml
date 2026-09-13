@@ -74,12 +74,11 @@ class Fieldgroup extends Table
 
         $import_fields = $params->get('fields', 0);
         if ($import_fields == 0)
+        {
             return;
+        }
 
-        $context = $params->get('context');
         $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $nullDate = $db->getNullDate();
-        $userid = $userId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 
         foreach ($xml->xpath("//j2xml/fieldgroup") as $record)
         {
