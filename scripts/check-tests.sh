@@ -4,8 +4,14 @@
 # Starts the environment, runs tests, and cleans up.
 #
 # Usage:
-#   ./scripts/check-tests.sh          # MySQL + PostgreSQL
-#   ./scripts/check-tests.sh --mysql  # MySQL only (faster)
+#   ./scripts/check-tests.sh                    # MySQL + PostgreSQL
+#   ./scripts/check-tests.sh --mysql            # MySQL only (faster)
+#   ./scripts/check-tests.sh --coverage         # also collect line coverage
+#   ./scripts/check-tests.sh --mysql --coverage
+#
+# With --coverage, pcov is installed into the Joomla containers and every
+# request is recorded. After the suite finishes, the raw dumps are merged
+# into coverage-integration.xml (clover format) at the repo root.
 #
 set -euo pipefail
 
@@ -20,9 +26,20 @@ fail() { printf "${red}FAIL${nc}  %s\n" "$*"; ((fail++)); }
 info() { printf "${yellow}  →${nc}  %s\n" "$*"; }
 
 MYSQL_ONLY=0
-[[ "${1:-}" = "--mysql" ]] && MYSQL_ONLY=1
+COVERAGE=0
+for arg in "$@"; do
+    case "$arg" in
+        --mysql) MYSQL_ONLY=1 ;;
+        --coverage) COVERAGE=1 ;;
+        *) echo "Unknown option: $arg"; exit 1 ;;
+    esac
+done
 
 cd "$(dirname "$0")/.." || exit 1
+
+if [[ $COVERAGE -eq 1 ]]; then
+    rm -rf build/coverage-raw
+fi
 
 # -------------------------------------------------------------------
 # 1. MySQL integration tests (Joomla 5 + 6)
@@ -31,11 +48,24 @@ echo "=== MySQL integration tests (Joomla 5 + 6) ==="
 info "Starting Docker containers…"
 docker compose -f tests/docker/docker-compose.yml up -d mysql joomla5 joomla6
 
+if [[ $COVERAGE -eq 1 ]]; then
+    info "Enabling coverage collection…"
+    bash tests/scripts/coverage-enable.sh \
+        j2xml-joomla5 http://localhost:8085 \
+        j2xml-joomla6 http://localhost:8086
+fi
+
 info "Running test suite (82 assertions)…"
 if bash tests/scripts/run-all-tests.sh; then
     ok "MySQL integration"
 else
     fail "MySQL integration"
+fi
+
+if [[ $COVERAGE -eq 1 ]]; then
+    info "Collecting coverage…"
+    bash tests/scripts/coverage-collect.sh \
+        coverage-integration.xml j2xml-joomla5 j2xml-joomla6
 fi
 
 info "Stopping containers…"
@@ -49,11 +79,24 @@ if [[ $MYSQL_ONLY -eq 0 ]]; then
     info "Starting Docker containers…"
     docker compose -f tests/docker/docker-compose.postgresql.yml up -d
 
+    if [[ $COVERAGE -eq 1 ]]; then
+        info "Enabling coverage collection…"
+        bash tests/scripts/coverage-enable.sh \
+            j2xml-joomla5-pg http://localhost:8185 \
+            j2xml-joomla6-pg http://localhost:8186
+    fi
+
     info "Running smoke tests…"
     if bash tests/scripts/run-postgresql-smoke.sh; then
         ok "PostgreSQL smoke"
     else
         fail "PostgreSQL smoke"
+    fi
+
+    if [[ $COVERAGE -eq 1 ]]; then
+        info "Collecting coverage…"
+        bash tests/scripts/coverage-collect.sh \
+            coverage-integration.xml j2xml-joomla5-pg j2xml-joomla6-pg
     fi
 
     info "Stopping containers…"

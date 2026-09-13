@@ -59,6 +59,7 @@ vendor/
 # PHPUnit coverage output
 # =========================
 coverage.xml
+coverage-integration.xml
 .phpunit.result.cache
 
 # =========================
@@ -68,6 +69,7 @@ coverage.xml
 # Only the built output is committed, not the tooling
 build/pako/node_modules/
 build/base64/node_modules/
+build/coverage-raw/
 node_modules/
 
 # =========================

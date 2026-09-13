@@ -76,8 +76,23 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y zip
       - name: Start Joomla and MySQL containers
         run: docker compose -f tests/docker/docker-compose.yml up -d mysql joomla5 joomla6
+      - name: Enable coverage collection
+        continue-on-error: true
+        run: bash tests/scripts/coverage-enable.sh j2xml-joomla5 http://localhost:8085 j2xml-joomla6 http://localhost:8086
       - name: Run Joomla integration suite
         run: bash tests/scripts/run-all-tests.sh
+      - name: Collect integration coverage
+        if: always()
+        continue-on-error: true
+        run: bash tests/scripts/coverage-collect.sh coverage-integration.xml j2xml-joomla5 j2xml-joomla6
+      - name: Upload integration coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@af09b5e394c93991b95a5e7646aeb90c1917f78f # v5.5.1
+        with:
+          files: ./coverage-integration.xml
+          flags: integration
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
       - name: Collect container logs
         if: failure()
         run: docker compose -f tests/docker/docker-compose.yml logs --no-color
@@ -95,8 +110,23 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y zip
       - name: Start Joomla and PostgreSQL containers
         run: docker compose -f tests/docker/docker-compose.postgresql.yml up -d
+      - name: Enable coverage collection
+        continue-on-error: true
+        run: bash tests/scripts/coverage-enable.sh j2xml-joomla5-pg http://localhost:8185 j2xml-joomla6-pg http://localhost:8186
       - name: Run PostgreSQL integration smoke tests
         run: bash tests/scripts/run-postgresql-smoke.sh
+      - name: Collect integration coverage
+        if: always()
+        continue-on-error: true
+        run: bash tests/scripts/coverage-collect.sh coverage-integration.xml j2xml-joomla5-pg j2xml-joomla6-pg
+      - name: Upload integration coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@af09b5e394c93991b95a5e7646aeb90c1917f78f # v5.5.1
+        with:
+          files: ./coverage-integration.xml
+          flags: integration
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
       - name: Collect container logs
         if: failure()
         run: docker compose -f tests/docker/docker-compose.postgresql.yml logs --no-color

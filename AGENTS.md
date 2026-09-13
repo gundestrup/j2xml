@@ -189,10 +189,13 @@ Releases are produced externally (eshiol.it tooling) which:
   public projects):
   `https://sonarcloud.io/api/issues/search?componentKeys=gundestrup_j2xml`
 - **Codecov** — code coverage via `codecov.yml` + GitHub Actions
-  (`codecov/codecov-action@v5`). PHPUnit runs with `--coverage-clover` and
-  uploads `coverage.xml` on every CI run. Coverage targets are informational
-  (no CI failure on coverage drop). Excludes the same vendored/generated
-  paths as SonarCloud.
+  (`codecov/codecov-action@v5`). Two uploads per CI run, merged by flag:
+  - `unittests`: PHPUnit runs with `--coverage-clover` → `coverage.xml`.
+  - `integration`: the Docker suites collect per-request line coverage
+    inside the Joomla containers via pcov (see "Integration coverage"
+    under §5) → `coverage-integration.xml`.
+  Coverage targets are informational (no CI failure on coverage drop).
+  Excludes the same vendored/generated paths as SonarCloud.
 
 For local checks, use the **pre-commit hook** (below) or the unified scripts:
 
@@ -203,6 +206,7 @@ For local checks, use the **pre-commit hook** (below) or the unified scripts:
 ./scripts/check-quality.sh --quick   # same but skips coverage (faster)
 ./scripts/check-tests.sh             # MySQL + PostgreSQL integration tests (starts/stops Docker)
 ./scripts/check-tests.sh --mysql     # MySQL only (faster)
+./scripts/check-tests.sh --coverage  # also collect line coverage → coverage-integration.xml
 ./scripts/check-all.sh               # quality + tests (full pre-release validation)
 ```
 
@@ -328,6 +332,34 @@ The script will:
 ```bash
 cd tests/docker
 docker compose down -v   # -v removes the database volumes too
+```
+
+### Integration coverage
+
+The integration suites can record **line coverage inside the Joomla
+containers** so that the import/export/send code paths exercised over HTTP
+show up on Codecov (the `integration` flag).
+
+How it works:
+
+- `tests/scripts/coverage-enable.sh <container> <url> [...]` installs pcov
+  (pinned via `PCOV_VERSION`, default 1.0.12) into each running Joomla
+  container, registers `tests/scripts/coverage-prepend.php` as PHP's
+  `auto_prepend_file`, disables opcache, and reloads Apache. Every request
+  then dumps raw pcov data (Xdebug-style line format) to `/tmp/j2xml-cov`.
+- `tests/scripts/coverage-collect.sh <output.xml> <container> [...]` pulls
+  the dumps into `build/coverage-raw/<container>/` and merges them with
+  `tests/scripts/merge-coverage.php` into clover XML. The merge rewrites
+  `/var/www/html/` paths to repo-relative ones and keeps only J2XML
+  extension directories; merging is cumulative across suites.
+- CI does this automatically in both integration jobs and uploads with
+  `flags: integration`; enablement is `continue-on-error` so a pcov/pecl
+  hiccup never blocks the test jobs.
+
+Locally:
+
+```bash
+./scripts/check-tests.sh --coverage   # runs both suites + writes coverage-integration.xml
 ```
 
 ### Test fixtures
