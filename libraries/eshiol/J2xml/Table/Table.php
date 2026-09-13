@@ -26,6 +26,7 @@ use Joomla\Utilities\ArrayHelper;
  * Table
  *
  */
+#[\AllowDynamicProperties]
 class Table extends \Joomla\CMS\Table\Table
 {
 
