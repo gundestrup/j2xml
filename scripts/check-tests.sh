@@ -20,7 +20,7 @@ fail() { printf "${red}FAIL${nc}  %s\n" "$*"; ((fail++)); }
 info() { printf "${yellow}  →${nc}  %s\n" "$*"; }
 
 MYSQL_ONLY=0
-[ "${1:-}" = "--mysql" ] && MYSQL_ONLY=1
+[[ "${1:-}" = "--mysql" ]] && MYSQL_ONLY=1
 
 cd "$(dirname "$0")/.." || exit 1
 
@@ -44,7 +44,7 @@ docker compose -f tests/docker/docker-compose.yml down -v
 # -------------------------------------------------------------------
 # 2. PostgreSQL smoke tests (Joomla 5 + 6)
 # -------------------------------------------------------------------
-if [ $MYSQL_ONLY -eq 0 ]; then
+if [[ $MYSQL_ONLY -eq 0 ]]; then
     echo "=== PostgreSQL smoke tests (Joomla 5 + 6) ==="
     info "Starting Docker containers…"
     docker compose -f tests/docker/docker-compose.postgresql.yml up -d
@@ -66,7 +66,7 @@ fi
 echo ""
 echo "=== Summary ==="
 printf "${green}Passed: %d${nc}\n" "$pass"
-if [ $fail -gt 0 ]; then
+if [[ $fail -gt 0 ]]; then
     printf "${red}Failed: %d${nc}\n" "$fail"
     exit 1
 else

@@ -49,7 +49,7 @@ echo ""
 
 # Summary
 echo "========================================"
-if [ $overall_fail -eq 0 ]; then
+if [[ $overall_fail -eq 0 ]]; then
     printf "${green}  ✓ All checks passed — ready for release${nc}\n"
     exit 0
 else

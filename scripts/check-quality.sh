@@ -20,7 +20,7 @@ fail() { printf "${red}FAIL${nc}  %s\n" "$*"; fail=$((fail + 1)); }
 info() { printf "${yellow}  →${nc}  %s\n" "$*"; }
 
 QUICK=0
-[ "${1:-}" = "--quick" ] && QUICK=1
+[[ "${1:-}" = "--quick" ]] && QUICK=1
 
 # -------------------------------------------------------------------
 # 1. PHP lint (all PHP files, all available 8.4+ binaries)
@@ -33,10 +33,10 @@ for candidate in \
     /usr/local/opt/php@8.4/bin/php \
     /usr/local/opt/php@8.5/bin/php
 do
-    [ -x "$candidate" ] && php_binaries+=("$candidate")
+    [[ -x "$candidate" ]] && php_binaries+=("$candidate")
 done
 path_php=$(command -v php 2>/dev/null || true)
-[ -n "$path_php" ] && php_binaries+=("$path_php")
+[[ -n "$path_php" ]] && php_binaries+=("$path_php")
 
 lint_errors=0
 for php_bin in "${php_binaries[@]}"; do
@@ -51,11 +51,11 @@ for php_bin in "${php_binaries[@]}"; do
             lint_errors=$((lint_errors + 1))
         fi
     done < <(git ls-files '*.php')
-    if [ $file_errors -eq 0 ]; then
+    if [[ $file_errors -eq 0 ]]; then
         info "PHP $ver — clean"
     fi
 done
-if [ $lint_errors -eq 0 ]; then
+if [[ $lint_errors -eq 0 ]]; then
     ok "PHP lint"
 else
     fail "PHP lint ($lint_errors errors)"
@@ -68,11 +68,11 @@ echo "=== PHPStan ==="
 phpstan_bin=""
 if command -v phpstan &>/dev/null; then
     phpstan_bin="phpstan"
-elif [ -x vendor/bin/phpstan ]; then
+elif [[ -x vendor/bin/phpstan ]]; then
     phpstan_bin="vendor/bin/phpstan"
 fi
 
-if [ -n "$phpstan_bin" ]; then
+if [[ -n "$phpstan_bin" ]]; then
     if $phpstan_bin analyse --no-progress --memory-limit=1G --error-format=table 2>&1; then
         ok "PHPStan"
     else
@@ -107,7 +107,7 @@ if command -v shellcheck &>/dev/null; then
             shellcheck_errors=$((shellcheck_errors + 1))
         fi
     done < <(git ls-files '*.sh')
-    if [ $shellcheck_errors -eq 0 ]; then
+    if [[ $shellcheck_errors -eq 0 ]]; then
         ok "ShellCheck"
     else
         fail "ShellCheck ($shellcheck_errors errors)"
@@ -127,7 +127,7 @@ while IFS= read -r f; do
         xml_errors=$((xml_errors + 1))
     fi
 done < <(git ls-files '*.xml')
-if [ $xml_errors -eq 0 ]; then
+if [[ $xml_errors -eq 0 ]]; then
     ok "XML validation"
 else
     fail "XML validation ($xml_errors errors)"
@@ -137,8 +137,8 @@ fi
 # 6. PHPUnit
 # -------------------------------------------------------------------
 echo "=== PHPUnit ==="
-if [ -x vendor/bin/phpunit ]; then
-    if [ $QUICK -eq 1 ]; then
+if [[ -x vendor/bin/phpunit ]]; then
+    if [[ $QUICK -eq 1 ]]; then
         info "Skipping coverage (--quick mode)"
         phpunit_out=$(vendor/bin/phpunit --configuration phpunit.xml.dist --no-coverage 2>&1)
     else
@@ -160,7 +160,7 @@ fi
 echo ""
 echo "=== Summary ==="
 printf "${green}Passed: %d${nc}\n" "$pass"
-if [ $fail -gt 0 ]; then
+if [[ $fail -gt 0 ]]; then
     printf "${red}Failed: %d${nc}\n" "$fail"
     exit 1
 else
