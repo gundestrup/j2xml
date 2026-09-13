@@ -32,6 +32,7 @@ register_shutdown_function(static function (): void {
 
         if (!is_dir($dir)) {
             @mkdir($dir, 0777, true);
+            @chmod($dir, 0777);
         }
 
         @file_put_contents(

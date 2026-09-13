@@ -32,7 +32,8 @@ while [[ $# -ge 2 ]]; do
     echo "[coverage] Waiting for $CONTAINER ($URL) ..."
     UP=0
     for _ in $(seq 1 90); do
-        if curl -sf -o /dev/null "$URL/" 2>/dev/null; then
+        # Any HTTP response (including 403/302) means Apache is serving.
+        if [[ "$(curl -s -o /dev/null -w '%{http_code}' "$URL/" 2>/dev/null)" != "000" ]]; then
             UP=1
             break
         fi
@@ -52,7 +53,8 @@ while [[ $# -ge 2 ]]; do
     "
 
     echo "[coverage] Installing collector and PHP config in $CONTAINER ..."
-    docker exec "$CONTAINER" mkdir -p /opt/j2xml-coverage /tmp/j2xml-cov
+    # /tmp/j2xml-cov must be writable by the Apache workers (www-data).
+    docker exec "$CONTAINER" bash -c 'mkdir -p /opt/j2xml-coverage /tmp/j2xml-cov && chmod 777 /tmp/j2xml-cov'
     docker cp "$PREPEND_FILE" "$CONTAINER:/opt/j2xml-coverage/prepend.php"
     docker exec "$CONTAINER" bash -c 'printf "%s\n" \
         "auto_prepend_file=/opt/j2xml-coverage/prepend.php" \
