@@ -14,10 +14,7 @@
 	<files>
     	<filename>Exporter.php</filename>
 		<filename>Importer.php</filename>
-		<filename>Messages.php</filename>
-		<filename>Sender.php</filename>
 		<filename>Version.php</filename>
-		<filename>classmap.php</filename>
 		<folder>Table</folder>
 	</files>
 	<languages folder="language">

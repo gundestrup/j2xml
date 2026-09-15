@@ -27,10 +27,9 @@ const DOC_ROOT = '/var/www/html/';
 // Repo-relative prefixes that belong to the J2XML extension.
 $prefixes = [
     'administrator/components/com_j2xml/',
-    'components/com_j2xml/',
+    'api/components/com_j2xml/',
     'libraries/eshiol/J2xml/',
     'plugins/system/j2xml/',
-    'plugins/system/basicauth/',
     'plugins/webservices/j2xml/',
     'cli/j2xml.php',
 ];

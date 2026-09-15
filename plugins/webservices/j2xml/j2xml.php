@@ -17,7 +17,9 @@
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Event\Application\BeforeApiRouteEvent;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\Event\SubscriberInterface;
 use Joomla\Router\Route;
 
 /**
@@ -32,8 +34,13 @@ use Joomla\Router\Route;
  *
  * @since  __DEPLOY_VERSION__
  */
-class PlgWebservicesJ2xml extends CMSPlugin
+class PlgWebservicesJ2xml extends CMSPlugin implements SubscriberInterface
 {
+    public static function getSubscribedEvents(): array
+    {
+        return ['onBeforeApiRoute' => 'onBeforeApiRoute'];
+    }
+
     /**
      * Registers the J2XML API routes.
      *
@@ -43,8 +50,9 @@ class PlgWebservicesJ2xml extends CMSPlugin
      *
      * @since   __DEPLOY_VERSION__
      */
-    public function onBeforeApiRoute(&$router)
+    public function onBeforeApiRoute(BeforeApiRouteEvent $event): void
     {
+        $router = $event->getRouter();
         $defaults = [
             'component' => 'com_j2xml',
             'public'    => false,

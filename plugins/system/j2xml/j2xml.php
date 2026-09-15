@@ -19,11 +19,18 @@
 // no direct access
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Event\Application\AfterDispatchEvent;
+use Joomla\Event\SubscriberInterface;
+
 /**
  *
  */
-class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
+class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin implements SubscriberInterface
 {
+    public static function getSubscribedEvents(): array
+    {
+        return ['onAfterDispatch' => 'onAfterDispatch'];
+    }
 
     /**
      * Load the language file on instantiation.
@@ -31,14 +38,6 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
      * @var boolean
      */
     protected $autoloadLanguage = true;
-
-    /**
-     * Application object.
-     *
-     * @var \Joomla\CMS\Application\CMSApplication
-     * @since 3.9.0
-     */
-    protected $app;
 
     /**
      * Constructor
@@ -76,24 +75,6 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
         }
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
-        // Only render in backend
-        if (!$this->app->isClient('administrator'))
-        {
-            return;
-        }
-
-        // Only render if J2XML is installed and enabled
-        $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $query = $db->getQuery(true)
-            ->select($db->quoteName('enabled'))
-            ->from($db->quoteName('#__extensions'))
-            ->where($db->quoteName('name') . ' = ' . $db->quote('com_j2xml'));
-        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
-        $is_enabled = $db->setQuery($query)->loadResult();
-        if (!$is_enabled)
-        {
-            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('PLG_SYSTEM_J2XML_MSG_REQUIREMENTS_COM', \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML')), \Joomla\CMS\Log\Log::WARNING, 'plg_system_j2xml'));
-        }
     }
 
     /**
@@ -101,30 +82,31 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
      *
      * @access public
      */
-    public function onAfterDispatch()
+    public function onAfterDispatch(AfterDispatchEvent $event): void
     {
+        $app = $event->getApplication();
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
 
-        if ($this->app->getInput()->get('format') == 'xmlrpc')
+        if ($app->getInput()->get('format') == 'xmlrpc')
         {
             return;
         }
 
         // Only render for HTML output.
-        if ($this->app->getDocument()->getType() !== 'html')
+        if ($app->getDocument()->getType() !== 'html')
         {
             return;
         }
 
         // Only render in backend
-        if (!$this->app->isClient('administrator'))
+        if (!$app->isClient('administrator'))
         {
             return;
         }
 
         // Only render if J2XML is installed and enabled
         $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $query = $db->getQuery(true)
+        $query = $db->getQuery()->clear()
             ->select($db->quoteName('enabled'))
             ->from('#__extensions')
             ->where($db->quoteName('name') . ' = ' . $db->quote('com_j2xml'));
@@ -136,7 +118,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
             return;
         }
 
-        $input = $this->app->getInput();
+        $input = $app->getInput();
         $option = $input->get('option');
         $contentType = substr($option, 4);
 
@@ -151,7 +133,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
         {
             if (($view != 'contents') && ($view != 'articles') && ($view != 'featured'))
             {
-                return true;
+                return;
             }
 
         }
@@ -163,18 +145,18 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
             }
             elseif ($view != $allowedView)
             {
-                return true;
+                return;
             }
         }
         elseif ($view != $allowedView)
         {
-            return true;
+            return;
         }
 
         // Only render if J2XML view exists and J2XML Library is loaded
         if (!class_exists('eshiol\\J2xml\\Exporter') || !method_exists('eshiol\\J2xml\\Exporter', $contentType))
         {
-            return true;
+            return;
         }
 
         if (file_exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/' . $contentType . '.php')
@@ -217,7 +199,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
             $bar->appendButton('Custom', $dHtml, 'download');
 
             // Check if the J2XML webservices plugin is enabled (REST API).
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName('extension_id'))
                 ->from($db->quoteName('#__extensions'))
                 ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
@@ -250,6 +232,6 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin
         // \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // \Joomla\CMS\Factory::getApplication()->triggerEvent('onLoadJS');
 
-        return true;
+        return;
     }
 }

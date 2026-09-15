@@ -1,4 +1,4 @@
-# Known Deprecated Patterns — J2XML 4.0.0
+# Known Deprecated Patterns — J2XML 4.5.x
 
 This file tracks deprecated Joomla/PHP patterns still present in the J2XML
 codebase.  They are scheduled for removal in a future release.  Each entry
@@ -245,13 +245,13 @@ Joomla 6.0+.  No direct CLI-compatible replacement exists yet.
 
 ## Summary
 
-_Last verified: 2026-08-15 — all 7 items still present, counts unchanged._
+_Last verified: 2026-09-15 — all 7 categories still have active occurrences; line references in the historical details should be refreshed when each item is addressed._
 
 | # | Pattern | Occurrences | Priority | Target version |
 |---|---------|-------------|----------|----------------|
 | 1 | `bootstrap.renderModal` | 2 | Medium | 4.1 |
 | 2 | `triggerEvent()` | 18 | Low | 5.0 |
-| 3 | `->getError()` | 15 | Low | 5.0 |
+| 3 | `->getError()` | 14 | Low | 5.0 |
 | 4 | Underscore-prefixed properties | 100+ | Low | 5.0 |
 | 5 | Missing native types | 20+ | Low | 5.0 |
 | 6 | `script.php` class-based installer | 1 | Low | 5.0 |

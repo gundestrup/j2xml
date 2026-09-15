@@ -9,28 +9,29 @@
 ## 1. Project Overview
 
 **J2XML** is a Joomla! extension package that exports and imports site content
-as XML, and can push/pull that content between Joomla! instances over XML-RPC.
+as XML, and transfers exported content between Joomla! instances through
+Joomla's Webservices REST API.
 
 - **Author / maintainer:** Helios Ciancio — <https://www.eshiol.it>
 - **License:** GNU/GPL v3 (<http://www.gnu.org/licenses/gpl-3.0.html>)
 - **Target platforms:** Joomla! **5 and 6** with **PHP 8.4 and 8.5**.
   (The upstream `eshiol/j2xml` targets Joomla 3.x/4.x; this fork drops
   older PHP/Joomla support to focus on modern versions.)
-- **Package name (Joomla):** `pkg_j2xml` (currently versioned as **3.9**).
+- **Package name (Joomla):** `pkg_j2xml` (release version **4.5.2**).
 - **Language:** PHP (no runtime JS build pipeline; Composer is used for
   development-only PHPUnit/PHPStan tooling, while runtime dependencies remain
   vendored as Joomla libraries).
 
-The package is composed of several Joomla extensions that are bundled together
-by `administrator/manifests/packages/pkg_j2xml.xml`:
+The package is composed of Joomla extensions bundled together by
+`administrator/manifests/packages/pkg_j2xml.xml`:
 
-| Type     | Id           | Path                                       | Purpose                                            |
-|----------|--------------|--------------------------------------------|----------------------------------------------------|
-| Component| `com_j2xml`  | `administrator/components/com_j2xml/`, `components/com_j2xml/` | Admin UI for export/import/send; site entry point |
-| Library  | `j2xml`      | `libraries/eshiol/J2xml/`                  | Core `Exporter`, `Importer`, `Sender`, `Messages`, `Version`, `Table\*` |
-| Plugin   | `j2xml` (system) | `plugins/system/j2xml/`                | System plugin: content preparation, layouts, Joomla 5/6 compatibility shims |
-| Plugin   | `basicauth` (system) | `plugins/system/basicauth/`        | HTTP Basic Auth for XML-RPC endpoints              |
-| CLI      | `j2xml`      | `cli/j2xml.php`                            | Command-line exporter (run with `php cli/j2xml.php -f file.xml`) |
+| Type     | Id                    | Path                                      | Purpose                                      |
+|----------|-----------------------|-------------------------------------------|----------------------------------------------|
+| Component| `com_j2xml`           | `administrator/components/com_j2xml/`     | Administrator export/import/send UI and API |
+| Library  | `j2xml`               | `libraries/eshiol/J2xml/`                 | Core `Exporter`, `Importer`, `Version`, `Table\*` |
+| Plugin   | `j2xml` (system)      | `plugins/system/j2xml/`                   | Content preparation and admin UI integration |
+| Plugin   | `j2xml` (webservices) | `plugins/webservices/j2xml/`              | Joomla REST import endpoint                  |
+| CLI      | `j2xml`               | `cli/j2xml.php`                            | Command-line importer                        |
 
 > **Note:** `libraries/eshiol/J2xmlpro/` and the related Pro manifests / language
 > files are intentionally gitignored — this repository is the open-source
@@ -43,24 +44,25 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
 ```
 .
 ├── administrator/
-│   ├── components/com_j2xml/   # Admin backend: controllers, models, views, sql, forms, script.php
+│   ├── components/com_j2xml/   # Admin backend: controllers, models, views, API, SQL, forms
 │   ├── language/               # (gitignored locales live elsewhere)
 │   └── manifests/              # Joomla install manifests per extension + pkg_j2xml.xml
-├── components/com_j2xml/       # Site-side entry point + helpers/controllers
-├── cli/j2xml.php               # Standalone CLI exporter
+├── api/components/com_j2xml/   # Joomla Webservices API controllers
+├── cli/j2xml.php               # Standalone CLI importer
 ├── language/en-GB/             # Site language files (en-GB)
 ├── libraries/eshiol/
-│   └── J2xml/                  # Core library (Exporter, Importer, Sender, Table/*, Version)
+│   └── J2xml/                  # Core library (Exporter, Importer, Table/*, Version)
 ├── media/                      # Joomla media folders (com_j2xml, lib_eshiol_j2xml)
 ├── build/                      # JS bundle build tooling (pako, base64) — node_modules gitignored
-├── plugins/system/
-│   ├── j2xml/                  # System plugin (j2xml.php, layouts/{joomla,joomla4}, src/)
-│   └── basicauth/              # Basic-auth system plugin
+├── plugins/
+│   ├── system/j2xml/           # System plugin and admin UI integration
+│   └── webservices/j2xml/       # Joomla REST import endpoint
 ├── .github/                    # Issue templates, PR template, CI workflows (ci.yml)
 ├── .semgrep.yml                # Semgrep security rules (local + CI)
 ├── .codefactor.yml             # CodeFactor exclude paths
 ├── sonar-project.properties    # SonarCloud configuration (exclusions, project key)
 ├── codecov.yml                 # Codecov configuration (coverage targets, ignores)
+├── VERSION                     # Single source of truth for release version
 ├── AGENTS.md                   # THIS FILE — single source of truth for AI tools
 ├── CLAUDE.md                   # Pointer → AGENTS.md (Claude Code)
 └── .windsurfrules              # Pointer → AGENTS.md (Windsurf)
@@ -73,12 +75,12 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
   usernotes, images) into J2XML XML.
 - `libraries/eshiol/J2xml/Importer.php` — parses J2XML XML and inserts/updates
   rows in the target Joomla instance.
-- `libraries/eshiol/J2xml/Sender.php` — pushes content to remote Joomla sites
-  via HTTP (uses native `stream_context_create`).
 - `libraries/eshiol/J2xml/Table/*.php` — per-entity table wrappers used by
   Exporter/Importer (`Content`, `Category`, `User`, `Menu`, `Menutype`,
   `Module`, `Contact`, `Weblink`, `Field`, `Fieldgroup`, `Tag`, `Viewlevel`,
   `Usernote`, `Image`).
+- `api/components/com_j2xml/src/Controller/ImportController.php` — token-authenticated
+  Joomla Webservices REST import endpoint.
 - `plugins/system/j2xml/j2xml.php` — system plugin entry; hooks Joomla events
   (`onContentPrepareData`, `onAfterRender`, etc.) and applies the compatibility
   shims under `plugins/system/j2xml/src/`.
@@ -156,16 +158,21 @@ by `administrator/manifests/packages/pkg_j2xml.xml`:
 
 ## 4. Build & Release
 
-`scripts/build-package.sh [output_dir]` builds the installable packages
-locally. It substitutes `__DEPLOY_VERSION__` (hardcoded `VERSION` at the top
-of the script — bump it per release) and `__DEPLOY_DATE__`, then zips each
-extension into `com_j2xml.zip`, `lib_eshiol_J2xml.zip`,
+`VERSION` is the single source of truth for the release version. It contains
+one semantic version, such as `4.5.2`. `scripts/build-package.sh [output_dir]`
+reads that file, substitutes `__DEPLOY_VERSION__` and `__DEPLOY_DATE__`, then
+zips each extension into `com_j2xml.zip`, `lib_eshiol_J2xml.zip`,
 `plg_system_j2xml.zip`, `plg_webservices_j2xml.zip`, and bundles them into
 `pkg_j2xml.zip` under `build/` (or the given output dir).
 
+Use `scripts/release-check.sh --metadata-only` to validate the VERSION file,
+CHANGELOG heading, and manifest placeholders. Without the flag it also builds
+and inspects all release archives and refuses to reuse an existing `vVERSION`
+tag. The script never creates tags, commits, or pushes.
+
 The integration test suite rebuilds the package automatically
 (`run-all-tests.sh` Phase 2), so `build/*.zip` is **gitignored** — never
-commit the zips. For a release, run the build script and attach
+commit the zips. For a release, run the release check and attach
 `pkg_j2xml.zip` (plus sub-zips if desired) to the GitHub release as assets.
 
 **CI** runs on every push and pull request via GitHub Actions
@@ -176,7 +183,8 @@ commit the zips. For a release, run the build script and attach
 - **mysql-integration**: Docker Compose Joomla 5 + 6 with MySQL 8.0;
   runs `tests/scripts/run-all-tests.sh`.
 - **postgresql-integration**: Docker Compose Joomla 5 + 6 with PostgreSQL 16;
-  runs `tests/scripts/run-postgresql-smoke.sh`.
+  runs the same full `tests/scripts/run-all-tests.sh` feature suite as MySQL,
+  with the PostgreSQL database adapter, and fails on import/export errors.
 - **semgrep**: Semgrep security scan using the local `.semgrep.yml` config.
 
 ### External code-quality services
@@ -275,8 +283,10 @@ The hook is version-controlled in `scripts/git-hooks/` and symlinked into
 ## 5. Testing
 
 Integration tests run in **Docker** against official Joomla 5 and 6 images.
-The primary suite uses MySQL; `tests/scripts/run-postgresql-smoke.sh` also
-exercises installation, import, and export against PostgreSQL. The test suite
+The same full feature suite runs against both MySQL and PostgreSQL through the
+database adapter in `tests/scripts/db-query.php`. The legacy
+`tests/scripts/run-postgresql-smoke.sh` remains available as a small standalone
+preflight, but is not the CI parity suite. The test suite
 (`tests/scripts/run-all-tests.sh`) verifies the three import bugs fixed in this
 fork:
 
@@ -302,7 +312,10 @@ docker compose up -d
 cd ../..
 bash tests/scripts/run-all-tests.sh
 
-# PostgreSQL smoke matrix
+# Full PostgreSQL parity matrix
+./scripts/check-tests.sh
+
+# Optional quick PostgreSQL preflight
 cd tests/docker
 docker compose -f docker-compose.postgresql.yml up -d
 cd ../..
@@ -324,12 +337,19 @@ The script will:
 
 ### Test output
 
+The current MySQL and PostgreSQL integration suites each cover Joomla 5 and
+Joomla 6 with 97 assertions, including PHP warning/deprecation checks:
+
 ```
-  Passed: 79
+  Passed: 97
   Failed: 0
   Skipped: 0
-  Total:  79
+  Total:  97
 ```
+
+The PHPUnit suite currently contains **69 tests and 128 assertions**. Use
+`vendor/bin/phpunit --configuration phpunit.xml.dist --no-coverage` locally when
+no PCOV/Xdebug driver is installed.
 
 ### Stopping the test environment
 
@@ -366,6 +386,22 @@ Locally:
 ./scripts/check-tests.sh --coverage   # runs both suites + writes coverage-integration.xml
 ```
 
+The latest MySQL and PostgreSQL integration runs recorded **2,723 of 3,714 executable lines**
+across 64 active J2XML files: **73.32% line coverage**. Removed legacy files
+are no longer part of the denominator. The coverage merger emits files observed
+in PCOV dumps; active files never loaded by the integration suite are not added
+as zero-coverage files. This makes the number an observed-line metric rather
+than whole-repository coverage. The uncovered lines are primarily optional,
+defensive, installer, CLI, workflow, and database-specific branches.
+In particular, `Table.php`, `Content.php`, `Exporter.php`, `ImportModel.php`,
+`cli/j2xml.php`, and installer/version paths account for most of the gap.
+
+The merge includes the administrator, Webservices API, library,
+system-plugin, and CLI paths. This is the integration flag only. PHPUnit
+uploads separately under the `unittests` flag, and Codecov's combined
+percentage can differ while one of the reports is missing, delayed, or
+calculated against a broader source set.
+
 ### Test fixtures
 
 XML fixtures live in `tests/fixtures/` and use the J3-era format
@@ -397,7 +433,7 @@ If you add a feature, consider whether it needs a new SQL update file under
 
 - **Commit messages:** short imperative summary line. Recent history uses
   plain summaries like `Joomla 5.0.0 PHP 8.2 Export` or
-  `PHP 8.2: utf8_encode() is deprecated - XMLRPC`. Match that style; do not
+  `PHP 8.4 compatibility cleanup`. Match that style; do not
   add `Generated with Devin` / `Co-Authored-By` trailers unless the user
   asks for them.
 - **Branches:** feature branches are named like `fix-content-construct-j5`,
@@ -472,8 +508,8 @@ If you add a feature, consider whether it needs a new SQL update file under
 # Inspect the package manifest (defines what ships)
 cat administrator/manifests/packages/pkg_j2xml.xml
 
-# Run the CLI exporter against a local Joomla install (requires a bootstrapped site)
-php cli/j2xml.php -f /tmp/export.xml
+# Run the CLI importer against a local Joomla install (requires a bootstrapped site)
+php cli/j2xml.php -f /tmp/import.xml
 
 # Find every place a Joomla entity type is handled
 grep -rn "eshiol\\\\J2xml\\\\Table\\\\" libraries/eshiol/J2xml/
@@ -514,7 +550,7 @@ modernisation effort:
 | 72  | Unable to use on Joomla! 5.2                                 | **High** — import fails with HTTP 500 on J5.2+; partially addressed by PHP 8.4 fixes (E_STRICT, utf8_encode) |
 | 71  | Unable to import Articles on Joomla 5.1.0 (from J3.10.11)   | **High** — cross-version import broken; likely schema/API drift in J5 |
 | 70  | Unable to import users                                       | **High** — user import broken on J5; likely the same root cause as #71 |
-| 68  | Please create a CLI for import and export                    | Medium — feature request; `cli/j2xml.php` exists for export but not import |
+| 68  | Please create a CLI for import and export                    | Medium — feature request; `cli/j2xml.php` exists for import but not export |
 | 56  | Error while importing articles from J3 into J4               | Medium — older J3→J4 import failure, may already be fixed but worth verifying |
 | 53  | Registration on website not responding — where is latest version? | Low — meta/maintenance question |
 | 40  | Import/export user groups                                    | Medium — feature gap; user groups not handled by current Table\User |
@@ -527,7 +563,7 @@ modernisation effort:
 - `utf8_encode()` replaced with `mb_convert_encoding()` (removed in PHP 8.3) — 5 files
 - Non-canonical casts `(boolean)`/`(integer)`/`(double)` → `(bool)`/`(int)`/`(float)` — 4 files
 - `case;` → `case:` syntax — 1 file
-- phpxmlrpc vendored library removed (Sender now uses native `stream_context_create`)
+- phpxmlrpc/XML-RPC transport removed; remote transfer now uses Joomla's Webservices REST API
 
 **Joomla 5/6 compatibility note:** All `J*` legacy class aliases (`JFactory`,
 `JLog`, `JText`, etc.) have been **migrated to fully-qualified namespaced

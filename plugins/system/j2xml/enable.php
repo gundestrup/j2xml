@@ -27,7 +27,7 @@ class PlgSystemJ2xmlInstallerScript
     {
         // Enable plugin
         $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $query = $db->getQuery(true)
+        $query = $db->getQuery()->clear()
             ->update('#__extensions')
             ->set($db->quoteName('enabled') . ' = 1')
             ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))

@@ -10,16 +10,16 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DB_HELPER="/tmp/j2xml-db-query.php"
 VERSION="${1:?Usage: uninstall-plugin.sh <5|6>}"
 
 if [[ "$VERSION" = "5" ]]; then
     CONTAINER="${J2XML_CONTAINER:-j2xml-joomla5}"
     JOOMLA_URL="${J2XML_URL:-http://localhost:8085}"
-    DB="${JOOMLA5_DB:-joomla5}"
 elif [[ "$VERSION" = "6" ]]; then
     CONTAINER="${J2XML_CONTAINER:-j2xml-joomla6}"
     JOOMLA_URL="${J2XML_URL:-http://localhost:8086}"
-    DB="${JOOMLA6_DB:-joomla6}"
 else
     echo "Invalid version: $VERSION"
     exit 1
@@ -55,13 +55,17 @@ echo "[uninstall] Logged in (HTTP $LOGIN_CODE)"
 # Step 2: Find the package extension ID from the database
 echo "[uninstall] Finding J2XML package extension ID..."
 
-PKG_ID=$(docker exec "$CONTAINER" php -r '
+docker cp "$SCRIPT_DIR/db-query.php" "$CONTAINER:$DB_HELPER" >/dev/null
+PKG_ID=$(printf '%s' "SELECT extension_id FROM #__extensions WHERE element='pkg_j2xml' AND type='package'" | docker exec -i "$CONTAINER" php "$DB_HELPER" scalar 2>&1 || true)
+PKG_ID="$(printf '%s' "$PKG_ID" | tail -1)"
+: <<'LEGACY_DB_QUERY'
 $mysqli = new mysqli("mysql", "joomla", "joomlapass", "'"$DB"'");
 if ($mysqli->connect_errno) { echo "FAIL\n"; exit(1); }
 $result = $mysqli->query("SELECT extension_id FROM joom_extensions WHERE element=\"pkg_j2xml\" AND type=\"package\"");
 $row = $result->fetch_row();
 echo $row[0] ?? "NOTFOUND";
 ' 2>&1)
+LEGACY_DB_QUERY
 
 if [[ "$PKG_ID" = "NOTFOUND" ]] || [[ -z "$PKG_ID" ]]; then
     echo "[uninstall] J2XML package not found in database - already uninstalled"
@@ -119,7 +123,9 @@ fi
 sleep 2
 
 # Check if any J2XML extensions remain
-REMAINING_CHECK=$(docker exec "$CONTAINER" php -r '
+REMAINING_IDS=$(printf '%s' "SELECT extension_id FROM #__extensions WHERE element IN ('com_j2xml','eshiol/J2xml','pkg_j2xml','j2xml') OR name LIKE '%J2XML%' OR name LIKE '%eshiol%'" | docker exec -i "$CONTAINER" php "$DB_HELPER" column 2>&1 | paste -sd, -)
+REMAINING_CHECK="IDS:$REMAINING_IDS"
+: <<'LEGACY_DB_QUERY'
 $mysqli = new mysqli("mysql", "joomla", "joomlapass", "'"$DB"'");
 $result = $mysqli->query("SELECT extension_id, type, element FROM joom_extensions WHERE element IN (\"com_j2xml\",\"eshiol/J2xml\",\"pkg_j2xml\",\"j2xml\") OR name LIKE \"%J2XML%\" OR name LIKE \"%eshiol%\"");
 $ids = [];
@@ -129,6 +135,7 @@ while ($row = $result->fetch_assoc()) {
 }
 echo "IDS:" . implode(",", $ids) . "\n";
 ' 2>&1)
+LEGACY_DB_QUERY
 
 echo "[uninstall] Remaining after package uninstall:"
 echo "$REMAINING_CHECK"
@@ -156,25 +163,30 @@ fi
 # Step 5: Verify all J2XML extensions are removed from the database
 echo "[uninstall] Verifying removal from database..."
 
-REMAINING_COUNT=$(docker exec "$CONTAINER" php -r '
+REMAINING_COUNT=$(printf '%s' "SELECT COUNT(*) FROM #__extensions WHERE element IN ('com_j2xml','eshiol/J2xml','pkg_j2xml','j2xml') OR name LIKE '%J2XML%' OR name LIKE '%eshiol%'" | docker exec -i "$CONTAINER" php "$DB_HELPER" scalar 2>&1 | tail -1)
+: <<'LEGACY_DB_COUNT'
 $mysqli = new mysqli("mysql", "joomla", "joomlapass", "'"$DB"'");
 if ($mysqli->connect_errno) { echo "0"; exit(0); }
 $result = $mysqli->query("SELECT COUNT(*) as cnt FROM joom_extensions WHERE element IN (\"com_j2xml\",\"eshiol/J2xml\",\"pkg_j2xml\",\"j2xml\") OR name LIKE \"%J2XML%\" OR name LIKE \"%eshiol%\"");
 $row = $result->fetch_assoc();
 echo $row["cnt"];
 ' 2>/dev/null || echo "0")
+LEGACY_DB_COUNT
 
 echo "[uninstall] Extensions remaining in DB: $REMAINING_COUNT"
 
 # Show any remaining extensions for debugging
 if [[ "${REMAINING_COUNT:-0}" -gt 0 ]]; then
-    docker exec "$CONTAINER" php -r '
+    db_query_output=$(printf '%s' "SELECT type, element, name FROM #__extensions WHERE element IN ('com_j2xml','eshiol/J2xml','pkg_j2xml','j2xml') OR name LIKE '%J2XML%' OR name LIKE '%eshiol%'" | docker exec -i "$CONTAINER" php "$DB_HELPER" json 2>&1 || true)
+    echo "  REMAINS: $db_query_output"
+    : <<'LEGACY_DB_NAMES'
 $mysqli = new mysqli("mysql", "joomla", "joomlapass", "'"$DB"'");
 $result = $mysqli->query("SELECT type, element, name FROM joom_extensions WHERE element IN (\"com_j2xml\",\"eshiol/J2xml\",\"pkg_j2xml\",\"j2xml\") OR name LIKE \"%J2XML%\" OR name LIKE \"%eshiol%\"");
 while ($row = $result->fetch_assoc()) {
     echo "  REMAINS: " . $row["type"] . " / " . $row["element"] . " / " . $row["name"] . PHP_EOL;
 }
 ' 2>/dev/null || true
+LEGACY_DB_NAMES
 fi
 
 # Step 6: Verify files are removed from the filesystem

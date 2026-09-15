@@ -56,7 +56,7 @@ class Weblink extends Table
         // #__contentitem_tag_map m WHERE type_alias =
         // "com_weblinks.weblink" AND t.id = m.tag_id AND m.content_item_id
         // = '. (int)$this->id;
-        $this->_aliases['tag'] = (string) $this->_db->getQuery(true)
+        $this->_aliases['tag'] = (string) $this->_db->getQuery()->clear()
             ->select($this->_db->quoteName('t.path'))
             ->from($this->_db->quoteName('#__tags', 't'))
             ->from($this->_db->quoteName('#__contentitem_tag_map', 'm'))
@@ -64,7 +64,7 @@ class Weblink extends Table
             ->where($this->_db->quoteName('t.id') . ' = ' . $this->_db->quoteName('m.tag_id'))
             ->where($this->_db->quoteName('m.content_item_id') . ' = ' . $this->_db->quote((string) $this->id));
 
-        $query = $this->_db->getQuery(true);
+        $query = $this->_db->getQuery()->clear();
         $this->_aliases['association'] = (string) $query
             ->select($query->concatenate([$this->_db->quoteName('cc.path'), $this->_db->quoteName('c.alias')], '/'))
             ->from($this->_db->quoteName('#__associations', 'asso1'))
@@ -215,7 +215,7 @@ class Weblink extends Table
 
             $id = $data['id'];
 
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select([
                     $db->quoteName('id'),
                     $db->quoteName('title')
@@ -283,7 +283,7 @@ class Weblink extends Table
                 $id = self::getWeblinkId($association);
                 if ($id)
                 {
-                    $tag = $db->setQuery($db->getQuery(true)
+                    $tag = $db->setQuery($db->getQuery()->clear()
                         ->select($db->quoteName('language'))
                         ->from($db->quoteName('#__weblinks'))
                         ->where($db->quoteName('id') . ' = ' . $id))
@@ -301,7 +301,7 @@ class Weblink extends Table
             $id = self::getWeblinkId($data['association']);
             if ($id)
             {
-                $tag = $db->setQuery($db->getQuery(true)
+                $tag = $db->setQuery($db->getQuery()->clear()
                     ->select($db->quoteName('language'))
                     ->from($db->quoteName('#__weblinks'))
                     ->where($db->quoteName('id') . ' = ' . $id))

@@ -11,7 +11,7 @@
 #   2. Export existing (default) content from fresh Joomla
 #   3. Import new content from fixtures
 #   4. Re-export and verify both old and new content present
-#   5. Test Send (XML-RPC) between Joomla 5 and Joomla 6
+#   5. Test Send via the Joomla Webservices API between Joomla 5 and Joomla 6
 #   6. Uninstall and verify clean removal
 #
 # Usage:
@@ -48,11 +48,47 @@ JOOMLA5_URL="${JOOMLA5_URL:-http://localhost:8085}"
 JOOMLA6_URL="${JOOMLA6_URL:-http://localhost:8086}"
 
 # Containers
-J5_CONTAINER="j2xml-joomla5"
-J6_CONTAINER="j2xml-joomla6"
+J5_CONTAINER="${J5_CONTAINER:-j2xml-joomla5}"
+J6_CONTAINER="${J6_CONTAINER:-j2xml-joomla6}"
 
 # Database settings
-export DB_USER=joomla DB_PASS=joomlapass JOOMLA5_DB=joomla5 JOOMLA6_DB=joomla6 JOOMLA5_DB_HOST=mysql JOOMLA6_DB_HOST=mysql
+export DB_USER=joomla DB_PASS=joomlapass JOOMLA5_DB="${JOOMLA5_DB:-joomla5}" JOOMLA6_DB="${JOOMLA6_DB:-joomla6}"
+DB_QUERY_HELPER="/tmp/j2xml-db-query.php"
+
+# =============================================================================
+# Helper: Driver-neutral database queries
+# =============================================================================
+prepare_db_helper() {
+    local container="$1"
+    docker cp "$SCRIPT_DIR/db-query.php" "$container:$DB_QUERY_HELPER" >/dev/null
+}
+
+db_query() {
+    local container="$1"
+    local mode="$2"
+    local sql="$3"
+    printf '%s' "$sql" | docker exec -i "$container" php "$DB_QUERY_HELPER" "$mode"
+}
+
+db_scalar() {
+    db_query "$1" scalar "$3"
+}
+
+db_column() {
+    db_query "$1" column "$3" | paste -sd, -
+}
+
+db_exec() {
+    db_query "$1" exec "$3"
+}
+
+db_component_api() {
+    docker exec "$1" php "$DB_QUERY_HELPER" component-api 2>/dev/null
+}
+
+db_token() {
+    docker exec "$1" php "$DB_QUERY_HELPER" token "$3" 2>/dev/null
+}
 
 # =============================================================================
 # Helper: Login to Joomla admin and get CSRF token
@@ -215,25 +251,31 @@ joomla_export() {
         # Get all IDs based on content type
         case "$content_type" in
             content)
-                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query('SELECT GROUP_CONCAT(id) FROM joom_content');echo \$r->fetch_row()[0];" 2>/dev/null)
+                cid=$(db_column "$db_container" "$db_name" 'SELECT id FROM #__content')
                 ;;
             categories)
-                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query(\"SELECT GROUP_CONCAT(id) FROM joom_categories WHERE extension='com_content'\");echo \$r->fetch_row()[0];" 2>/dev/null)
+                cid=$(db_column "$db_container" "$db_name" "SELECT id FROM #__categories WHERE extension='com_content'")
                 ;;
             users)
-                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query('SELECT GROUP_CONCAT(id) FROM joom_users');echo \$r->fetch_row()[0];" 2>/dev/null)
+                cid=$(db_column "$db_container" "$db_name" 'SELECT id FROM #__users')
                 ;;
             contact)
-                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query('SELECT GROUP_CONCAT(id) FROM joom_contact_details');echo \$r->fetch_row()[0];" 2>/dev/null)
+                cid=$(db_column "$db_container" "$db_name" 'SELECT id FROM #__contact_details')
                 ;;
             modules)
-                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query('SELECT GROUP_CONCAT(id) FROM joom_modules');echo \$r->fetch_row()[0];" 2>/dev/null)
+                cid=$(db_column "$db_container" "$db_name" 'SELECT id FROM #__modules')
                 ;;
             menus)
-                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query(\"SELECT GROUP_CONCAT(id) FROM joom_menu WHERE client_id=0\");echo \$r->fetch_row()[0];" 2>/dev/null)
+                cid=$(db_column "$db_container" "$db_name" 'SELECT id FROM #__menu WHERE client_id=0')
                 ;;
             fields)
-                cid=$(docker exec "$db_container" php -r "\$m=new mysqli('mysql','joomla','joomlapass','${db_name}');\$r=\$m->query('SELECT GROUP_CONCAT(id) FROM joom_fields');echo \$r->fetch_row()[0];" 2>/dev/null)
+                cid=$(db_column "$db_container" "$db_name" 'SELECT id FROM #__fields')
+                ;;
+            viewlevels)
+                cid=$(db_column "$db_container" "$db_name" 'SELECT id FROM #__viewlevels')
+                ;;
+            usernotes)
+                cid=$(db_column "$db_container" "$db_name" 'SELECT id FROM #__user_notes')
                 ;;
             *)
                 cid=""
@@ -272,12 +314,8 @@ joomla_export() {
 db_count() {
     local container="$1"
     local db="$2"
-    local table="$3"
-    docker exec "$container" php -r "
-\$m = new mysqli('mysql', 'joomla', 'joomlapass', '${db}');
-\$r = \$m->query('SELECT COUNT(*) FROM \`$table\`');
-echo \$r->fetch_row()[0];
-" 2>/dev/null
+    local table="${3#joom_}"
+    db_scalar "$container" "$db" "SELECT COUNT(*) FROM #__${table}"
 }
 
 # =============================================================================
@@ -290,16 +328,10 @@ create_export_test_fixtures() {
     local image_data="j2xml-export-image-fixture"
 
     docker exec "$container" bash -c "mkdir -p /var/www/html/images/j2xml-tests && printf '%s' '$image_data' > /var/www/html/$image_path" 2>/dev/null
-    docker exec -e "J2XML_TEST_DB=$db" "$container" php -r "$(cat <<'PHP'
-$m = new mysqli('mysql', 'joomla', 'joomlapass', getenv('J2XML_TEST_DB'));
-$m->query("DELETE FROM joom_content WHERE alias IN ('j2xml-ui-selection-one', 'j2xml-ui-selection-two', 'j2xml-ui-selection-three')");
-$sql = "INSERT INTO joom_content (title, alias, introtext, `fulltext`, state, catid, created, created_by, modified, modified_by, publish_up, access, language, images, urls, attribs, metadata, metakey, metadesc, version, hits, ordering, featured) VALUES
-('J2XML UI Selection One', 'j2xml-ui-selection-one', '<p>Must not be selected</p>', '', 1, 2, NOW(), 1, NOW(), 1, NOW(), 1, '*', '{}', '{}', '{}', '{}', '', '', 1, 0, 0, 0),
-('J2XML UI Selection Two', 'j2xml-ui-selection-two', '<p><img src=\"images/j2xml-tests/export-image.png\"></p>', '', 1, 2, NOW(), 1, NOW(), 1, NOW(), 1, '*', '{\"image_intro\":\"images/j2xml-tests/export-image.png\"}', '{}', '{}', '{}', '', '', 1, 0, 0, 0),
-('J2XML UI Selection Three', 'j2xml-ui-selection-three', '<p>Must be selected</p>', '', 1, 2, NOW(), 1, NOW(), 1, NOW(), 1, '*', '{}', '{}', '{}', '{}', '', '', 1, 0, 0, 0)";
-if (!$m->query($sql)) { fwrite(STDERR, $m->error); exit(1); }
-PHP
-)" 2>/dev/null
+    local fulltext_column='`fulltext`'
+    [[ "${DB_DRIVER:-mysql}" = "pgsql" ]] && fulltext_column='"fulltext"'
+    db_exec "$container" "$db" "DELETE FROM #__content WHERE alias IN ('j2xml-ui-selection-one', 'j2xml-ui-selection-two', 'j2xml-ui-selection-three')"
+    db_exec "$container" "$db" "INSERT INTO #__content (title, alias, introtext, ${fulltext_column}, state, catid, created, created_by, modified, modified_by, publish_up, access, language, images, urls, attribs, metadata, metakey, metadesc, version, hits, ordering, featured) VALUES ('J2XML UI Selection One', 'j2xml-ui-selection-one', '<p>Must not be selected</p>', '', 1, 2, NOW(), 1, NOW(), 1, NOW(), 1, '*', '{}', '{}', '{}', '{}', '', '', 1, 0, 0, 0), ('J2XML UI Selection Two', 'j2xml-ui-selection-two', '<p><img src=\"images/j2xml-tests/export-image.png\"></p>', '', 1, 2, NOW(), 1, NOW(), 1, NOW(), 1, '*', '{\"image_intro\":\"images/j2xml-tests/export-image.png\"}', '{}', '{}', '{}', '', '', 1, 0, 0, 0), ('J2XML UI Selection Three', 'j2xml-ui-selection-three', '<p>Must be selected</p>', '', 1, 2, NOW(), 1, NOW(), 1, NOW(), 1, '*', '{}', '{}', '{}', '{}', '', '', 1, 0, 0, 0)"
 }
 
 # =============================================================================
@@ -308,19 +340,7 @@ PHP
 enable_api() {
     local container="$1"
     local db="$2"
-    docker exec "$container" php -r "
-\$m = new mysqli('mysql', 'joomla', 'joomlapass', '${db}');
-\$r = \$m->query(\"SELECT params FROM joom_extensions WHERE element='com_j2xml' AND type='component'\");
-\$row = \$r->fetch_assoc();
-\$params = json_decode(\$row['params'] ?? '{}', true);
-\$params['api'] = '1';
-\$params['debug'] = '0';
-\$paramsJson = json_encode(\$params);
-\$stmt = \$m->prepare(\"UPDATE joom_extensions SET params=? WHERE element='com_j2xml' AND type='component'\");
-\$stmt->bind_param('s', \$paramsJson);
-\$stmt->execute();
-echo \$stmt->affected_rows;
-" 2>/dev/null
+    db_component_api "$container" "$db"
 }
 
 # =============================================================================
@@ -330,23 +350,23 @@ gen_api_token() {
     local container="$1"
     local db="$2"
     local userId="$3"
-    docker exec "$container" php -r "
-\$m = new mysqli('mysql', 'joomla', 'joomlapass', '${db}');
-\$m->query(\"DELETE FROM joom_user_profiles WHERE profile_key LIKE 'joomlatoken%' AND user_id=${userId}\");
-\$seed = random_bytes(32);
-\$seedB64 = base64_encode(\$seed);
-\$config = file_get_contents('/var/www/html/configuration.php');
-preg_match('/\\\$secret\\s*=\\s*\\'([^\\']+)\\'/', \$config, \$matches);
-\$secret = \$matches[1];
-\$hmac = hash_hmac('sha256', \$seed, \$secret);
-\$tokenString = base64_encode('sha256:' . ${userId} . ':' . \$hmac);
-\$stmt = \$m->prepare(\"INSERT INTO joom_user_profiles (user_id, profile_key, profile_value, ordering) VALUES (${userId}, 'joomlatoken.token', ?, 1)\");
-\$stmt->bind_param('s', \$seedB64);
-\$stmt->execute();
-\$stmt2 = \$m->prepare(\"INSERT INTO joom_user_profiles (user_id, profile_key, profile_value, ordering) VALUES (${userId}, 'joomlatoken.enabled', '1', 2)\");
-\$stmt2->execute();
-echo \$tokenString;
-" 2>/dev/null
+    db_token "$container" "$db" "$userId"
+}
+
+# =============================================================================
+# Helper: Enable PHP diagnostics without enabling Joomla's visual debug mode
+# =============================================================================
+enable_php_diagnostics() {
+    local container="$1"
+
+    docker exec "$container" bash -c 'cat > /usr/local/etc/php/conf.d/99-j2xml-tests.ini <<"INI"
+error_reporting=E_ALL
+display_errors=Off
+log_errors=On
+error_log=/var/log/apache2/error.log
+INI
+: > /var/log/apache2/error.log
+apachectl -k graceful' 2>/dev/null
 }
 
 # =============================================================================
@@ -372,6 +392,15 @@ for _ in $(seq 1 60); do
     sleep 2
 done
 
+info "Enabling PHP E_ALL diagnostics for both Joomla containers..."
+if enable_php_diagnostics "$J5_CONTAINER" && enable_php_diagnostics "$J6_CONTAINER"; then
+    pass "PHP diagnostics enabled for Joomla 5 and Joomla 6"
+else
+    fail "Could not enable PHP diagnostics in one or more Joomla containers"
+fi
+prepare_db_helper "$J5_CONTAINER"
+prepare_db_helper "$J6_CONTAINER"
+
 # =============================================================================
 # Phase 2: Build and Install J2XML from compiled zip
 # =============================================================================
@@ -386,7 +415,7 @@ else
 fi
 
 info "Installing J2XML on Joomla 5 from zip..."
-if bash "$SCRIPT_DIR/install-plugin.sh" 5 > /tmp/j2xml-install-5.log 2>&1; then
+if J2XML_CONTAINER="$J5_CONTAINER" J2XML_URL="$JOOMLA5_URL" J2XML_DB="$JOOMLA5_DB" bash "$SCRIPT_DIR/install-plugin.sh" 5 > /tmp/j2xml-install-5.log 2>&1; then
     pass "J2XML installed on Joomla 5 from compiled zip"
 else
     fail "Failed to install J2XML on Joomla 5 from zip"
@@ -402,7 +431,7 @@ else
 fi
 
 info "Installing J2XML on Joomla 6 from zip..."
-if bash "$SCRIPT_DIR/install-plugin.sh" 6 > /tmp/j2xml-install-6.log 2>&1; then
+if J2XML_CONTAINER="$J6_CONTAINER" J2XML_URL="$JOOMLA6_URL" J2XML_DB="$JOOMLA6_DB" bash "$SCRIPT_DIR/install-plugin.sh" 6 > /tmp/j2xml-install-6.log 2>&1; then
     pass "J2XML installed on Joomla 6 from compiled zip"
 else
     fail "Failed to install J2XML on Joomla 6 from zip"
@@ -503,8 +532,8 @@ else
     fail "UI J5: Export dropdown is missing checkbox selection wiring or modal target"
 fi
 
-J5_UI_TWO_ID=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT id FROM joom_content WHERE alias=\"j2xml-ui-selection-two\"");echo $r->fetch_row()[0];' 2>/dev/null)
-J5_UI_THREE_ID=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT id FROM joom_content WHERE alias=\"j2xml-ui-selection-three\"");echo $r->fetch_row()[0];' 2>/dev/null)
+J5_UI_TWO_ID=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT id FROM #__content WHERE alias='j2xml-ui-selection-two'")
+J5_UI_THREE_ID=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT id FROM #__content WHERE alias='j2xml-ui-selection-three'")
 
 info "Exporting only selected UI fixture articles 2 and 3 (not article 1)..."
 SELECTED_UI_XML=$(joomla_export "$JOOMLA5_URL" "content" "$J5_UI_TWO_ID,$J5_UI_THREE_ID" 1 2>/dev/null)
@@ -564,7 +593,7 @@ header "Phase 4: Import all content types into Joomla 5 (Import feature)"
 
 info "Importing comprehensive fixture (all content types)..."
 HTTP_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" \
-    1 1 1 1 1 1 1 1 1)
+    1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 1 0 0)
 
 if [[ "$HTTP_CODE" = "200" ]] || [[ "$HTTP_CODE" = "303" ]]; then
     pass "Import: All content types imported (HTTP $HTTP_CODE)"
@@ -621,7 +650,7 @@ else
 fi
 
 # Verify menu types imported
-MENUTYPE_COUNT=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT COUNT(*) FROM joom_menu_types");echo $r->fetch_row()[0];' 2>/dev/null)
+MENUTYPE_COUNT=$(db_count "$J5_CONTAINER" "$JOOMLA5_DB" menu_types)
 if [[ "${MENUTYPE_COUNT:-0}" -ge 1 ]] 2>/dev/null; then
     pass "Import: $MENUTYPE_COUNT menu types in J5 database"
 else
@@ -647,7 +676,9 @@ for export_spec in \
     "contact contact" \
     "modules module" \
     "menus menu" \
-    "fields field"; do
+    "fields field" \
+    "viewlevels viewlevel" \
+    "usernotes usernote"; do
     export_method=${export_spec%% *}
     export_node=${export_spec##* }
     export_xml=$(joomla_export "$JOOMLA5_URL" "$export_method" all 0 "$J5_CONTAINER" joomla5 2>/dev/null)
@@ -696,9 +727,9 @@ else
 fi
 
 KEEP_ID_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 2 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0 0)
-KEEP_ID_USER=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT username FROM joom_users WHERE id=50");echo $r->fetch_row()[0] ?? "";' 2>/dev/null)
+KEEP_ID_USER=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT username FROM #__users WHERE id=50")
 KEEP_CONTENT_ID_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/keep-id.xml" 2 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0)
-KEEP_ID_ARTICLE=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT alias FROM joom_content WHERE id=1903");echo $r->fetch_row()[0] ?? "";' 2>/dev/null)
+KEEP_ID_ARTICLE=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT alias FROM #__content WHERE id=1903")
 if { [[ "$KEEP_ID_IMPORT_CODE" = "200" ]] || [[ "$KEEP_ID_IMPORT_CODE" = "303" ]]; } && { [[ "$KEEP_CONTENT_ID_CODE" = "200" ]] || [[ "$KEEP_CONTENT_ID_CODE" = "303" ]]; } && [[ "$KEEP_ID_ARTICLE" = "j2xml-keep-id-only-article" ]] && [[ "$KEEP_ID_USER" = "fixtureuser1" ]]; then
     pass "Import J5: keep_id and keep_user_id preserve source IDs"
 else
@@ -706,7 +737,7 @@ else
 fi
 
 FORCE_CATEGORY_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 2 2 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0)
-FORCED_ARTICLE_CATEGORY=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT catid FROM joom_content WHERE alias=\"fixture-article-one\"");echo $r->fetch_row()[0] ?? "";' 2>/dev/null)
+FORCED_ARTICLE_CATEGORY=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT catid FROM #__content WHERE alias='fixture-article-one'")
 if { [[ "$FORCE_CATEGORY_CODE" = "200" ]] || [[ "$FORCE_CATEGORY_CODE" = "303" ]]; } && [[ "$FORCED_ARTICLE_CATEGORY" = "2" ]]; then
     pass "Import J5: keep_category force-to setting assigns the selected category"
 else
@@ -714,7 +745,7 @@ else
 fi
 
 SUPERUSER_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 2 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0)
-SUPERUSER_PRESENT=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT COUNT(*) FROM joom_users WHERE username=\"fixturesuperuser\"");echo $r->fetch_row()[0];' 2>/dev/null)
+SUPERUSER_PRESENT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__users WHERE username='fixturesuperuser'")
 if { [[ "$SUPERUSER_CODE" = "200" ]] || [[ "$SUPERUSER_CODE" = "303" ]]; } && [[ "$SUPERUSER_PRESENT" -eq 1 ]]; then
     pass "Import J5: superusers setting permits superuser imports when enabled"
 else
@@ -722,7 +753,7 @@ else
 fi
 
 USERNOTE_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0)
-USERNOTE_PRESENT=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT COUNT(*) FROM joom_user_notes WHERE subject=\"J2XML User Note Setting\"");echo $r->fetch_row()[0];' 2>/dev/null)
+USERNOTE_PRESENT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__user_notes WHERE subject='J2XML User Note Setting'")
 if { [[ "$USERNOTE_CODE" = "200" ]] || [[ "$USERNOTE_CODE" = "303" ]]; } && [[ "$USERNOTE_PRESENT" -ge 1 ]]; then
     pass "Import J5: usernotes setting imports user notes"
 else
@@ -730,14 +761,14 @@ else
 fi
 
 KEEP_DATA_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 2 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1)
-KEEP_DATA_MODIFIED=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT modified FROM joom_content WHERE alias=\"fixture-keep-id-article\"");echo $r->fetch_row()[0] ?? "";' 2>/dev/null)
+KEEP_DATA_MODIFIED=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT modified FROM #__content WHERE alias='fixture-keep-id-article'")
 if [[ "$KEEP_DATA_CODE" = "200" ]] || [[ "$KEEP_DATA_CODE" = "303" ]]; then
     pass "Import J5: keep_data setting completed (modified: $KEEP_DATA_MODIFIED)"
 else
     fail "Import J5: keep_data setting failed (HTTP: $KEEP_DATA_CODE; modified: $KEEP_DATA_MODIFIED)"
 fi
 
-WEBLINKS_ENABLED=$(docker exec "$J5_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla5");$r=$m->query("SELECT COUNT(*) FROM joom_extensions WHERE name=\"com_weblinks\" AND enabled=1");echo $r->fetch_row()[0];' 2>/dev/null)
+WEBLINKS_ENABLED=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__extensions WHERE name='com_weblinks' AND enabled=1")
 WEBLINKS_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1 0)
 if [[ "$WEBLINKS_ENABLED" -eq 0 ]] 2>/dev/null && { [[ "$WEBLINKS_CODE" = "200" ]] || [[ "$WEBLINKS_CODE" = "303" ]]; }; then
     pass "Import J5: weblinks setting safely no-ops when com_weblinks is unavailable"
@@ -745,6 +776,83 @@ elif [[ "$WEBLINKS_ENABLED" -gt 0 ]] 2>/dev/null; then
     pass "Import J5: weblinks setting path executed with com_weblinks installed"
 else
     fail "Import J5: weblinks setting failed (HTTP: $WEBLINKS_CODE; component enabled: $WEBLINKS_ENABLED)"
+fi
+
+# Exercise the Table::get*Id() name/path resolvers by importing a fixture
+# that references categories, users, tags, groups, access levels and
+# associations by name/path instead of numeric id.
+info "Importing name/path-reference fixture (resolver coverage)..."
+NAMEREF_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/name-refs.xml" 1 1 1 1 0 0 1 1 1 0 0 0 1 0 0 0 1 0 0)
+if [[ "$NAMEREF_CODE" = "200" ]] || [[ "$NAMEREF_CODE" = "303" ]]; then
+    pass "Import J5: name/path-reference fixture accepted (HTTP $NAMEREF_CODE)"
+else
+    fail "Import J5: name/path-reference fixture failed (HTTP $NAMEREF_CODE)"
+fi
+
+NAMEREF_ARTICLE_CATID=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT c.catid FROM #__content c JOIN #__categories cc ON c.catid=cc.id WHERE c.alias='nameref-article' AND cc.path='uncategorised/test-category-articles'")
+if [[ -n "$NAMEREF_ARTICLE_CATID" ]] 2>/dev/null; then
+    pass "Import J5: article catid resolved from category path (catid=$NAMEREF_ARTICLE_CATID)"
+else
+    fail "Import J5: article catid was not resolved from category path"
+fi
+
+NAMEREF_FALLBACK=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT access FROM #__content WHERE alias='nameref-fallback-article'")
+if [[ "$NAMEREF_FALLBACK" = "3" ]] 2>/dev/null; then
+    pass "Import J5: unknown access title fell back to Special (access=3)"
+else
+    fail "Import J5: unknown access title did not fall back to Special (access=$NAMEREF_FALLBACK)"
+fi
+
+NAMEREF_USER=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__users WHERE username='namerefuser'")
+NAMEREF_VIEWLEVEL=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__viewlevels WHERE title='Name-Ref View Level'")
+NAMEREF_CONTACT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__contact_details WHERE alias='nameref-contact'")
+NAMEREF_USERNOTE=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__user_notes WHERE subject='Name-Ref User Note'")
+if [[ "$NAMEREF_USER" -ge 1 ]] && [[ "$NAMEREF_VIEWLEVEL" -ge 1 ]] && [[ "$NAMEREF_CONTACT" -ge 1 ]] && [[ "$NAMEREF_USERNOTE" -ge 1 ]] 2>/dev/null; then
+    pass "Import J5: name/path references resolved for user, viewlevel, contact and usernote"
+else
+    fail "Import J5: name/path resolution incomplete (user:$NAMEREF_USER viewlevel:$NAMEREF_VIEWLEVEL contact:$NAMEREF_CONTACT usernote:$NAMEREF_USERNOTE)"
+fi
+
+# Exercise the CLI importer inside the container. The script computes
+# JPATH_BASE from its own location, so it must run from /var/www/html/cli.
+# auto_prepend_file/pcov apply to the CLI SAPI too, so this also contributes
+# coverage when --coverage is enabled.
+#
+# Note: content import via CLI triggers Joomla's Workflow component which
+# requires a CMSApplication (CliApplication does not extend it on J5/6),
+# so we import a category instead — the Category importer uses direct
+# table operations, not the MVC factory.
+info "Testing CLI importer inside Joomla 5 container..."
+docker exec "$J5_CONTAINER" mkdir -p /var/www/html/cli 2>/dev/null
+docker cp "$ROOT_DIR/cli/j2xml.php" "$J5_CONTAINER:/var/www/html/cli/j2xml.php" 2>/dev/null
+docker cp "$FIXTURES_DIR/cli-import.xml" "$J5_CONTAINER:/tmp/j2xml-cli-import.xml" 2>/dev/null
+CLI_CAT_BEFORE=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__categories WHERE alias='j2xml-cli-import-category'")
+CLI_OUT=$(docker exec "$J5_CONTAINER" php /var/www/html/cli/j2xml.php -f /tmp/j2xml-cli-import.xml 2>&1)
+CLI_CAT_AFTER=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__categories WHERE alias='j2xml-cli-import-category'")
+if [[ "$CLI_CAT_AFTER" -gt "$CLI_CAT_BEFORE" ]] 2>/dev/null || [[ "$CLI_OUT" == *"imported"* ]] || [[ "$CLI_OUT" == *"Imported"* ]]; then
+    pass "CLI: j2xml.php imported fixture via command line (category $CLI_CAT_BEFORE → $CLI_CAT_AFTER)"
+else
+    fail "CLI: j2xml.php import produced no change (category before:$CLI_CAT_BEFORE after:$CLI_CAT_AFTER; out: $(echo "$CLI_OUT" | head -3))"
+fi
+
+# Error paths: malformed XML and an unsupported format version must be
+# rejected gracefully without changing data.
+info "Testing malformed XML and unsupported-version imports..."
+ERR_ARTICLES_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_content")
+MALFORMED_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/malformed.xml" 1 1 1 1 1 1 1 1 1 0 0 0 1 0 0 0 1 0 0)
+ERR_ARTICLES_AFTER=$(db_count "$J5_CONTAINER" "joomla5" "joom_content")
+if [[ "$ERR_ARTICLES_AFTER" -eq "$ERR_ARTICLES_BEFORE" ]] 2>/dev/null; then
+    pass "Import J5: malformed XML rejected without data changes (HTTP $MALFORMED_CODE)"
+else
+    fail "Import J5: malformed XML changed data (articles $ERR_ARTICLES_BEFORE → $ERR_ARTICLES_AFTER)"
+fi
+
+BADVERSION_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/unsupported-version.xml" 1 1 1 1 1 1 1 1 1 0 0 0 1 0 0 0 1 0 0)
+ERR_ARTICLES_AFTER2=$(db_count "$J5_CONTAINER" "joomla5" "joom_content")
+if [[ "$ERR_ARTICLES_AFTER2" -eq "$ERR_ARTICLES_AFTER" ]] 2>/dev/null; then
+    pass "Import J5: unsupported format version rejected without data changes (HTTP $BADVERSION_CODE)"
+else
+    fail "Import J5: unsupported version changed data (articles $ERR_ARTICLES_AFTER → $ERR_ARTICLES_AFTER2)"
 fi
 
 # =============================================================================
@@ -799,11 +907,11 @@ ENABLED=$(enable_api "$J6_CONTAINER" "joomla6")
 info "API enabled on J6: $ENABLED rows updated"
 
 info "Enabling webservices plugin on Joomla 6..."
-docker exec "$J6_CONTAINER" php -r "\$m=new mysqli('mysql','joomla','joomlapass','joomla6');\$m->query(\"UPDATE joom_extensions SET enabled=1 WHERE element='j2xml' AND folder='webservices'\");echo \$m->affected_rows;" 2>/dev/null
+db_exec "$J6_CONTAINER" "$JOOMLA6_DB" "UPDATE #__extensions SET enabled=1 WHERE element='j2xml' AND folder='webservices'"
 
 # Generate an API token for the Joomla 6 admin user
 info "Generating API token on Joomla 6..."
-J6_ADMIN_ID=$(docker exec "$J6_CONTAINER" php -r "\$m=new mysqli('mysql','joomla','joomlapass','joomla6');\$r=\$m->query(\"SELECT id FROM joom_users WHERE username='admin'\");echo \$r->fetch_row()[0];" 2>/dev/null)
+J6_ADMIN_ID=$(db_scalar "$J6_CONTAINER" "$JOOMLA6_DB" "SELECT id FROM #__users WHERE username='admin'")
 J6_TOKEN=$(gen_api_token "$J6_CONTAINER" "joomla6" "$J6_ADMIN_ID")
 info "Token generated for user ID $J6_ADMIN_ID"
 
@@ -890,6 +998,41 @@ else
     fail "Send: Comprehensive content-type payload failed (HTTP $ALL_SEND_CODE)"
 fi
 
+# Exercise the server side of the send flow: the send view/form plus the
+# JSON export task that the send modal JavaScript calls to build the XML.
+info "Exercising send view and JSON export task on Joomla 5..."
+SEND_VIEW_HTML=$(curl -s -b "$COOKIE_FILE" "$JOOMLA5_URL/administrator/index.php?option=com_j2xml&view=send&layout=content&format=html&tmpl=component" 2>/dev/null)
+if [[ "$SEND_VIEW_HTML" == *j2xmlSendOkBtn* ]] || [[ "$SEND_VIEW_HTML" == *remote_url* ]]; then
+    pass "Send J5: send view rendered the remote-url form"
+else
+    fail "Send J5: send view did not render the remote-url form"
+fi
+
+JSON_EXPORT_TOKEN=$(get_csrf_token "$JOOMLA5_URL/administrator/index.php?option=com_j2xml&view=export&layout=content")
+JSON_EXPORT_RESP=$(curl -s -b "$COOKIE_FILE" \
+    -X POST "$JOOMLA5_URL/administrator/index.php?option=com_j2xml&task=content.export&format=json" \
+    -F "${JSON_EXPORT_TOKEN}=1" \
+    -F "cid[]=1" \
+    2>/dev/null)
+if [[ "$JSON_EXPORT_RESP" == *'"success":true'* ]] && [[ "$JSON_EXPORT_RESP" == *j2xml* ]]; then
+    pass "Send J5: JSON export task returned J2XML payload"
+else
+    fail "Send J5: JSON export task failed (response: $(echo "$JSON_EXPORT_RESP" | head -3))"
+fi
+
+# A rejected token must surface a 4xx from the webservices endpoint.
+info "Testing REST endpoint rejection with a bad token..."
+BADTOKEN_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$REST_URL" \
+    -H "Content-Type: application/xml" \
+    -H "X-Joomla-Token: invalid-token" \
+    -d '<?xml version="1.0"?><j2xml version="21.12.0"></j2xml>' \
+    2>/dev/null)
+if [[ "$BADTOKEN_CODE" -ge 400 ]] && [[ "$BADTOKEN_CODE" -lt 500 ]] 2>/dev/null; then
+    pass "Send: invalid token rejected (HTTP $BADTOKEN_CODE)"
+else
+    fail "Send: invalid token not rejected as expected (HTTP $BADTOKEN_CODE)"
+fi
+
 # =============================================================================
 # Phase 7: Test on Joomla 6 (PHP 8.4)
 # =============================================================================
@@ -900,7 +1043,7 @@ joomla_login "$JOOMLA6_URL" "Joomla 6" || { skip "Cannot login to Joomla 6"; }
 info "Importing the selected UI export into Joomla 6 with images enabled..."
 SELECTED_IMPORT_CODE=$(joomla_import "$JOOMLA6_URL" /tmp/j2xml-selected-ui.xml 1 0 0 0 0 0 0 0 0 1)
 if [[ "$SELECTED_IMPORT_CODE" = "200" ]] || [[ "$SELECTED_IMPORT_CODE" = "303" ]]; then
-    J6_SELECTED_COUNT=$(docker exec "$J6_CONTAINER" php -r '$m=new mysqli("mysql","joomla","joomlapass","joomla6");$r=$m->query("SELECT COUNT(*) FROM joom_content WHERE alias IN (\"j2xml-ui-selection-two\",\"j2xml-ui-selection-three\")");echo $r->fetch_row()[0];' 2>/dev/null)
+    J6_SELECTED_COUNT=$(db_scalar "$J6_CONTAINER" "$JOOMLA6_DB" "SELECT COUNT(*) FROM #__content WHERE alias IN ('j2xml-ui-selection-two','j2xml-ui-selection-three')")
     J6_IMAGE_CONTENT=$(docker exec "$J6_CONTAINER" cat /var/www/html/images/j2xml-tests/export-image.png 2>/dev/null)
     if [[ "$J6_SELECTED_COUNT" -eq 2 ]] && [[ "$J6_IMAGE_CONTENT" = "j2xml-export-image-fixture" ]]; then
         pass "Import J6: Selected articles and exported image were restored"
@@ -914,7 +1057,7 @@ fi
 # Import on Joomla 6
 info "Importing all content types into Joomla 6..."
 HTTP_CODE=$(joomla_import "$JOOMLA6_URL" "$FIXTURES_DIR/all-content-types.xml" \
-    1 1 1 1 1 1 1 1 1)
+    1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 1 0 0)
 
 if [[ "$HTTP_CODE" = "200" ]] || [[ "$HTTP_CODE" = "303" ]]; then
     pass "J6: All content types imported (HTTP $HTTP_CODE)"
@@ -1099,13 +1242,32 @@ else
     fail "E2E J6: Export failed (HTTP $J6_EXPORT_HTTP, CD: $J6_EXPORT_CD, CT: $J6_EXPORT_CT)"
 fi
 
-# Check for PHP deprecation warnings
-DEPRECATIONS=$(docker exec "$J6_CONTAINER" bash -c 'grep -c "Deprecated" /var/log/apache2/error.log 2>/dev/null || echo 0')
-if [[ "$DEPRECATIONS" -eq 0 ]] 2>/dev/null; then
-    pass "J6: No deprecation warnings in Apache error log"
-else
-    info "J6: $DEPRECATIONS deprecation warnings in Apache log (may be from Joomla core)"
-fi
+# Check both Joomla versions for PHP warnings and deprecations. Joomla core
+# and third-party warnings are reported for visibility; warnings that identify
+# J2XML source paths fail the suite because they are package regressions.
+check_runtime_warnings() {
+    local container="$1"
+    local label="$2"
+    local log
+    local warnings
+    local j2xml_warnings
+
+    log=$(docker exec "$container" bash -c 'grep -iE "Deprecated|deprecation|PHP Warning|PHP Notice|PHP Fatal|Warning:|Notice:" /var/log/apache2/error.log 2>/dev/null || true')
+    warnings=$(printf '%s\n' "$log" | sed '/^$/d' | wc -l | tr -d ' ')
+    j2xml_warnings=$(printf '%s\n' "$log" | grep -iE 'j2xml|/var/www/html/(administrator/components/com_j2xml|api/components/com_j2xml|libraries/eshiol/J2xml|plugins/system/j2xml|plugins/webservices/j2xml|cli/j2xml\.php)' || true)
+
+    if [[ -n "$j2xml_warnings" ]]; then
+        fail "$label: J2XML PHP warnings/deprecations detected"
+        printf '%s\n' "$j2xml_warnings" | head -10
+    elif [[ "$warnings" -eq 0 ]] 2>/dev/null; then
+        pass "$label: No PHP warnings or deprecations in Apache error log"
+    else
+        info "$label: $warnings PHP warnings/deprecations in Apache log (outside J2XML source)"
+    fi
+}
+
+check_runtime_warnings "$J5_CONTAINER" "J5"
+check_runtime_warnings "$J6_CONTAINER" "J6"
 
 # =============================================================================
 # Phase 8: Uninstall and verify clean removal
@@ -1113,7 +1275,7 @@ fi
 header "Phase 8: Uninstall J2XML and verify clean removal"
 
 info "Uninstalling J2XML from Joomla 5..."
-if bash "$SCRIPT_DIR/uninstall-plugin.sh" 5 > /tmp/j2xml-uninstall-5.log 2>&1; then
+if J2XML_CONTAINER="$J5_CONTAINER" J2XML_URL="$JOOMLA5_URL" J2XML_DB="$JOOMLA5_DB" bash "$SCRIPT_DIR/uninstall-plugin.sh" 5 > /tmp/j2xml-uninstall-5.log 2>&1; then
     pass "Uninstall: J2XML cleanly uninstalled from Joomla 5"
 else
     fail "Uninstall: Failed to cleanly uninstall from Joomla 5"
@@ -1129,7 +1291,7 @@ else
 fi
 
 info "Uninstalling J2XML from Joomla 6..."
-if bash "$SCRIPT_DIR/uninstall-plugin.sh" 6 > /tmp/j2xml-uninstall-6.log 2>&1; then
+if J2XML_CONTAINER="$J6_CONTAINER" J2XML_URL="$JOOMLA6_URL" J2XML_DB="$JOOMLA6_DB" bash "$SCRIPT_DIR/uninstall-plugin.sh" 6 > /tmp/j2xml-uninstall-6.log 2>&1; then
     pass "Uninstall: J2XML cleanly uninstalled from Joomla 6"
 else
     fail "Uninstall: Failed to cleanly uninstall from Joomla 6"

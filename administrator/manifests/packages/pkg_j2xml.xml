@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extension type="package" method="upgrade">
-	<name>J2XML 3.9</name>
+	<name>J2XML __DEPLOY_VERSION__</name>
 	<packagename>j2xml</packagename>
-	<description><![CDATA[J2XML 3.9 the ultimate solution to share content for Joomla! 5.x & 6.x]]></description>
+	<description><![CDATA[J2XML __DEPLOY_VERSION__ for Joomla! 5.x & 6.x]]></description>
 
 	<author>Helios Ciancio</author>
 	<authorEmail>info (at) eshiol (dot) it</authorEmail>

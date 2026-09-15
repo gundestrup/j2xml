@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Deliberately unsupported version: exercises Importer::isSupported(). -->
+<j2xml version="99.0.0">
+  <content>
+    <title>Unsupported Version Article</title>
+    <alias>unsupported-version-article</alias>
+    <introtext><![CDATA[<p>Must never be imported.</p>]]></introtext>
+    <state>1</state>
+    <catid>2</catid>
+  </content>
+</j2xml>

@@ -22,7 +22,6 @@ final class ExporterTest extends TestCase
     {
         $exporter = (new ReflectionClass(Exporter::class))->newInstanceWithoutConstructor();
         $r = new ReflectionMethod(Exporter::class, '_root');
-        $r->setAccessible(true);
         return $r->invoke($exporter);
     }
 

@@ -195,7 +195,7 @@ eshiol.j2xml.codes = [
     'warning', // LIB_J2XML_MSG_UNKNOWN_WARNING 29
     'notice',  // LIB_J2XML_MSG_UNKNOWN_NOTICE 30
     'message', // LIB_J2XML_MSG_UNKNOWN_MESSAGE 31
-    'notice',  // LIB_J2XML_MSG_XMLRPC_DISABLED 32
+    'notice',  // reserved legacy status code 32
     'message', // LIB_J2XML_MSG_MENUTYPE_IMPORTED 33
     'notice',  // LIB_J2XML_MSG_MENUTYPE_NOT_IMPORTED 34
     'message', // LIB_J2XML_MSG_MENU_IMPORTED 35

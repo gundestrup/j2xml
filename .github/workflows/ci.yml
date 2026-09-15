@@ -26,6 +26,8 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
       - name: Validate Composer configuration
         run: composer validate --strict
+      - name: Validate release metadata
+        run: bash scripts/release-check.sh --metadata-only
       - name: PHP syntax
         shell: bash
         run: |
@@ -113,8 +115,15 @@ jobs:
       - name: Enable coverage collection
         continue-on-error: true
         run: bash tests/scripts/coverage-enable.sh j2xml-joomla5-pg http://localhost:8185 j2xml-joomla6-pg http://localhost:8186
-      - name: Run PostgreSQL integration smoke tests
-        run: bash tests/scripts/run-postgresql-smoke.sh
+      - name: Run full PostgreSQL integration suite
+        env:
+          DB_DRIVER: pgsql
+          DB_PG_CONTAINER: j2xml-postgres
+          J5_CONTAINER: j2xml-joomla5-pg
+          J6_CONTAINER: j2xml-joomla6-pg
+          JOOMLA5_URL: http://localhost:8185
+          JOOMLA6_URL: http://localhost:8186
+        run: bash tests/scripts/run-all-tests.sh
       - name: Collect integration coverage
         if: always()
         continue-on-error: true

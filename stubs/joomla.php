@@ -183,6 +183,8 @@ namespace Joomla\CMS
      */
     class Factory
     {
+        public static $application;
+
         public static function getApplication(): CMSApplication { return new CMSApplication(); }
         public static function getConfig(): Registry { return new Registry(); }
         public static function getContainer(): \Joomla\DI\Container { return new \Joomla\DI\Container(); }
@@ -309,6 +311,17 @@ namespace Joomla\CMS\Session
         public function set(string $name, $value, string $namespace = 'default') { return $value; }
         public function has(string $name, string $namespace = 'default'): bool { return false; }
     }
+}
+
+// ===========================================================================
+// Joomla\Session
+// ===========================================================================
+
+namespace Joomla\Session
+{
+    class Session {}
+
+    interface SessionInterface {}
 }
 
 // ===========================================================================
@@ -946,7 +959,10 @@ namespace Joomla\Database
         public function truncateTable(string $table): void;
     }
 
-    interface QueryInterface {}
+    interface QueryInterface
+    {
+        public function clear(?string $clause = null): self;
+    }
 }
 
 // ===========================================================================
@@ -973,7 +989,34 @@ namespace Joomla\Event
     {
         public function dispatch(string $eventName, ?Event $event = null): Event;
     }
-    class Event {}
+
+    interface SubscriberInterface
+    {
+        public static function getSubscribedEvents(): array;
+    }
+
+    class Event
+    {
+        public function getArgument(string $name, $default = null) { return $default; }
+        public function getArguments(): array { return []; }
+    }
+}
+
+// ===========================================================================
+// Joomla\CMS\Event\Application
+// ===========================================================================
+
+namespace Joomla\CMS\Event\Application
+{
+    class AfterDispatchEvent extends \Joomla\Event\Event
+    {
+        public function getApplication() { return null; }
+    }
+
+    class BeforeApiRouteEvent extends \Joomla\Event\Event
+    {
+        public function getRouter() { return null; }
+    }
 }
 
 // ===========================================================================
@@ -1132,6 +1175,8 @@ namespace Joomla\CMS\Extension
     }
 
     interface ComponentInterface {}
+
+    interface PluginInterface {}
 
     interface BootableExtensionInterface {}
 }

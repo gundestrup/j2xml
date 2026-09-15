@@ -10,6 +10,7 @@
 	<license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3</license>
 	<version>__DEPLOY_VERSION__</version>
 	<files>
+		<folder plugin="j2xml">services</folder>
 		<filename plugin="j2xml">j2xml.php</filename>
 		<filename>install.mysql.sql</filename>
 		<filename>install.postgresql.sql</filename>

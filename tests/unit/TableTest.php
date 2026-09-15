@@ -5,6 +5,7 @@ declare(strict_types=1);
 use PHPUnit\Framework\TestCase;
 use eshiol\J2xml\Table\Table;
 use eshiol\J2xml\Table\Tag;
+use Joomla\Database\DatabaseInterface;
 
 /**
  * Unit tests for eshiol\J2xml\Table\Table — pure-logic methods.
@@ -21,7 +22,6 @@ final class TableTest extends TestCase
     private static function invokeStatic(string $method, array $args = [])
     {
         $r = new ReflectionMethod(Table::class, $method);
-        $r->setAccessible(true);
         return $r->invokeArgs(null, $args);
     }
 
@@ -117,7 +117,6 @@ final class TableTest extends TestCase
     {
         // _setValue is protected, need an instance
         $r = new ReflectionMethod(Table::class, '_setValue');
-        $r->setAccessible(true);
 
         // Create a Table instance without calling the constructor
         $table = (new ReflectionClass(Table::class))->newInstanceWithoutConstructor();
@@ -128,7 +127,6 @@ final class TableTest extends TestCase
     public function testSetValueStringValue(): void
     {
         $r = new ReflectionMethod(Table::class, '_setValue');
-        $r->setAccessible(true);
         $table = (new ReflectionClass(Table::class))->newInstanceWithoutConstructor();
         $result = $r->invoke($table, 'title', 'Hello World');
         self::assertStringContainsString('<title>', $result);
@@ -139,7 +137,6 @@ final class TableTest extends TestCase
     public function testSetValueEmptyString(): void
     {
         $r = new ReflectionMethod(Table::class, '_setValue');
-        $r->setAccessible(true);
         $table = (new ReflectionClass(Table::class))->newInstanceWithoutConstructor();
         $result = $r->invoke($table, 'alias', '');
         self::assertSame('<alias />', $result);
@@ -148,7 +145,6 @@ final class TableTest extends TestCase
     public function testSetValueObjectWithSingleProperty(): void
     {
         $r = new ReflectionMethod(Table::class, '_setValue');
-        $r->setAccessible(true);
         $table = (new ReflectionClass(Table::class))->newInstanceWithoutConstructor();
         $obj = new stdClass();
         $obj->name = 'test';
@@ -162,7 +158,6 @@ final class TableTest extends TestCase
     public function testSetValueObjectWithMultipleProperties(): void
     {
         $r = new ReflectionMethod(Table::class, '_setValue');
-        $r->setAccessible(true);
         $table = (new ReflectionClass(Table::class))->newInstanceWithoutConstructor();
         $obj = new stdClass();
         $obj->name = 'test';
@@ -178,7 +173,6 @@ final class TableTest extends TestCase
     public function testSetValuePreservesSpecialChars(): void
     {
         $r = new ReflectionMethod(Table::class, '_setValue');
-        $r->setAccessible(true);
         $table = (new ReflectionClass(Table::class))->newInstanceWithoutConstructor();
         $result = $r->invoke($table, 'content', '<p>Hello & "world"</p>');
         // _setValue uses htmlentities + CDATA, so special chars are encoded
@@ -237,9 +231,67 @@ final class TableTest extends TestCase
         self::assertSame(0, $result);
     }
 
+    public function testGetUsergroupIdPositiveNumericReturnsInput(): void
+    {
+        self::assertSame(7, Table::getUsergroupId(7));
+    }
+
+    public function testGetAccessIdNumericReturnsInput(): void
+    {
+        self::assertSame(5, Table::getAccessId(5));
+    }
+
+    public function testGetAccessIdZeroFallsBackToSpecialAccess(): void
+    {
+        self::assertSame(3, Table::getAccessId(0));
+    }
+
+    public function testFixDateNormalDateUsesJoomlaDate(): void
+    {
+        // The Joomla date stub returns an empty SQL value, but this exercises
+        // the non-empty branch and confirms that it does not return null.
+        self::assertSame('', self::invokeStatic('fixDate', ['2024-01-02 03:04:05']));
+    }
+
     // ------------------------------------------------------------------
     // IMAGE_MATCH_STRING constant
     // ------------------------------------------------------------------
+
+    public function testGetTagIdReturnsDatabaseId(): void
+    {
+        $query = new class implements \Joomla\Database\QueryInterface {
+            public function clear(?string $clause = null): self { return $this; }
+            public function select($value): self { return $this; }
+            public function from($value): self { return $this; }
+            public function where($value): self { return $this; }
+        };
+        $db = $this->createMock(DatabaseInterface::class);
+        $db->method('getQuery')->willReturn($query);
+        $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
+        $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
+        $db->method('setQuery')->willReturnSelf();
+        $db->method('loadResult')->willReturn(9);
+
+        self::assertSame(9, Table::getTagId('news', $db));
+    }
+
+    public function testGetTagIdReturnsFalseOnDatabaseFailure(): void
+    {
+        $query = new class implements \Joomla\Database\QueryInterface {
+            public function clear(?string $clause = null): self { return $this; }
+            public function select($value): self { return $this; }
+            public function from($value): self { return $this; }
+            public function where($value): self { return $this; }
+        };
+        $db = $this->createMock(DatabaseInterface::class);
+        $db->method('getQuery')->willReturn($query);
+        $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
+        $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
+        $db->method('setQuery')->willReturnSelf();
+        $db->method('loadResult')->willThrowException(new RuntimeException('database failure'));
+
+        self::assertFalse(Table::getTagId('news', $db));
+    }
 
     public function testImageMatchStringIsRegex(): void
     {
@@ -275,7 +327,6 @@ final class TableTest extends TestCase
     public function testSerializeEmptyObjectProducesTag(): void
     {
         $r = new ReflectionMethod(Table::class, '_serialize');
-        $r->setAccessible(true);
         $table = $this->tableInstance();
         $result = $r->invoke($table);
         // With no properties, should produce an empty table tag
@@ -286,7 +337,6 @@ final class TableTest extends TestCase
     public function testSerializeWithScalarProperties(): void
     {
         $r = new ReflectionMethod(Table::class, '_serialize');
-        $r->setAccessible(true);
         $table = $this->tableInstance();
         $table->id = 42;
         $table->title = 'Test Article';
@@ -299,7 +349,6 @@ final class TableTest extends TestCase
     public function testSerializeExcludesUnderscoreProperties(): void
     {
         $r = new ReflectionMethod(Table::class, '_serialize');
-        $r->setAccessible(true);
         $table = $this->tableInstance();
         $table->id = 1;
         $table->_internal = 'secret';
@@ -312,12 +361,10 @@ final class TableTest extends TestCase
     public function testSerializeExcludesExcludedFields(): void
     {
         $r = new ReflectionMethod(Table::class, '_serialize');
-        $r->setAccessible(true);
         $table = $this->tableInstance();
 
         // Set up the excluded list (normally done in constructor)
         $excludedProp = new ReflectionProperty(Table::class, '_excluded');
-        $excludedProp->setAccessible(true);
         $excludedProp->setValue($table, ['asset_id', 'parent_id', 'lft', 'rgt', 'level', 'checked_out', 'checked_out_time']);
 
         $table->id = 1;
@@ -332,7 +379,6 @@ final class TableTest extends TestCase
     public function testSerializeWithoutTagProducesFragmentOnly(): void
     {
         $r = new ReflectionMethod(Table::class, '_serialize');
-        $r->setAccessible(true);
         $table = $this->tableInstance();
         $table->id = 5;
         $result = $r->invoke($table, false);
@@ -344,11 +390,9 @@ final class TableTest extends TestCase
     public function testSerializeJsonEncodesJsonFields(): void
     {
         $r = new ReflectionMethod(Table::class, '_serialize');
-        $r->setAccessible(true);
         $table = $this->tableInstance();
 
         $jsonProp = new ReflectionProperty(Table::class, '_jsonEncode');
-        $jsonProp->setAccessible(true);
         $jsonProp->setValue($table, ['params']);
 
         $table->id = 1;
@@ -388,5 +432,39 @@ final class TableTest extends TestCase
     {
         $result = Tag::convertPathsToIds(null);
         self::assertNull($result);
+    }
+
+    public function testConvertPathsToIdsReturnsDatabaseIds(): void
+    {
+        $query = new class implements \Joomla\Database\QueryInterface {
+            public function clear(?string $clause = null): self { return $this; }
+            public function select($value): self { return $this; }
+            public function from($value): self { return $this; }
+            public function where($value): self { return $this; }
+        };
+        $db = $this->createMock(DatabaseInterface::class);
+        $db->method('getQuery')->willReturn($query);
+        $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
+        $db->method('setQuery')->willReturnSelf();
+        $db->method('loadColumn')->willReturn([4, 7]);
+
+        self::assertSame([4, 7], Tag::convertPathsToIds(['news', 'news', 'blog'], $db));
+    }
+
+    public function testConvertPathsToIdsReturnsFalseOnDatabaseFailure(): void
+    {
+        $query = new class implements \Joomla\Database\QueryInterface {
+            public function clear(?string $clause = null): self { return $this; }
+            public function select($value): self { return $this; }
+            public function from($value): self { return $this; }
+            public function where($value): self { return $this; }
+        };
+        $db = $this->createMock(DatabaseInterface::class);
+        $db->method('getQuery')->willReturn($query);
+        $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
+        $db->method('setQuery')->willReturnSelf();
+        $db->method('loadColumn')->willThrowException(new RuntimeException('database failure'));
+
+        self::assertFalse(Tag::convertPathsToIds(['news'], $db));
     }
 }

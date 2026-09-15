@@ -91,7 +91,7 @@ class Importer
 
         $this->_user     = $app->getIdentity();
         $this->_nullDate = $db->getNullDate();
-        $this->_user_id  = $this->_user->get('id');
+        $this->_user_id  = $this->_user ? $this->_user->get('id') : 0;
         $this->_now      = (new \Joomla\CMS\Date\Date("now"))->format("%Y-%m-%d-%H-%M-%S");
         $this->_option   = (PHP_SAPI != 'cli') ? $app->getInput()->getCmd('option') : 'cli_' .
                  strtolower(get_class($app));
@@ -224,7 +224,7 @@ class Importer
         {
             \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
             // Trigger the onAfterImport event.
-            $results = $this->app->triggerEvent('onContentAfterImport', [
+            $this->app->triggerEvent('onContentAfterImport', [
                 'com_j2xml.import',
                 &$xml,
                 $params

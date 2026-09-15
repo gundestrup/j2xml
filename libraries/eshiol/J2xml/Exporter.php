@@ -193,7 +193,7 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $results = $this->app->triggerEvent('onJ2xmlAfterExport', [
+        $this->app->triggerEvent('onJ2xmlAfterExport', [
             $this->_option . '.' . __FUNCTION__,
             &$xml,
             $params
@@ -238,7 +238,7 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $results = $this->app->triggerEvent('onJ2xmlAfterExport', [
+        $this->app->triggerEvent('onJ2xmlAfterExport', [
             $this->_option . '.' . __FUNCTION__,
             &$xml,
             $params
@@ -283,7 +283,7 @@ class Exporter
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 
         // Trigger the onAfterExport event.
-        $results = $this->app->triggerEvent('onJ2xmlAfterExport', [
+        $this->app->triggerEvent('onJ2xmlAfterExport', [
             $this->_option . '.' . __FUNCTION__,
             &$xml,
             $params
@@ -327,7 +327,7 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $results = $this->app->triggerEvent('onJ2xmlAfterExport', [
+        $this->app->triggerEvent('onJ2xmlAfterExport', [
                 $this->_option . '.' . __FUNCTION__,
                 &$xml,
                 $params
@@ -371,7 +371,7 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $results = $this->app->triggerEvent('onJ2xmlAfterExport', [
+        $this->app->triggerEvent('onJ2xmlAfterExport', [
             $this->_option . '.' . __FUNCTION__,
             &$xml,
             $params
@@ -415,7 +415,7 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $results = $this->app->triggerEvent('onJ2xmlAfterExport', [
+        $this->app->triggerEvent('onJ2xmlAfterExport', [
                 $this->_option . '.' . __FUNCTION__,
                 &$xml,
                 $params
@@ -459,7 +459,7 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $results = $this->app->triggerEvent('onJ2xmlAfterExport', [
+        $this->app->triggerEvent('onJ2xmlAfterExport', [
                 $this->_option . '.' . __FUNCTION__,
                 &$xml,
                 $params
@@ -505,7 +505,7 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $results = $this->app->triggerEvent('onJ2xmlAfterExport', [
+        $this->app->triggerEvent('onJ2xmlAfterExport', [
                 $this->_option . '.' . __FUNCTION__,
                 &$xml,
                 $params
@@ -551,7 +551,7 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $results = $this->app->triggerEvent('onJ2xmlAfterExport', [
+        $this->app->triggerEvent('onJ2xmlAfterExport', [
                 $this->_option . '.' . __FUNCTION__,
                 &$xml,
                 $params
@@ -596,7 +596,7 @@ class Exporter
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 
         // Trigger the onAfterExport event.
-        $results = $this->app->triggerEvent('onJ2xmlAfterExport', [
+        $this->app->triggerEvent('onJ2xmlAfterExport', [
             $this->_option . '.' . __FUNCTION__,
             &$xml,
             $params

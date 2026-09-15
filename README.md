@@ -31,7 +31,8 @@ Joomla! instances using a portable XML format. It can:
   fields, tags, view levels, user notes, and images to an XML file.
 - **Import** the same XML into another Joomla! site, creating or updating
   records as needed.
-- **Send** content directly to a remote Joomla! site over XML-RPC.
+- **Send** exported content to another Joomla! site through Joomla's
+  Webservices REST API using token authentication.
 
 The original project by [Helios Ciancio](https://www.eshiol.it) targets
 Joomla! 3.x and 4.x. This fork updates it for Joomla! 5 and 6 and PHP 8.4,
@@ -42,23 +43,26 @@ fixing deprecations and the import failures reported on Joomla 5.x
 
 ## Package contents
 
-| Type     | Id                  | Purpose                                                  |
-|----------|---------------------|----------------------------------------------------------|
-| Component| `com_j2xml`         | Admin UI for export / import / send                      |
-| Library  | `eshiol/J2xml`      | Core `Exporter`, `Importer`, `Sender`, `Table\*` classes |
-| Library  | `eshiol/phpxmlrpc`  | Vendored XML-RPC client/server (v4.11.5)                 |
-| Plugin   | `plg_system_j2xml`  | System plugin: content prep, layouts, compat shims       |
-| Plugin   | `plg_system_basicauth` | HTTP Basic Auth for XML-RPC endpoints                 |
-| CLI      | `cli/j2xml.php`     | Command-line exporter                                    |
+- **Component** `com_j2xml` — Administrator UI for export / import / send.
+- **Library** `eshiol/J2xml` — Core `Exporter`, `Importer`, `Version`, and `Table\\*` classes.
+- **Plugin** `plg_system_j2xml` — System plugin for content preparation and UI integration.
+- **Plugin** `plg_webservices_j2xml` — Joomla Webservices REST import endpoint.
+- **CLI** `cli/j2xml.php` — Separate command-line importer.
+
+The CLI importer is maintained in the repository separately from the
+`pkg_j2xml.zip` package. J2XML does not require third-party extensions for
+normal content migration.
+The optional [Attachments for J2XML](https://www.eshiol.it/joomla/j2xml/attachments-for-j2xml.html)
+connector integrates with the separate [Attachments component](https://github.com/jmcameron/attachments)
+to transfer attachments. That connector is not bundled with J2XML and must be
+maintained separately for Joomla 5/6 and current PHP versions.
 
 ## Requirements
 
-| Software   | Version  |
-|------------|----------|
-| PHP        | 8.4 or 8.5 (8.3 is Joomla 6's minimum, but this fork targets 8.4+) |
-| Joomla!    | 5.x or 6.x |
-| MySQL      | 8.0.13+ (or MariaDB 10.4+) |
-| PostgreSQL | 12.0+    |
+- **PHP:** 8.4 or 8.5 (8.3 is Joomla 6's minimum, but this fork targets 8.4+).
+- **Joomla!:** 5.x or 6.x.
+- **MySQL:** 8.0.13+ (or MariaDB 10.4+).
+- **PostgreSQL:** 12.0+.
 
 **Required PHP extensions:** `json`, `simplexml`, `dom`, `zlib`, `gd`,
 `mbstring`, and a MySQL or PostgreSQL PDO driver.
@@ -68,23 +72,26 @@ fixing deprecations and the import failures reported on Joomla 5.x
 1. Download the latest `pkg_j2xml.zip` from
    [releases](https://github.com/gundestrup/j2xml/releases).
 2. In Joomla! admin go to **System → Install → Extensions**.
-3. Upload the package zip. Joomla installs all five extensions together.
+3. Upload the package zip. Joomla installs the component, library, system
+   plugin, and Webservices plugin.
 
 ## CLI usage
 
-```bash
-# Export to an XML file (run from the Joomla site root)
-php cli/j2xml.php -f /tmp/export.xml
-```
+The repository also contains a command-line importer. Run it from the Joomla
+site root with a J2XML file:
 
-> CLI import is not yet implemented — see
-> [eshiol/j2xml#68](https://github.com/eshiol/j2xml/issues/68).
+```bash
+php cli/j2xml.php -f /tmp/import.xml
+```
 
 ## Development
 
-There is no build toolchain — the repo ships the PHP source directly.
-Releases are produced by substituting `__DEPLOY_VERSION__` /
-`__DEPLOY_DATE__` placeholders in manifests and zipping each extension.
+`VERSION` is the single source of truth for the release version. Use
+`scripts/release-check.sh` to validate the VERSION file, changelog, manifests,
+and release archives. Use `scripts/build-package.sh` directly when only a
+package build is needed. The build substitutes `__DEPLOY_VERSION__` /
+`__DEPLOY_DATE__` placeholders and creates the component, library, plugin, and
+package archives.
 
 ### Local setup
 
@@ -157,12 +164,51 @@ The script will:
 
 ### Test output
 
-```
-  Passed: 8
+The current MySQL and PostgreSQL integration suites each cover Joomla 5 and
+Joomla 6 with 97 assertions, including PHP warning/deprecation checks:
+
+```text
+  Passed: 97
   Failed: 0
   Skipped: 0
-  Total:  8
+  Total:  97
 ```
+
+The PHPUnit suite contains **69 tests and 128 assertions**. Run it without
+coverage locally when no PCOV/Xdebug driver is installed:
+
+```bash
+vendor/bin/phpunit --configuration phpunit.xml.dist --no-coverage
+```
+
+### Integration coverage
+
+The latest MySQL and PostgreSQL integration runs recorded **2,723 of 3,714 executable lines** across
+64 active J2XML files: **73.32% line coverage**. This is coverage of the
+integration suite only, not a statement that 73.32% of every production branch
+has been tested. The merge script emits files observed in PCOV dumps; active
+files never loaded by the integration suite are not added as zero-coverage
+files, so this is an observed-line metric and can overstate whole-repository
+coverage.
+
+The remaining uncovered lines are concentrated in defensive and optional paths:
+
+- `libraries/eshiol/J2xml/Table/Table.php` — resolver fallbacks, error paths,
+  association handling, and database-specific branches.
+- `libraries/eshiol/J2xml/Table/Content.php` — update/overwrite combinations,
+  rating/front-page preservation, ID remapping, and workflow failures.
+- `libraries/eshiol/J2xml/Exporter.php` — response compression/header branches,
+  optional related-entity exports, and empty/error cases.
+- `administrator/components/com_j2xml/src/Model/ImportModel.php` — upload,
+  URL/folder input, validation, and option/error branches.
+- `cli/j2xml.php`, installer lifecycle code, and version fallback paths.
+
+Dead files removed during cleanup no longer contribute to this denominator. The
+coverage report is therefore measuring the remaining active code, not counting
+removed legacy code as uncovered. The merge includes the administrator, Webservices API, library, system-plugin,
+and CLI paths. CI uploads PHPUnit coverage with the `unittests` flag and Docker
+coverage with the `integration` flag; Codecov may show a different combined
+percentage depending on which reports have arrived.
 
 ### Stopping the test environment
 
@@ -188,8 +234,7 @@ Copyright (C) 2010–2026 Helios Ciancio. Licensed under
 ## Changelog
 
 See [`CHANGELOG.md`](./CHANGELOG.md) for the full release history, including
-the PHP 8.4/8.5 fixes and phpxmlrpc 4.11.5 upgrade in the current unreleased
-version.
+the PHP 8.4/8.5 compatibility fixes and REST-based transfer cleanup.
 
 ## Links
 

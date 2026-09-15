@@ -59,7 +59,7 @@ class Category extends Table
         // #__contentitem_tag_map m WHERE type_alias = "' . $this->extension
         // . '.category' . '" AND t.id = m.tag_id AND m.content_item_id = '.
         // $this->id;
-        $this->_aliases['tag'] = (string) $this->_db->getQuery(true)
+        $this->_aliases['tag'] = (string) $this->_db->getQuery()->clear()
                 ->select($this->_db->quoteName('t.path'))
                 ->from($this->_db->quoteName('#__tags', 't'))
                 ->from($this->_db->quoteName('#__contentitem_tag_map', 'm'))
@@ -67,7 +67,7 @@ class Category extends Table
                 ->where($this->_db->quoteName('t.id') . ' = ' . $this->_db->quoteName('m.tag_id'))
                 ->where($this->_db->quoteName('m.content_item_id') . ' = ' . $this->_db->quote((string) $this->id));
 
-        $query = $this->_db->getQuery(true);
+        $query = $this->_db->getQuery()->clear();
         $this->_aliases['association'] = (string) $query
             ->select('CASE WHEN ' .  $this->_db->quoteName('cc1.level') . ' = 1'
                 . ' THEN ' . $this->_db->quoteName('cc1.alias')
@@ -120,7 +120,7 @@ class Category extends Table
         if ($keep_id)
         {
             $autoincrement = 0;
-            $maxid = $db->setQuery($db->getQuery(true)
+            $maxid = $db->setQuery($db->getQuery()->clear()
                 ->select('MAX(' . $db->quoteName('id') . ')')
                 ->from($db->quoteName('#__categories')))
                 ->loadResult();
@@ -151,7 +151,7 @@ class Category extends Table
             }
             else
             {
-                $query = $db->getQuery(true)
+                $query = $db->getQuery()->clear()
                     ->select([
                         $db->quoteName('id'),
                         $db->quoteName('title'),
@@ -174,7 +174,7 @@ class Category extends Table
 
                     if (!$category && ($keep_id == 1))
                     {
-                        $query = $db->getQuery(true)
+                        $query = $db->getQuery()->clear()
                             ->select([
                                 $db->quoteName('id'),
                                 $db->quoteName('title')
@@ -245,14 +245,14 @@ class Category extends Table
                         {
                             try
                             {
-                                $query = $db->getQuery(true)
+                                $query = $db->getQuery()->clear()
                                     ->update($db->quoteName('#__categories'))
                                     ->set($db->quoteName('id') . ' = ' . $id)
                                     ->where($db->quoteName('id') . ' = ' . $table->id);
                                 $db->setQuery($query)->execute();
                                 $table->id = $id;
 
-                                $query = $db->getQuery(true)
+                                $query = $db->getQuery()->clear()
                                     ->update($db->quoteName('#__assets'))
                                     ->set($db->quoteName('name') . ' = ' . $db->quote($data['extension'] . '.category.' . $id))
                                     ->where($db->quoteName('id') . ' = ' . $table->asset_id);
@@ -354,7 +354,7 @@ class Category extends Table
             {
                 $table = '#__' . substr($item->extension, 4);
                 $extension = '\\eshiol\\J2xml\\Table\\' . ucfirst(substr($item->extension, 4));
-                $query = $db->getQuery(true)
+                $query = $db->getQuery()->clear()
                     ->select('id')
                     ->from($table)
                     ->where('catid = ' . $id);
@@ -464,7 +464,7 @@ class Category extends Table
                 $id = self::getCategoryId($association, $data['extension']);
                 if ($id)
                 {
-                    $tag = $db->setQuery($db->getQuery(true)
+                    $tag = $db->setQuery($db->getQuery()->clear()
                         ->select($db->quoteName('language'))
                         ->from($db->quoteName('#__categories'))
                         ->where($db->quoteName('id') . ' = ' . $id))
@@ -482,7 +482,7 @@ class Category extends Table
             $id = self::getCategoryId($data['association'], $data['extension']);
             if ($id)
             {
-                $tag = $db->setQuery($db->getQuery(true)
+                $tag = $db->setQuery($db->getQuery()->clear()
                     ->select($db->quoteName('language'))
                     ->from($db->quoteName('#__categories'))
                     ->where($db->quoteName('id') . ' = ' . $id))

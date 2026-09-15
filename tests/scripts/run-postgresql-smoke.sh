@@ -48,14 +48,12 @@ import_fixture() {
 		echo "[pg-smoke] Import succeeded (HTTP $code)"
 		return 0
 	fi
-	# HTTP 500 indicates a server-side error during import.  This is typically
-	# a PostgreSQL compatibility issue in the J2XML importer (MySQL-specific
-	# SQL syntax).  Log the error but don't fail the entire smoke test —
-	# the export test below can still verify the component works on PG.
-	echo "[pg-smoke] WARNING: Import returned HTTP $code (PostgreSQL compatibility issue)"
-	echo "[pg-smoke] Response excerpt:"
-	head -5 "$body_file" 2>/dev/null | sed 's/^/  /' || true
-	return 0
+	# An import failure is a PostgreSQL compatibility failure. Do not allow
+	# the later export request to mask it with pre-existing/default content.
+	echo "[pg-smoke] ERROR: Import returned HTTP $code (PostgreSQL compatibility issue)" >&2
+	echo "[pg-smoke] Response excerpt:" >&2
+	head -5 "$body_file" 2>/dev/null | sed 's/^/  /' >&2 || true
+	return 1
 }
 
 export_articles() {
@@ -79,19 +77,19 @@ export_articles() {
 		-F "jform[cid]=$ids" -F jform[export_compression]=0 -F jform[export_categories]=1 \
 		-F jform[export_fields]=0 -F jform[export_images]=0 -F jform[export_tags]=0)
 	if [[ "$code" != "200" ]]; then
-		echo "[pg-smoke] WARNING: Export returned HTTP $code for $db"
-		return 0
+		echo "[pg-smoke] ERROR: Export returned HTTP $code for $db" >&2
+		return 1
 	fi
 	if ! grep -q '<j2xml' /tmp/j2xml-pg-export.xml 2>/dev/null; then
-		echo "[pg-smoke] WARNING: Export response does not contain valid J2XML for $db"
-		return 0
+		echo "[pg-smoke] ERROR: Export response does not contain valid J2XML for $db" >&2
+		return 1
 	fi
 	echo "[pg-smoke] Export succeeded for $db (HTTP $code, valid J2XML)"
-	# Check for content nodes — may be empty if import failed
 	if grep -q '<content>' /tmp/j2xml-pg-export.xml 2>/dev/null; then
 		echo "[pg-smoke] Export contains content records"
 	else
-		echo "[pg-smoke] WARNING: Export has no content records (import may have failed)"
+		echo "[pg-smoke] ERROR: Export has no content records" >&2
+		return 1
 	fi
 }
 

@@ -128,7 +128,7 @@ class Menu extends \eshiol\J2xml\Table\Table
         }
 
         /* export children */
-        $query = $db->getQuery(true)
+        $query = $db->getQuery()->clear()
             ->select($db->quoteName('id'))
             ->from($db->quoteName('#__menu'))
             ->where($db->quoteName('menutype') . ' = ' . $db->quote($item->menutype))
@@ -162,7 +162,7 @@ class Menu extends \eshiol\J2xml\Table\Table
         {
             self::prepareData($record, $data, $params);
 
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName([
                     'id',
                     'title'
@@ -189,7 +189,7 @@ class Menu extends \eshiol\J2xml\Table\Table
 
                 if (isset($data['component_id']) && $data['component_id'])
                 {
-                    $query = $db->getQuery(true)
+                    $query = $db->getQuery()->clear()
                         ->select($db->quoteName('extension_id'))
                         ->from($db->quoteName('#__extensions'))
                         ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
@@ -243,7 +243,7 @@ class Menu extends \eshiol\J2xml\Table\Table
                             }
                             else
                             {
-                                $query = $db->getQuery(true)
+                                $query = $db->getQuery()->clear()
                                     ->select($db->quoteName('extension_id'))
                                     ->from($db->quoteName('#__extensions'))
                                     ->where($db->quoteName('type') . ' = ' . $db->quote('component'))

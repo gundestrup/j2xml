@@ -57,6 +57,16 @@ class Viewlevel extends Table
 
         $serverType = $this->_db->getServerType();
 
+        // Build the IN-clause value from the JSON-encoded rules.  An empty
+        // rules array ("[]" or "") would produce "IN ()" which is invalid
+        // SQL on both MySQL and PostgreSQL; in that case use a condition
+        // that matches no rows so the export still succeeds.
+        $rulesIn = str_replace(['[', ']'], ['(', ')'], $this->rules);
+        if ($rulesIn === '()' || $rulesIn === '')
+        {
+            $rulesIn = '(NULL)';
+        }
+
         if ($serverType === 'postgresql')
         {
             $this->_aliases['rule'] = '
@@ -70,27 +80,15 @@ class Viewlevel extends Table
                   FROM usergroups AS p, #__usergroups AS c
                   WHERE c.parent_id = p.id
                 )
-                SELECT (\'["\' || path || \'"]\') FROM usergroups WHERE id IN ' . str_replace([
-                    '[',
-                    ']'
-            ], [
-                    '(',
-                    ')'
-            ], $this->rules);
+                SELECT (\'["\' || path || \'"]\') FROM usergroups WHERE id IN ' . $rulesIn;
         }
         else
         {
-            $this->_aliases['rule'] = (string) $this->_db->getQuery(true)
+            $this->_aliases['rule'] = (string) $this->_db->getQuery()->clear()
                 ->select($this->_db->quoteName('title'))
                 ->from($this->_db->quoteName('#__j2xml_usergroups', 'g'))
                 ->where(
-                    $this->_db->quoteName('g.id') . ' IN ' . str_replace([
-                            '[',
-                            ']'
-                    ], [
-                            '(',
-                            ')'
-                    ], $this->rules));
+                    $this->_db->quoteName('g.id') . ' IN ' . $rulesIn);
         }
 
         return parent::toXML($mapKeysToText);
@@ -127,9 +125,9 @@ class Viewlevel extends Table
         {
             self::prepareData($record, $data, $params);
 
-            $id = $data['id'];
+            $id = $data['id'] ?? 0;
 
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select([
                     $db->quoteName('id'),
                     $db->quoteName('title')

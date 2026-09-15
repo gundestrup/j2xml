@@ -61,7 +61,7 @@ class Contact extends Table
 
         // $this->_aliases['user_id']='SELECT username FROM #__users WHERE id =
         // '.(int)$this->user_id;
-        $this->_aliases['user_id'] = (string) $this->_db->getQuery(true)
+        $this->_aliases['user_id'] = (string) $this->_db->getQuery()->clear()
             ->select($this->_db->quoteName('username'))
             ->from($this->_db->quoteName('#__users'))
             ->where($this->_db->quoteName('id') . ' = ' . (int) $this->user_id);
@@ -69,7 +69,7 @@ class Contact extends Table
         // $this->_aliases['tag']='SELECT t.path FROM #__tags t,
         // #__contentitem_tag_map m WHERE type_alias = "com_contact.contact"
         // AND t.id = m.tag_id AND m.content_item_id = '. (int)$this->id;
-        $this->_aliases['tag'] = (string) $this->_db->getQuery(true)
+        $this->_aliases['tag'] = (string) $this->_db->getQuery()->clear()
             ->select($this->_db->quoteName('t.path'))
             ->from($this->_db->quoteName('#__tags', 't'))
             ->from($this->_db->quoteName('#__contentitem_tag_map', 'm'))
@@ -77,7 +77,7 @@ class Contact extends Table
             ->where($this->_db->quoteName('t.id') . ' = ' . $this->_db->quoteName('m.tag_id'))
             ->where($this->_db->quoteName('m.content_item_id') . ' = ' . $this->_db->quote((string) $this->id));
 
-        $query = $this->_db->getQuery(true);
+        $query = $this->_db->getQuery()->clear();
         $this->_aliases['association'] = (string) $query
             ->select($query->concatenate([$this->_db->quoteName('cc.path'), $this->_db->quoteName('c.alias')], '/'))
             ->from($this->_db->quoteName('#__associations', 'asso1'))
@@ -165,7 +165,7 @@ class Contact extends Table
         }
 
         // associated contacts
-        $query = $db->getQuery(true)
+        $query = $db->getQuery()->clear()
             ->select($db->quoteName('c.id'))
             ->from($db->quoteName('#__associations', 'asso1'))
             ->join('INNER', $db->quoteName('#__associations', 'asso2') . ' ON ' . $db->quoteName('asso1.key') . ' = ' . $db->quoteName('asso2.key'))
@@ -227,10 +227,10 @@ class Contact extends Table
             self::prepareData($record, $data, $params);
             \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(print_r($data, true), \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-            $contactId = $data['id'];
+            $contactId = $data['id'] ?? 0;
             unset($data['id']);
 
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName('id'))
                 ->from($db->quoteName('#__contact_details'));
             if ($keepId)
@@ -309,7 +309,7 @@ class Contact extends Table
                 $id = self::getContactId($association);
                 if ($id)
                 {
-                    $tag = $db->setQuery($db->getQuery(true)
+                    $tag = $db->setQuery($db->getQuery()->clear()
                         ->select($db->quoteName('language'))
                         ->from($db->quoteName('#__contact_details'))
                         ->where($db->quoteName('id') . ' = ' . $id))
@@ -327,7 +327,7 @@ class Contact extends Table
             $id = self::getContactId($data['association']);
             if ($id)
             {
-                $tag = $db->setQuery($db->getQuery(true)
+                $tag = $db->setQuery($db->getQuery()->clear()
                     ->select($db->quoteName('language'))
                     ->from($db->quoteName('#__contact_details'))
                     ->where($db->quoteName('id') . ' = ' . $id))

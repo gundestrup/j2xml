@@ -25,6 +25,7 @@ use Joomla\CMS\Layout\LayoutHelper;
 
 extract($displayData);
 
+$layout ??= 'content';
 $relevantFields = [
     'content'    => ['export_compression', 'export_categories', 'export_fields', 'export_images', 'export_tags'],
     'categories' => ['export_compression', 'export_users', 'export_images', 'export_tags'],

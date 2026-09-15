@@ -87,7 +87,7 @@ class Com_J2xmlInstallerScript
        if ($action === 'update')
         {
             $db    = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select('*')
                 ->from($db->quoteName('#__extensions'))
                 ->where($db->quoteName('type') . ' = ' . $db->quote('component'))

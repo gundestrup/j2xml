@@ -42,9 +42,7 @@ $this->document->addScriptOptions('progressBarClass', 'progress-bar progress-bar
 Text::script('COM_J2XML_SEND_ERROR');
 Text::script('COM_J2XML_SEND_ERROR_REMOTEURL_IS_REQUIRED');
 Text::script('LIB_J2XML_SENDING');
-Text::script('LIB_J2XML_MSG_XMLRPC_DISABLED');
 Text::script('LIB_J2XML_ERROR_UNKNOWN');
-Text::script('LIB_J2XML_ERROR_STATUS0');
 ?>
 <form action="<?php echo Route::_('index.php?option=com_j2xml'); ?>"
     id="adminForm" method="post" name="adminForm"

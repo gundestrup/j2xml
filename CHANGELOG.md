@@ -17,11 +17,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.5.2] - 2026-09-15
 
----
+### Removed
 
-## [4.5.1] - 2026-09-13
+- Removed the unused legacy XML-RPC `Sender` and `Messages` library classes.
+- Removed the empty legacy `classmap.php`, obsolete administrator helpers,
+  broken frontend controller entry point, backup manifest, and standalone
+  import diagnostic script.
+- Removed XML-RPC-only language strings and send-template references.
+
+### Changed
+
+- The supported remote transfer path is Joomla's Webservices REST API with
+  token authentication.
+- Preserved the J2XML export/import plugin events so separately maintained
+  integrations, such as an updated Attachments connector, can continue to
+  extend the XML format.
+- Integration coverage merging now includes the Webservices API controller.
+- Modernized the J2XML system and Webservices plugins with dependency-injected
+  applications, SubscriberInterface event registration, and typed Joomla 6
+  application events.
+- Replaced the deprecated database query reset parameter with explicit query
+  clearing while preserving query isolation.
+
+### Tests
+
+- PHPUnit: **69 tests, 128 assertions passed**, with no PHP 8.5 reflection deprecations.
+- MySQL integration: **97/97 passed** on Joomla 5 and Joomla 6, including PHP warning/deprecation checks.
+- Full PostgreSQL integration: **97/97 passed** on Joomla 5 and Joomla 6, using the same feature suite as MySQL.
+- Integration coverage: **2,723/3,714 executable lines (73.32%)** across
+  64 active J2XML files. The remaining gap is concentrated in optional,
+  defensive, installer, CLI, workflow, and database-specific branches.
 
 ### Added
 
@@ -29,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Codecov integration** — `codecov.yml` with informational coverage targets; PHPUnit runs with `--coverage-clover` in CI and uploads to Codecov via `codecov/codecov-action@v5.5.1`. Badge added to README.
 - **AGENTS.md updated** — documented Semgrep, CodeFactor, SonarCloud, and Codecov services, suppression syntax (`nosemgrep` / `NOSONAR`), and SonarCloud REST API access for local finding retrieval.
 - **`.editorconfig`** — enforces PSR-12 indentation (4 spaces for PHP, tabs for XML manifests) in supported IDEs.
-- **Unit tests** — 76 PHPUnit tests covering `Version`, `Messages`, `Table` (xml2array, _setValue, _serialize, fixDate, toXML, IMAGE_MATCH_STRING), `Exporter` (_root), `Importer` (isSupported), and `Tag` (convertPathsToIds edge cases). Coverage: 3.20% (110/3440 lines). Stubs updated to fix class ordering and `#[\AllowDynamicProperties]` on Joomla\CMS\Table\Table.
+- **Unit tests** — 76 PHPUnit tests covering `Version`, `Messages`, `Table` (xml2array, _setValue,_serialize, fixDate, toXML, IMAGE_MATCH_STRING), `Exporter` (_root), `Importer` (isSupported), and `Tag` (convertPathsToIds edge cases). Coverage: 3.20% (110/3440 lines). Stubs updated to fix class ordering and `#[\AllowDynamicProperties]` on Joomla\CMS\Table\Table.
 
 ### Changed
 

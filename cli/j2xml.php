@@ -33,6 +33,29 @@ const _JEXEC = 1;
 error_reporting(E_ALL & ~E_NOTICE);
 ini_set('display_errors', 1); // nosemgrep: search-active-debug
 
+// In CLI context, Joomla's web-stack services (router, SiteApplication)
+// may be lazily resolved when booting components (e.g. com_users).  Those
+// services read $_SERVER['HTTP_HOST'] / ['REQUEST_URI'] to build a base
+// URI, and fail with "Could not parse the requested URI" when the values
+// are missing or are file paths.  Populate the minimum variables that
+// Joomla's AbstractUri needs to parse successfully.
+if (empty($_SERVER['HTTP_HOST']))
+{
+    $_SERVER['HTTP_HOST'] = 'localhost';
+}
+if (empty($_SERVER['REQUEST_URI']))
+{
+    $_SERVER['REQUEST_URI'] = '/cli/j2xml.php';
+}
+if (empty($_SERVER['SCRIPT_NAME']))
+{
+    $_SERVER['SCRIPT_NAME'] = '/cli/j2xml.php';
+}
+if (empty($_SERVER['SERVER_NAME']))
+{
+    $_SERVER['SERVER_NAME'] = 'localhost';
+}
+
 // Load system defines
 if (file_exists(dirname(dirname(__FILE__)).'/defines.php'))
 {
@@ -45,22 +68,20 @@ if (!defined('_JDEFINES'))
     require_once JPATH_BASE.'/includes/defines.php';
 }
 
-// Bootstrap the CMS libraries.
-require_once JPATH_LIBRARIES.'/bootstrap.php';
+// Bootstrap the CMS libraries and configuration (framework.php
+// defines JDEBUG and loads configuration.php which bootstrap.php does not).
+require_once JPATH_BASE.'/includes/framework.php';
 
-// Import the configuration.
-require_once JPATH_CONFIGURATION.'/configuration.php';
-
-// System configuration.
-$config = new JConfig();
-
-// Load Library language
-$lang = \Joomla\CMS\Factory::getApplication()->getLanguage();
-
-// Try the j2xmlimporter file in the current language (without allowing the loading of the file in the default language)
-$lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, false, false)
-    // Fallback to the j2xmlimporter file in the default language
-    || $lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, true);
+// Boot the DI container and alias the session to the CLI session — the
+// same pattern Joomla's own cli/joomla.php uses.  Without this, any call
+// to Factory::getApplication() (or the session) raises "Failed to start
+// application" under Joomla 5/6.
+$container = \Joomla\CMS\Factory::getContainer();
+$container->alias('session', 'session.cli')
+    ->alias('JSession', 'session.cli')
+    ->alias(\Joomla\CMS\Session\Session::class, 'session.cli')
+    ->alias(\Joomla\Session\Session::class, 'session.cli')
+    ->alias(\Joomla\Session\SessionInterface::class, 'session.cli');
 
 /**
  * @package  Joomla.CLI
@@ -81,6 +102,8 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
     {
         // Merge the default translation with the current translation
         $lang = $this->getLanguage();
+        $lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, false, false)
+            || $lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, true);
         $lang->load('lib_j2xml', JPATH_SITE, null, false, false)
             || $lang->load('lib_j2xml', JPATH_ADMINISTRATOR, null, false, false)
             // Fallback to the lib_j2xml file in the default language
@@ -196,7 +219,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
                 $iparams->set('superusers', $params->get('import_superusers', 0));
                 $iparams->set('usernotes', $params->get('import_usernotes', 1));
                 $iparams->set('viewlevels', $params->get('import_viewlevels', 1));
-                $iparams->set('content', $params->get('import_content'));
+                $iparams->set('content', $params->get('import_content', 1));
                 $iparams->set('weblinks', $params->get('import_weblinks'));
                 $iparams->set('logger', 'cli');
 
@@ -235,10 +258,29 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
     {
         $this->out(sprintf("%s - %s",self::$codes[$type],$msg));
     }
+
+    /**
+     * Returns the application name.
+     *
+     * Required by CMSApplicationInterface under Joomla 5/6 (the parent
+     * CliApplication no longer provides a concrete implementation).
+     *
+     * @return  string
+     *
+     * @since   4.5.0
+     */
+    public function getName()
+    {
+        return 'cli';
+    }
 }
 
-// Instantiate the CLI application via the DI container and execute.
-$container = \Joomla\CMS\Factory::getContainer();
-$container->registerServiceProvider(new \Joomla\CMS\Application\Service\Provider\CliApplication());
-$cli = $container->get(\Joomla\CMS\Application\CliApplication::class);
+// Instantiate the CLI application directly and execute.  The
+// Service\Provider\CliApplication class does not exist in Joomla 5/6
+// (it was replaced by the Console provider), so we construct J2xmlCli
+// directly. framework.php already set up the DI container.  Registering
+// the instance with Factory is required so that Factory::getApplication()
+// inside the library code resolves to this CLI application.
+$cli = new J2xmlCli();
+\Joomla\CMS\Factory::$application = $cli;
 $cli->execute();

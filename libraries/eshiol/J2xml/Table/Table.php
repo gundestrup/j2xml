@@ -107,7 +107,7 @@ class Table extends \Joomla\CMS\Table\Table
         $serverType = $this->_db->getServerType();
 
         // Non-subform field values
-        $query = $this->_db->getQuery(true)
+        $query = $this->_db->getQuery()->clear()
             ->select($this->_db->quoteName('f.name'))
             ->select($this->_db->quoteName('v.value'))
             ->from($this->_db->quoteName('#__fields_values', 'v'))
@@ -118,7 +118,7 @@ class Table extends \Joomla\CMS\Table\Table
         $this->_aliases['field'] = (string) $query;
 
         // Map field IDs to names for subform processing
-        $query = $this->_db->getQuery(true)
+        $query = $this->_db->getQuery()->clear()
             ->select($this->_db->quoteName('f.id'))
             ->select($this->_db->quoteName('f.name'))
             ->from($this->_db->quoteName('#__fields', 'f'));
@@ -129,7 +129,7 @@ class Table extends \Joomla\CMS\Table\Table
         }
 
         // Subform field values — decode, rename field IDs to names, re-encode, UNION
-        $query = $this->_db->getQuery(true)
+        $query = $this->_db->getQuery()->clear()
             ->select($this->_db->quoteName('f.name'))
             ->select($this->_db->quoteName('v.value'))
             ->from($this->_db->quoteName('#__fields_values', 'v'))
@@ -151,7 +151,7 @@ class Table extends \Joomla\CMS\Table\Table
             }
             $subformValue = json_encode($subformValue, true);
 
-            $query = $this->_db->getQuery(true)
+            $query = $this->_db->getQuery()->clear()
                 ->select($this->_db->quote($field->name))
                 ->select($this->_db->quote($subformValue));
             if ($serverType === 'sqlserver')
@@ -178,7 +178,7 @@ class Table extends \Joomla\CMS\Table\Table
     protected static function exportFields($id, &$xml, $options, $db): void
     {
         // load subform fields
-        $query = $db->getQuery(true)
+        $query = $db->getQuery()->clear()
             ->select($db->quoteName('v.value'))
             ->from($db->quoteName('#__fields_values', 'v'))
             ->from($db->quoteName('#__fields', 'f'))
@@ -196,7 +196,7 @@ class Table extends \Joomla\CMS\Table\Table
             }
         }
 
-        $query = $db->getQuery(true)
+        $query = $db->getQuery()->clear()
             ->select('DISTINCT field_id')
             ->from('#__fields_values')
             ->where('item_id = ' . $db->quote($id));
@@ -237,42 +237,42 @@ class Table extends \Joomla\CMS\Table\Table
         {
             if (isset($this->created_by))
             {
-                $this->_aliases['created_by'] = (string) $this->_db->getQuery(true)
+                $this->_aliases['created_by'] = (string) $this->_db->getQuery()->clear()
                     ->select($this->_db->quoteName('username'))
                     ->from($this->_db->quoteName('#__users'))
                     ->where($this->_db->quoteName('id') . ' = ' . (int) $this->created_by);
             }
             if (isset($this->created_user_id))
             {
-                $this->_aliases['created_user_id'] = (string) $this->_db->getQuery(true)
+                $this->_aliases['created_user_id'] = (string) $this->_db->getQuery()->clear()
                     ->select($this->_db->quoteName('username'))
                     ->from($this->_db->quoteName('#__users'))
                     ->where($this->_db->quoteName('id') . ' = ' . (int) $this->created_user_id);
             }
             if (isset($this->modified_by))
             {
-                $this->_aliases['modified_by'] = (string) $this->_db->getQuery(true)
+                $this->_aliases['modified_by'] = (string) $this->_db->getQuery()->clear()
                     ->select($this->_db->quoteName('username'))
                     ->from($this->_db->quoteName('#__users'))
                     ->where($this->_db->quoteName('id') . ' = ' . (int) $this->modified_by);
             }
             if (isset($this->modified_user_id))
             {
-                $this->_aliases['modified_user_id'] = (string) $this->_db->getQuery(true)
+                $this->_aliases['modified_user_id'] = (string) $this->_db->getQuery()->clear()
                     ->select($this->_db->quoteName('username'))
                     ->from($this->_db->quoteName('#__users'))
                     ->where($this->_db->quoteName('id') . ' = ' . (int) $this->modified_user_id);
             }
             if (isset($this->catid))
             {
-                $this->_aliases['catid'] = (string) $this->_db->getQuery(true)
+                $this->_aliases['catid'] = (string) $this->_db->getQuery()->clear()
                     ->select($this->_db->quoteName('path'))
                     ->from($this->_db->quoteName('#__categories'))
                     ->where($this->_db->quoteName('id') . ' = ' . (int) $this->catid);
             }
             if (isset($this->access))
             {
-                $query = $this->_db->getQuery(true);
+                $query = $this->_db->getQuery()->clear();
                 $serverType = $this->_db->getServerType();
 
                 if ($serverType === 'postgresql')
@@ -604,7 +604,7 @@ class Table extends \Joomla\CMS\Table\Table
         {
             $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
             $i = strrpos($article, '/');
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName('c.id'))
                 ->from($db->quoteName('#__content', 'c'))
                 ->join('INNER', $db->quoteName('#__categories', 'cc') . ' ON ' . $db->quoteName('c.catid') . ' = ' . $db->quoteName('cc.id'))
@@ -636,7 +636,7 @@ class Table extends \Joomla\CMS\Table\Table
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
         $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $query = $db->getQuery(true)
+        $query = $db->getQuery()->clear()
             ->select($db->quoteName('id'))
             ->from($db->quoteName('#__users'))
             ->where($db->quoteName('username') . ' = ' . $db->quote($username));
@@ -668,7 +668,7 @@ class Table extends \Joomla\CMS\Table\Table
         elseif (!is_numeric($usergroup))
         {
             $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName('id'))
                 ->from($db->quoteName('#__j2xml_usergroups', 'g'))
                 ->where($db->quoteName('title') . ' = ' . $db->quote($usergroup));
@@ -686,7 +686,7 @@ class Table extends \Joomla\CMS\Table\Table
                 {
                     $g[] = $groups[$j];
                     $usergroup = json_encode($g, JSON_NUMERIC_CHECK);
-                    $query = $db->getQuery(true)
+                    $query = $db->getQuery()->clear()
                         ->select($db->quoteName('id'))
                         ->from($db->quoteName('#__usergroups'))
                         ->where($db->quoteName('title') . ' = ' . $db->quote($groups[$j]))
@@ -732,7 +732,7 @@ class Table extends \Joomla\CMS\Table\Table
         else
         {
             $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName('id'))
                 ->from($db->quoteName('#__viewlevels'))
                 ->where($db->quoteName('title') . ' = ' . $db->quote($access));
@@ -765,7 +765,7 @@ class Table extends \Joomla\CMS\Table\Table
         $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         if (!is_numeric($category))
         {
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName('id'))
                 ->from($db->quoteName('#__categories'))
                 ->where($db->quoteName('path') . ' = ' . $db->quote($category))
@@ -774,7 +774,7 @@ class Table extends \Joomla\CMS\Table\Table
         }
         else
         {
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName('id'))
                 ->from($db->quoteName('#__categories'))
                 ->where($db->quoteName('id') . ' = ' . $category)
@@ -785,7 +785,7 @@ class Table extends \Joomla\CMS\Table\Table
         {
             if ($defaultCategoryId)
             {
-                $query = $db->getQuery(true)
+                $query = $db->getQuery()->clear()
                     ->select($db->quoteName('id'))
                     ->from($db->quoteName('#__categories'))
                     ->where($db->quoteName('id') . ' = ' . $defaultCategoryId)
@@ -794,7 +794,7 @@ class Table extends \Joomla\CMS\Table\Table
             }
             if (!$categoryId)
             {
-                $query = $db->getQuery(true)
+                $query = $db->getQuery()->clear()
                     ->select('MIN(' . $db->quoteName('id') . ')')
                     ->from($db->quoteName('#__categories'))
                     ->where($db->quoteName('extension') . ' = ' . $db->quote($extension));
@@ -827,7 +827,10 @@ class Table extends \Joomla\CMS\Table\Table
             if (is_array($tag))
             {
                 $tags = array_unique($tag);
-                $query = 'SELECT CASE WHEN b.id IS NOT NULL THEN b.id ELSE CONCAT(\'#new#\', a.path) END FROM (SELECT ' .
+                $tagIdExpression = $db->getServerType() === 'postgresql'
+                    ? "CASE WHEN b.id IS NOT NULL THEN CAST(b.id AS TEXT) ELSE CONCAT('#new#', a.path) END"
+                    : "CASE WHEN b.id IS NOT NULL THEN b.id ELSE CONCAT('#new#', a.path) END";
+                $query = 'SELECT ' . $tagIdExpression . ' FROM (SELECT ' .
                     $db->quote(array_shift($tags)) . ' as path';
                 foreach ($tags as $tag)
                 {
@@ -838,7 +841,7 @@ class Table extends \Joomla\CMS\Table\Table
             }
             else
             {
-                $query = $db->getQuery(true)
+                $query = $db->getQuery()->clear()
                     ->select($db->quoteName('id'))
                     ->from($db->quoteName('#__tags'))
                     ->where($db->quoteName('path') . ' = ' . $db->quote($tag));
@@ -1051,7 +1054,7 @@ class Table extends \Joomla\CMS\Table\Table
         else
         {
             $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-            $query = $db->getQuery(true);
+            $query = $db->getQuery()->clear();
             $path = $query->concatenate([$db->quoteName('menutype'), $db->quoteName('path')], '/');
             $query->select($db->quoteName('id'))
                 ->from($db->quoteName('#__menu'))
@@ -1116,7 +1119,7 @@ class Table extends \Joomla\CMS\Table\Table
             }
 
             // Get associationskey for edited item
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName('key'))
                 ->from($db->quoteName('#__associations'))
                 ->where($db->quoteName('context') . ' = ' . $db->quote($context))
@@ -1125,7 +1128,7 @@ class Table extends \Joomla\CMS\Table\Table
             $old_key = $db->loadResult();
 
             // Deleting old associations for the associated items
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->delete($db->quoteName('#__associations'))
                 ->where($db->quoteName('context') . ' = ' . $db->quote($context));
 
@@ -1152,7 +1155,7 @@ class Table extends \Joomla\CMS\Table\Table
             {
                 // Adding new association for these items
                 $key   = md5(json_encode($associations)); // nosemgrep: weak-crypto — non-cryptographic lookup key for #__associations, matches Joomla core // NOSONAR
-                $query = $db->getQuery(true)
+                $query = $db->getQuery()->clear()
                     ->insert('#__associations');
 
                 foreach ($associations as $itemId)
@@ -1190,7 +1193,7 @@ class Table extends \Joomla\CMS\Table\Table
         {
             $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
             $i = strrpos($contact, '/');
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName('c.id'))
                 ->from($db->quoteName('#__contact_details', 'c'))
                 ->join('INNER', $db->quoteName('#__categories', 'cc') . ' ON ' . $db->quoteName('c.catid') . ' = ' . $db->quoteName('cc.id'))
@@ -1232,7 +1235,7 @@ class Table extends \Joomla\CMS\Table\Table
         {
             $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
             $i = strrpos($weblink, '/');
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName('c.id'))
                 ->from($db->quoteName('#__weblinks', 'c'))
                 ->join('INNER', $db->quoteName('#__categories', 'cc') . ' ON ' . $db->quoteName('c.catid') . ' = ' . $db->quoteName('cc.id'))

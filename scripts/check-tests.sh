@@ -55,7 +55,7 @@ if [[ $COVERAGE -eq 1 ]]; then
         j2xml-joomla6 http://localhost:8086
 fi
 
-info "Running test suite (82 assertions)…"
+info "Running test suite…"
 if bash tests/scripts/run-all-tests.sh; then
     ok "MySQL integration"
 else
@@ -72,10 +72,10 @@ info "Stopping containers…"
 docker compose -f tests/docker/docker-compose.yml down -v
 
 # -------------------------------------------------------------------
-# 2. PostgreSQL smoke tests (Joomla 5 + 6)
+# 2. PostgreSQL full integration tests (Joomla 5 + 6)
 # -------------------------------------------------------------------
 if [[ $MYSQL_ONLY -eq 0 ]]; then
-    echo "=== PostgreSQL smoke tests (Joomla 5 + 6) ==="
+    echo "=== PostgreSQL full integration tests (Joomla 5 + 6) ==="
     info "Starting Docker containers…"
     docker compose -f tests/docker/docker-compose.postgresql.yml up -d
 
@@ -86,11 +86,17 @@ if [[ $MYSQL_ONLY -eq 0 ]]; then
             j2xml-joomla6-pg http://localhost:8186
     fi
 
-    info "Running smoke tests…"
-    if bash tests/scripts/run-postgresql-smoke.sh; then
-        ok "PostgreSQL smoke"
+    info "Running full feature suite on PostgreSQL…"
+    if DB_DRIVER=pgsql \
+        DB_PG_CONTAINER=j2xml-postgres \
+        J5_CONTAINER=j2xml-joomla5-pg \
+        J6_CONTAINER=j2xml-joomla6-pg \
+        JOOMLA5_URL=http://localhost:8185 \
+        JOOMLA6_URL=http://localhost:8186 \
+        bash tests/scripts/run-all-tests.sh; then
+        ok "PostgreSQL full integration"
     else
-        fail "PostgreSQL smoke"
+        fail "PostgreSQL full integration"
     fi
 
     if [[ $COVERAGE -eq 1 ]]; then

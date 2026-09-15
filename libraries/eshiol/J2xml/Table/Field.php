@@ -63,7 +63,7 @@ class Field extends Table
         {
             // $this->_aliases['group'] = 'SELECT title FROM #__fields_groups
             // WHERE id = '. (int)$this->group_id;
-            $this->_aliases['group'] = (string) $this->_db->getQuery(true)
+            $this->_aliases['group'] = (string) $this->_db->getQuery()->clear()
                 ->select($this->_db->quoteName('title'))
                 ->from($this->_db->quoteName('#__fields_groups'))
                 ->where($this->_db->quoteName('id') . ' = ' . (int) $this->group_id);
@@ -72,7 +72,7 @@ class Field extends Table
         // $this->_aliases['category'] = 'SELECT c.path FROM #__categories c,
         // #__fields_categories fc WHERE c.id = fc.category_id AND fc.field_id
         // ='.(int)$this->id;
-        $this->_aliases['category'] = (string) $this->_db->getQuery(true)
+        $this->_aliases['category'] = (string) $this->_db->getQuery()->clear()
             ->select($this->_db->quoteName('c.path'))
             ->from($this->_db->quoteName('#__categories', 'c'))
             ->from($this->_db->quoteName('#__fields_categories', 'fc'))
@@ -81,7 +81,7 @@ class Field extends Table
 
         if ($this->type == 'subform')
         {
-            $query = $this->_db->getQuery(true)
+            $query = $this->_db->getQuery()->clear()
                 ->select($this->_db->quoteName('id'))
                 ->select($this->_db->quoteName('name'))
                 ->from($this->_db->quoteName('#__fields'));
@@ -139,7 +139,7 @@ class Field extends Table
             self::prepareData($record, $data, $params);
 
             $field = $db->setQuery(
-                $db->getQuery(true)
+                $db->getQuery()->clear()
                     ->select($db->quoteName('id'))
                     ->select($db->quoteName('name'))
                     ->from($db->quoteName('#__fields'))
@@ -209,7 +209,7 @@ class Field extends Table
 
         if ($data['type'] == 'subform')
         {
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName('id'))
                 ->select($db->quoteName('name'))
                 ->from($db->quoteName('#__fields'))
@@ -288,7 +288,7 @@ class Field extends Table
 
         if (isset($options['categories']) && $options['categories'])
         {
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select('category_id')
                 ->from('#__fields_categories')
                 ->where('field_id = ' . $id);

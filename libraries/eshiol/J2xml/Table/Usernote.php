@@ -202,7 +202,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        $this->_aliases['user_id'] = (string) $this->_db->getQuery(true)
+        $this->_aliases['user_id'] = (string) $this->_db->getQuery()->clear()
             ->select($this->_db->quoteName('username'))
             ->from($this->_db->quoteName('#__users'))
             ->where($this->_db->quoteName('id') . ' = ' . (int) $this->user_id);

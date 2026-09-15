@@ -84,7 +84,7 @@ class Fieldgroup extends Table
         {
             self::prepareData($record, $data, $params);
 
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->quoteName('id'))
                 ->select($db->quoteName('title'))
                 ->from($db->quoteName('#__fields_groups'))
@@ -178,6 +178,19 @@ class Fieldgroup extends Table
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
         parent::prepareData($record, $data, $params);
+
+        if (!isset($data['created']) && isset($data['created_time']))
+        {
+            $data['created'] = $data['created_time'];
+        }
+        if (!isset($data['created_by']) && isset($data['created_user_id']))
+        {
+            $data['created_by'] = $data['created_user_id'];
+        }
+        if (!isset($data['modified']) && isset($data['modified_time']))
+        {
+            $data['modified'] = $data['modified_time'];
+        }
 
         if (!isset($data['description']))
         {

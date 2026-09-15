@@ -65,7 +65,7 @@ class User extends Table
         try {
             $db->truncateTable("#__j2xml_usergroups");
 
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
             //  ->insert($db->quoteName("#__j2xml_usergroups"))
                 ->select($db->quoteName("id"))
                 ->select($db->quoteName("parent_id"))
@@ -75,14 +75,20 @@ class User extends Table
             $db->setQuery($query)->execute();
 
             do {
-                $query = $db->getQuery(true)
+                $parentColumn = $db->getServerType() === 'postgresql'
+                    ? $db->quoteName('parent_id')
+                    : $db->quoteName('j.parent_id');
+                $titleColumn = $db->getServerType() === 'postgresql'
+                    ? $db->quoteName('title')
+                    : $db->quoteName('j.title');
+                $query = $db->getQuery()->clear()
                     ->update($db->quoteName("#__j2xml_usergroups", "j"))
                     ->join("INNER", $db->quoteName("#__usergroups", "g"), $db->quoteName("j.parent_id") . " = " . $db->quoteName("g.id"))
-                    ->set($db->quoteName("j.parent_id") . " = " . $db->quoteName("g.parent_id"))
-                    ->set($db->quoteName("j.title") . " = CONCAT('[\"',REPLACE(" . $db->quoteName("g.title") . ",'\"','\\\"'), '\",', SUBSTR(" . $db->quoteName("j.title") . ",2))");
+                    ->set($parentColumn . " = " . $db->quoteName("g.parent_id"))
+                    ->set($titleColumn . " = CONCAT('[\"',REPLACE(" . $db->quoteName("g.title") . ",'\"','\\\"'), '\",', SUBSTR(" . $db->quoteName("j.title") . ",2))");
                 $db->setQuery($query)->execute();
 
-                $query = $db->getQuery(true)
+                $query = $db->getQuery()->clear()
                     ->select("COUNT(*)")
                     ->from($db->quoteName("#__j2xml_usergroups"))
                     ->where($db->quoteName("parent_id") . " > 0");
@@ -125,7 +131,7 @@ class User extends Table
         }
         else
         {
-            $this->_aliases['group'] = (string) $this->_db->getQuery(true)
+            $this->_aliases['group'] = (string) $this->_db->getQuery()->clear()
                 ->select($this->_db->quoteName('title'))
                 ->from($this->_db->quoteName('#__j2xml_usergroups', 'g'))
                 ->from($this->_db->quoteName('#__user_usergroup_map', 'm'))
@@ -137,7 +143,7 @@ class User extends Table
 
         // $this->_aliases['profile'] = 'SELECT profile_key name, profile_value
         // value FROM #__user_profiles WHERE user_id = '. (int)$this->id;
-        $this->_aliases['profile'] = (string) $this->_db->getQuery(true)
+        $this->_aliases['profile'] = (string) $this->_db->getQuery()->clear()
             ->select($this->_db->quoteName('profile_key', 'name'))
             ->select($this->_db->quoteName('profile_value', 'value'))
             ->from($this->_db->quoteName('#__user_profiles'))
@@ -180,7 +186,7 @@ class User extends Table
         $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
         $autoincrement = 0;
-        $maxid = $db->setQuery($db->getQuery(true)
+        $maxid = $db->setQuery($db->getQuery()->clear()
             ->select('MAX(' . $db->quoteName('id') . ')')
             ->from($db->quoteName('#__users')))
             ->loadResult();
@@ -219,7 +225,7 @@ class User extends Table
             }
 
             $existingUserId = $db->setQuery(
-                    $db->getQuery(true)
+                    $db->getQuery()->clear()
                         ->select($db->quoteName('id'))
                         ->from($db->quoteName('#__users'))
                         ->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
@@ -243,11 +249,11 @@ class User extends Table
                 unset($data['password'], $data['password2'], $data['password_clear'], $data['password_crypted']);
             }
 
-            $userId = $data['id'];
+            $userId = $data['id'] ?? 0;
             unset($data['id']);
 
             $data['id'] = $db->setQuery(
-                    $db->getQuery(true)
+                    $db->getQuery()->clear()
                         ->select($db->quoteName('id'))
                         ->from($db->quoteName('#__users'))
                         ->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
@@ -259,7 +265,7 @@ class User extends Table
                 $result = $user->save($data);
 
                 $id = $db->setQuery(
-                        $db->getQuery(true)
+                        $db->getQuery()->clear()
                             ->select($db->quoteName('id'))
                             ->from($db->quoteName('#__users'))
                             ->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
@@ -284,7 +290,7 @@ class User extends Table
                     if (isset($data['password_crypted']))
                     {
                         // set password
-                        $query = $db->getQuery(true)
+                        $query = $db->getQuery()->clear()
                             ->update('#__users')
                             ->set($db->quoteName('password') . ' = ' . $db->quote($data['password_crypted']))
                             ->where($db->quoteName('id') . ' = ' . $id);
@@ -294,13 +300,13 @@ class User extends Table
                     if (($userId != $id) && ($keepId == 1))
                     {
                         $id = $user->getState('user.id');
-                        $query = $db->getQuery(true)
+                        $query = $db->getQuery()->clear()
                             ->update('#__users')
                             ->set($db->quoteName('id') . ' = ' . $userId)
                             ->where($db->quoteName('id') . ' = ' . $id);
                         $db->setQuery($query)->execute();
 
-                        $query = $db->getQuery(true)
+                        $query = $db->getQuery()->clear()
                             ->update('#__user_usergroup_map')
                             ->set($db->quoteName('user_id') . ' = ' . $userId)
                             ->where($db->quoteName('user_id') . ' = ' . $id);
@@ -316,20 +322,20 @@ class User extends Table
 
                     try
                     {
-                        $query = $db->getQuery(true)
+                        $query = $db->getQuery()->clear()
                             ->delete($db->quoteName('#__user_profiles'))
                             ->where($db->quoteName('user_id') . ' = ' . $id);
                         $db->setQuery($query)->execute();
 
                         if (isset($data['profile']))
                         {
-                            $query = $db->getQuery(true)->insert($db->quoteName('#__user_profiles'));
+                            $query = $db->getQuery()->clear()->insert($db->quoteName('#__user_profiles'));
                             $query->values($id . ', ' . $db->quote($data['profile']['name']) . ', ' . $db->quote($data['profile']['value']) . ', 1');
                             $db->setQuery($query)->execute();
                         }
                         elseif (isset($data['profilelist']))
                         {
-                            $query = $db->getQuery(true)->insert($db->quoteName('#__user_profiles'));
+                            $query = $db->getQuery()->clear()->insert($db->quoteName('#__user_profiles'));
                             $order = 1;
                             $query->columns(
                                     $db->quoteName(
@@ -492,7 +498,7 @@ class User extends Table
         $fragment->appendXML($item->toXML());
         $doc->documentElement->appendChild($fragment);
 
-        /*$query = $db->getQuery(true)
+        /*$query = $db->getQuery()->clear()
             ->select($db->quoteName('l.id'))
             ->from($db->quoteName('#__viewlevels', 'l'))
             ->join('', $db->quoteName('#__user_usergroup_map', 'm'))
@@ -507,7 +513,7 @@ class User extends Table
 
         if (isset($options['contacts']) && $options['contacts'])
         {
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select('id')
                 ->from('#__contact_details')
                 ->where('user_id = ' . $id);
@@ -522,7 +528,7 @@ class User extends Table
 
         if (isset($options['usernotes']) && $options['usernotes'])
         {
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select('id')
                 ->from('#__user_notes')
                 ->where('user_id = ' . $id);

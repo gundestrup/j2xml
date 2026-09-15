@@ -10,6 +10,7 @@
 	<version>__DEPLOY_VERSION__</version>
 	<description>PLG_WEBSERVICES_J2XML_XML_DESCRIPTION</description>
 	<files>
+		<folder plugin="j2xml">services</folder>
 		<filename plugin="j2xml">j2xml.php</filename>
 		<filename>index.html</filename>
 	</files>

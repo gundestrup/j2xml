@@ -46,10 +46,24 @@ class Module extends \eshiol\J2xml\Table\Table
     function toXML ($mapKeysToText = false)
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-        $this->_aliases['menus'] = "SELECT DISTINCT IF(SIGN(mm.menuid) > 0, 'include', 'exclude') FROM `#__modules_menu` mm INNER JOIN `#__menu` m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " .
-             (int) $this->id . " UNION SELECT 'all' FROM `#__modules_menu` mm WHERE mm.moduleid = " . (int) $this->id . " AND mm.menuid = 0";
-        $this->_aliases['menu'] = "SELECT CONCAT(m.menutype, '/', m.path) FROM `#__modules_menu` mm INNER JOIN `#__menu` m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " .
-             (int) $this->id;
+        if ($this->_db->getServerType() === 'postgresql')
+        {
+            $this->_aliases['menus'] = "SELECT DISTINCT CASE WHEN mm.menuid > 0 THEN 'include' ELSE 'exclude' END FROM "
+                . $this->_db->qn('#__modules_menu') . " mm INNER JOIN " . $this->_db->qn('#__menu')
+                . " m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " . (int) $this->id
+                . " UNION SELECT 'all' FROM " . $this->_db->qn('#__modules_menu')
+                . " mm WHERE mm.moduleid = " . (int) $this->id . " AND mm.menuid = 0";
+            $this->_aliases['menu'] = "SELECT CONCAT(m.menutype, '/', m.path) FROM "
+                . $this->_db->qn('#__modules_menu') . " mm INNER JOIN " . $this->_db->qn('#__menu')
+                . " m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " . (int) $this->id;
+        }
+        else
+        {
+            $this->_aliases['menus'] = "SELECT DISTINCT IF(SIGN(mm.menuid) > 0, 'include', 'exclude') FROM `#__modules_menu` mm INNER JOIN `#__menu` m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " .
+                (int) $this->id . " UNION SELECT 'all' FROM `#__modules_menu` mm WHERE mm.moduleid = " . (int) $this->id . " AND mm.menuid = 0";
+            $this->_aliases['menu'] = "SELECT CONCAT(m.menutype, '/', m.path) FROM `#__modules_menu` mm INNER JOIN `#__menu` m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " .
+                (int) $this->id;
+        }
 
         return parent::_serialize();
     }
@@ -100,7 +114,7 @@ class Module extends \eshiol\J2xml\Table\Table
             self::prepareData($record, $data, $params);
 
             /* import module */
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->qn('id'))
                 ->select($db->qn('title'))
                 ->from($db->qn('#__modules'))
@@ -128,7 +142,7 @@ class Module extends \eshiol\J2xml\Table\Table
                 $table->bind($data);
                 if ($table->store())
                 {
-                    $query = $db->getQuery(true)
+                    $query = $db->getQuery()->clear()
                         ->delete('#__modules_menu')
                         ->where($db->quoteName('moduleid') . ' = ' . $table->id);
                     $db->setQuery($query)->execute();

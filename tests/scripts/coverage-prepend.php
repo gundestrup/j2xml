@@ -31,8 +31,7 @@ register_shutdown_function(static function (): void {
         $dir = '/tmp/j2xml-cov';
 
         if (!is_dir($dir)) {
-            @mkdir($dir, 0777, true);
-            @chmod($dir, 0777);
+            @mkdir($dir, 0700, true);
         }
 
         @file_put_contents(

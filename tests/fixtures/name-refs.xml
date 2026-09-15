@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Name/path-reference fixture: exercises the Table::get*Id() resolvers by
+  referencing entities by path/name instead of numeric id.
+
+  Must be imported AFTER all-content-types.xml — it provides the referenced
+  categories (uncategorised/test-category-*), tags (test-tag-*), contact
+  (fixture-contact-one) and article (fixture-article-one) targets.
+
+  Note: usergroup references must be JSON arrays of the FULL path from the
+  root group (e.g. ["Public","Registered"]), because #__j2xml_usergroups
+  stores full paths as titles.
+-->
+<j2xml version="21.12.0">
+  <!-- View level resolved via group-name rules (getUsergroupId name branch).
+       rulelist/rule is the importer's documented multi-rule format; each
+       <rule> value is a JSON array of usergroup titles (a tree path from root).
+       Uses existing groups to exercise the name-lookup resolver branch. -->
+  <viewlevel>
+    <title>Name-Ref View Level</title>
+    <ordering>0</ordering>
+    <rulelist>
+      <rule>["Public","Registered"]</rule>
+      <rule>["Public","Guest"]</rule>
+    </rulelist>
+  </viewlevel>
+
+  <!-- User resolved via group-name trees (found + auto-created paths) -->
+  <user>
+    <name>Name-Ref User</name>
+    <username>namerefuser</username>
+    <email>namerefuser@example.com</email>
+    <password></password>
+    <block>0</block>
+    <sendEmail>0</sendEmail>
+    <registerDate>2024-04-01 10:00:00</registerDate>
+    <lastvisitDate>0000-00-00 00:00:00</lastvisitDate>
+    <activation>0</activation>
+    <params></params>
+    <group>["Public","Registered"]</group>
+  </user>
+
+  <!-- Article resolved via category path, usernames, access title, tag
+       paths, article association and a custom-field value -->
+  <content>
+    <title>Name-Ref Article</title>
+    <alias>nameref-article</alias>
+    <introtext><![CDATA[<p>Article resolved entirely by names and paths.</p>]]></introtext>
+    <fulltext><![CDATA[<p>Full text of the name-reference article.</p>]]></fulltext>
+    <state>1</state>
+    <catid>uncategorised/test-category-articles</catid>
+    <created>2024-04-02 10:00:00</created>
+    <created_by>namerefuser</created_by>
+    <modified>2024-04-02 10:00:00</modified>
+    <modified_by>nonexistent-user</modified_by>
+    <language>*</language>
+    <featured>0</featured>
+    <hits>0</hits>
+    <publish_up>2024-04-02 10:00:00</publish_up>
+    <publish_down>0000-00-00 00:00:00</publish_down>
+    <access>Public</access>
+    <tag>test-tag-one</tag>
+    <tag>test-tag-two</tag>
+    <association>uncategorised/test-category-articles/fixture-article-one</association>
+    <field>
+      <name>test-field-text</name>
+      <value>Resolved by name</value>
+    </field>
+  </content>
+
+  <!-- Second article: unknown access title falls back to Special (3) and an
+       unknown category path falls back to the default category -->
+  <content>
+    <title>Name-Ref Fallback Article</title>
+    <alias>nameref-fallback-article</alias>
+    <introtext><![CDATA[<p>Exercises resolver fallback branches.</p>]]></introtext>
+    <state>1</state>
+    <catid>nonexistent-category-path</catid>
+    <created>2024-04-03 10:00:00</created>
+    <created_by>namerefuser</created_by>
+    <access>Nonexistent Level</access>
+    <language>*</language>
+  </content>
+
+  <!-- Contact resolved via username, category path and contact association -->
+  <contact>
+    <name>Name-Ref Contact</name>
+    <alias>nameref-contact</alias>
+    <user_id>namerefuser</user_id>
+    <catid>uncategorised/test-category-contacts</catid>
+    <published>1</published>
+    <access>Public</access>
+    <language>*</language>
+    <params>{}</params>
+    <association>uncategorised/test-category-contacts/fixture-contact-one</association>
+  </contact>
+
+  <!-- User note resolved via username -->
+  <usernote>
+    <user_id>namerefuser</user_id>
+    <catid>1</catid>
+    <subject>Name-Ref User Note</subject>
+    <body><![CDATA[<p>User note resolved via username.</p>]]></body>
+    <state>1</state>
+    <created_user_id>1</created_user_id>
+    <created_time>2024-04-04 10:00:00</created_time>
+    <modified_user_id>1</modified_user_id>
+    <modified_time>2024-04-04 10:00:00</modified_time>
+  </usernote>
+</j2xml>

@@ -92,7 +92,7 @@ class Tag extends Table
             }
 
             $tag = $db->setQuery(
-                    $db->getQuery(true)
+                    $db->getQuery()->clear()
                         ->select([
                             $db->quoteName('id'),
                             $db->quoteName('title')
@@ -155,7 +155,7 @@ class Tag extends Table
 
             $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select('id')
                 ->from('#__tags')
                 ->where('path IN (' . implode(',', array_map([
@@ -169,7 +169,7 @@ class Tag extends Table
                 $ids = $db->loadColumn();
                 return $ids;
             }
-            catch (RuntimeException $e)
+            catch (\RuntimeException $e)
             {
                 return false;
             }

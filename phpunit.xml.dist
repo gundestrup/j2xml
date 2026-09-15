@@ -9,7 +9,7 @@
 		<include>
 			<directory>libraries/eshiol/J2xml</directory>
 			<directory>administrator/components/com_j2xml/src</directory>
-			<directory>components/com_j2xml</directory>
+			<directory>api/components/com_j2xml/src</directory>
 			<directory>cli</directory>
 		</include>
 		<exclude>

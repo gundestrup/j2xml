@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Deliberately malformed: exercises the importer's parse-error path. -->
+<j2xml version="21.12.0">
+  <content>
+    <title>Broken Article</title>
+    <alias>broken-article</alias>
+    <introtext><![CDATA[<p>Unclosed element follows</p>]]></introtext>
+    <state>1</state>
+  <category>
+</j2xml>

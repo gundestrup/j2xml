@@ -15,8 +15,13 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUTPUT_DIR="${1:-$ROOT_DIR/build}"
 
-VERSION="4.5.0"
+VERSION="$(tr -d '[:space:]' < "$ROOT_DIR/VERSION")"
 DATE="$(date +%Y-%m-%d)"
+
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Invalid release version in VERSION: $VERSION" >&2
+    exit 1
+fi
 
 # --- helpers ----------------------------------------------------------------
 
@@ -69,10 +74,6 @@ mkdir -p "$STAGING"
 # Manifest at root
 cp "$ROOT_DIR/administrator/components/com_j2xml/j2xml.xml" "$STAGING/j2xml.xml"
 cp "$ROOT_DIR/administrator/components/com_j2xml/script.php" "$STAGING/script.php"
-# Site files (folder="site")
-mkdir -p "$STAGING/site"
-cp "$ROOT_DIR/components/com_j2xml/j2xml.php" "$STAGING/site/j2xml.php"
-copy_dir "$ROOT_DIR/components/com_j2xml/controllers" "$STAGING/site/controllers"
 # Admin files (folder="admin")
 mkdir -p "$STAGING/admin"
 cp "$ROOT_DIR/administrator/components/com_j2xml/access.xml" "$STAGING/admin/access.xml"
@@ -113,10 +114,7 @@ cp "$ROOT_DIR/administrator/manifests/libraries/eshiol/j2xml.xml" "$STAGING/j2xm
 # Library files (from libraries/eshiol/J2xml/)
 cp "$ROOT_DIR/libraries/eshiol/J2xml/Exporter.php" "$STAGING/"
 cp "$ROOT_DIR/libraries/eshiol/J2xml/Importer.php" "$STAGING/"
-cp "$ROOT_DIR/libraries/eshiol/J2xml/Messages.php" "$STAGING/"
-cp "$ROOT_DIR/libraries/eshiol/J2xml/Sender.php" "$STAGING/"
 cp "$ROOT_DIR/libraries/eshiol/J2xml/Version.php" "$STAGING/"
-cp "$ROOT_DIR/libraries/eshiol/J2xml/classmap.php" "$STAGING/"
 copy_dir "$ROOT_DIR/libraries/eshiol/J2xml/Table" "$STAGING/Table"
 # Language (folder="language")
 mkdir -p "$STAGING/language/en-GB"
@@ -143,6 +141,7 @@ mkdir -p "$STAGING"
 cp "$ROOT_DIR/plugins/system/j2xml/j2xml.xml" "$STAGING/j2xml.xml"
 # Plugin files
 cp "$ROOT_DIR/plugins/system/j2xml/j2xml.php" "$STAGING/"
+copy_dir "$ROOT_DIR/plugins/system/j2xml/services" "$STAGING/services"
 cp "$ROOT_DIR/plugins/system/j2xml/install.mysql.sql" "$STAGING/"
 cp "$ROOT_DIR/plugins/system/j2xml/install.postgresql.sql" "$STAGING/"
 cp "$ROOT_DIR/plugins/system/j2xml/install.sqlazure.sql" "$STAGING/"
@@ -163,6 +162,7 @@ mkdir -p "$STAGING"
 cp "$ROOT_DIR/plugins/webservices/j2xml/j2xml.xml" "$STAGING/j2xml.xml"
 # Plugin files
 cp "$ROOT_DIR/plugins/webservices/j2xml/j2xml.php" "$STAGING/"
+copy_dir "$ROOT_DIR/plugins/webservices/j2xml/services" "$STAGING/services"
 cp "$ROOT_DIR/plugins/webservices/j2xml/index.html" "$STAGING/"
 # Language (folder="language")
 mkdir -p "$STAGING/language/en-GB"

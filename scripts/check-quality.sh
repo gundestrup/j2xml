@@ -44,6 +44,7 @@ for php_bin in "${php_binaries[@]}"; do
     info "PHP $ver"
     file_errors=0
     while IFS= read -r f; do
+        [[ -f "$f" ]] || continue
         if ! output=$("$php_bin" -l "$f" 2>&1); then
             printf "${red}    FAIL: %s${nc}\n" "$f"
             printf "    %s\n" "$output"
@@ -122,6 +123,8 @@ fi
 echo "=== XML validation ==="
 xml_errors=0
 while IFS= read -r f; do
+    # This fixture is intentionally malformed to exercise import rejection.
+    [[ "$f" = "tests/fixtures/malformed.xml" ]] && continue
     if ! xmllint --noout "$f" 2>/dev/null; then
         printf "${red}    FAIL: %s${nc}\n" "$f"
         xml_errors=$((xml_errors + 1))

@@ -67,7 +67,7 @@ class Menutype extends \eshiol\J2xml\Table\Table
         }
 
         /* export modules */
-        $query = $db->getQuery(true)
+        $query = $db->getQuery()->clear()
             ->select($db->qn('id'))
             ->select($db->qn('params'))
             ->from($db->qn('#__modules'))
@@ -91,7 +91,7 @@ class Menutype extends \eshiol\J2xml\Table\Table
         $doc->documentElement->appendChild($fragment);
 
         /* export menus */
-        $query = $db->getQuery(true)
+        $query = $db->getQuery()->clear()
             ->select($db->qn('id'))
             ->from($db->qn('#__menu'))
             ->where($db->qn('menutype') . ' = ' . $db->q($item->menutype))
@@ -128,7 +128,7 @@ class Menutype extends \eshiol\J2xml\Table\Table
         {
             self::prepareData($record, $data, $params);
 
-            $query = $db->getQuery(true)
+            $query = $db->getQuery()->clear()
                 ->select($db->qn([
                     'id',
                     'title'

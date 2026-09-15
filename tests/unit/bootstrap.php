@@ -10,7 +10,6 @@ require_once J2XML_ROOT . '/stubs/joomla.php';
 
 // Manually require the J2XML library classes (no Composer autoloading).
 require_once J2XML_ROOT . '/libraries/eshiol/J2xml/Version.php';
-require_once J2XML_ROOT . '/libraries/eshiol/J2xml/Messages.php';
 require_once J2XML_ROOT . '/libraries/eshiol/J2xml/Table/Table.php';
 require_once J2XML_ROOT . '/libraries/eshiol/J2xml/Table/Tag.php';
 require_once J2XML_ROOT . '/libraries/eshiol/J2xml/Exporter.php';
