@@ -55,7 +55,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git ls-files '*.xml' -z | xargs -0 -n1 xmllint --noout
+          while IFS= read -r -d '' file; do
+            # This fixture is intentionally malformed for import rejection tests.
+            [[ "$file" = "tests/fixtures/malformed.xml" ]] && continue
+            xmllint --noout "$file"
+          done < <(git ls-files '*.xml' -z)
 
   semgrep:
     name: Semgrep security scan
