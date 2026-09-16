@@ -37,13 +37,16 @@ jobs:
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
       - name: PHPUnit
         run: vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-clover coverage.xml
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@af09b5e394c93991b95a5e7646aeb90c1917f78f # v5.5.1
+      - name: Stage coverage artifact
+        if: always()
+        run: cp coverage.xml coverage-phpunit-${{ matrix.php }}.xml 2>/dev/null || echo "No unit coverage produced"
+      - name: Upload unit coverage artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          files: ./coverage.xml
-          flags: unittests
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
+          name: coverage-phpunit-${{ matrix.php }}
+          path: coverage-phpunit-${{ matrix.php }}.xml
+          if-no-files-found: warn
       - name: ShellCheck
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
         with:
@@ -90,15 +93,14 @@ jobs:
       - name: Collect integration coverage
         if: always()
         continue-on-error: true
-        run: bash tests/scripts/coverage-collect.sh coverage-integration.xml j2xml-joomla5 j2xml-joomla6
-      - name: Upload integration coverage to Codecov
+        run: bash tests/scripts/coverage-collect.sh coverage-integration-mysql.xml j2xml-joomla5 j2xml-joomla6
+      - name: Upload integration coverage artifact
         if: always()
-        uses: codecov/codecov-action@af09b5e394c93991b95a5e7646aeb90c1917f78f # v5.5.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          files: ./coverage-integration.xml
-          flags: integration
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
+          name: coverage-integration-mysql
+          path: coverage-integration-mysql.xml
+          if-no-files-found: warn
       - name: Collect container logs
         if: failure()
         run: docker compose -f tests/docker/docker-compose.yml logs --no-color
@@ -131,18 +133,52 @@ jobs:
       - name: Collect integration coverage
         if: always()
         continue-on-error: true
-        run: bash tests/scripts/coverage-collect.sh coverage-integration.xml j2xml-joomla5-pg j2xml-joomla6-pg
-      - name: Upload integration coverage to Codecov
+        run: bash tests/scripts/coverage-collect.sh coverage-integration-postgresql.xml j2xml-joomla5-pg j2xml-joomla6-pg
+      - name: Upload integration coverage artifact
         if: always()
-        uses: codecov/codecov-action@af09b5e394c93991b95a5e7646aeb90c1917f78f # v5.5.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          files: ./coverage-integration.xml
-          flags: integration
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
+          name: coverage-integration-postgresql
+          path: coverage-integration-postgresql.xml
+          if-no-files-found: warn
       - name: Collect container logs
         if: failure()
         run: docker compose -f tests/docker/docker-compose.postgresql.yml logs --no-color
       - name: Stop test environment
         if: always()
         run: docker compose -f tests/docker/docker-compose.postgresql.yml down -v
+
+  coverage:
+    name: Merge and upload coverage
+    runs-on: ubuntu-latest
+    needs: [php-quality, mysql-integration, postgresql-integration]
+    if: always()
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: '8.4'
+          coverage: none
+      - name: Download coverage artifacts
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: coverage-*
+          path: coverage-reports
+          merge-multiple: true
+      - name: Merge coverage reports
+        run: |
+          shopt -s nullglob
+          files=(coverage-reports/*.xml)
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No coverage reports found; skipping merge"
+            exit 0
+          fi
+          php tests/scripts/merge-clover.php coverage-combined.xml coverage-reports
+      - name: Upload coverage to Codecov
+        if: hashFiles('coverage-combined.xml') != ''
+        uses: codecov/codecov-action@af09b5e394c93991b95a5e7646aeb90c1917f78f # v5.5.1
+        with:
+          files: ./coverage-combined.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false

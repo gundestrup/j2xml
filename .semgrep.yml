@@ -1,7 +1,7 @@
 # Semgrep configuration for j2xml
 # https://semgrep.dev/docs/
 #
-# Run: semgrep scan --config .semgrep.yml --error libraries/ plugins/ components/ administrator/ cli/
+# Run: semgrep scan --config .semgrep.yml --error libraries/ plugins/ administrator/ api/ cli/
 
 rules:
   # Detect SQL injection via string interpolation in query methods.

@@ -201,11 +201,12 @@ commit the zips. For a release, run the release check and attach
   public projects):
   `https://sonarcloud.io/api/issues/search?componentKeys=gundestrup_j2xml`
 - **Codecov** — code coverage via `codecov.yml` + GitHub Actions
-  (`codecov/codecov-action@v5`). Two uploads per CI run, merged by flag:
-  - `unittests`: PHPUnit runs with `--coverage-clover` → `coverage.xml`.
-  - `integration`: the Docker suites collect per-request line coverage
-    inside the Joomla containers via pcov (see "Integration coverage"
-    under §5) → `coverage-integration.xml`.
+  (`codecov/codecov-action@v5`). Each job uploads its clover report as a
+  workflow artifact (`coverage-phpunit-*`, `coverage-integration-*`);
+  a final `coverage` job merges them with `tests/scripts/merge-clover.php`
+  and uploads a single combined report. Uploading per-job reports
+  separately caused Codecov to resolve conflicting line sets per file and
+  silently drop integration hits — merging before upload avoids that.
   Coverage targets are informational (no CI failure on coverage drop).
   Excludes the same vendored/generated paths as SonarCloud.
 
@@ -376,8 +377,10 @@ How it works:
   `tests/scripts/merge-coverage.php` into clover XML. The merge rewrites
   `/var/www/html/` paths to repo-relative ones and keeps only J2XML
   extension directories; merging is cumulative across suites.
-- CI does this automatically in both integration jobs and uploads with
-  `flags: integration`; enablement is `continue-on-error` so a pcov/pecl
+- CI does this automatically in both integration jobs and uploads the
+  clover as a workflow artifact; the final `coverage` job merges all
+  reports with `tests/scripts/merge-clover.php` and uploads one combined
+  report to Codecov. Enablement is `continue-on-error` so a pcov/pecl
   hiccup never blocks the test jobs.
 
 Locally:
@@ -397,10 +400,11 @@ In particular, `Table.php`, `Content.php`, `Exporter.php`, `ImportModel.php`,
 `cli/j2xml.php`, and installer/version paths account for most of the gap.
 
 The merge includes the administrator, Webservices API, library,
-system-plugin, and CLI paths. This is the integration flag only. PHPUnit
-uploads separately under the `unittests` flag, and Codecov's combined
-percentage can differ while one of the reports is missing, delayed, or
-calculated against a broader source set.
+system-plugin, and CLI paths. In CI the pcov report is merged with the
+PHPUnit clover before upload (`merge-clover.php`), so the Codecov total
+uses PHPUnit's full executable-line set as the denominator with
+integration hits ORed in — a whole-source metric rather than an
+observed-line one.
 
 ### Test fixtures
 
