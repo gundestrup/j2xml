@@ -19,7 +19,6 @@ parameters:
     # Only analyse our own code, not vendored/bundled libraries.
     paths:
         - administrator
-        - components
         - libraries/eshiol/J2xml
         - plugins
         - cli
