@@ -175,10 +175,14 @@ jobs:
             exit 0
           fi
           php tests/scripts/merge-clover.php coverage-combined.xml coverage-reports
+          # Remove the raw reports so the Codecov uploader does not
+          # auto-discover them alongside coverage-combined.xml.
+          rm -rf coverage-reports
       - name: Upload coverage to Codecov
         if: hashFiles('coverage-combined.xml') != ''
         uses: codecov/codecov-action@af09b5e394c93991b95a5e7646aeb90c1917f78f # v5.5.1
         with:
           files: ./coverage-combined.xml
+          disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
