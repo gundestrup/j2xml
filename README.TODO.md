@@ -1,30 +1,42 @@
-the install of the plugin should be via a "complied" zip file of the plugin.
-not installing via online
-we should also test uninstall of the plugin (that it uninstalls cleanly)
+# README.TODO — all items completed (2026-09)
 
-the tests should cover the following
-Features: 
- Export
- Import
- Send
+- [x] Install the plugin via a "compiled" zip file of the plugin, not online
+      — Done: `tests/scripts/run-all-tests.sh` Phase 2 builds
+      `build/pkg_j2xml.zip` via `scripts/build-package.sh` and installs it
+      through Joomla's installer on both Joomla 5 and Joomla 6.
+- [x] Test uninstall of the plugin (that it uninstalls cleanly)
+      — Done: `run-all-tests.sh` Phase 8 uninstalls the package and asserts
+      no uninstaller warnings/errors on Joomla 5 and 6.
 
-Content types
- Users
- Articles
- Categories
- Contacts
- Modules
- Menus
- Tags
- Fields
+## Test coverage — all covered
 
-on this page 
-https://www.eshiol.it/joomla/j2xml/j2xml39.html
+Features:
 
-you can find the screenshots and explination of the functions.
+- [x] Export — covered by integration suite (export + round-trip)
+- [x] Import — covered by integration suite (UI, CLI, REST API paths)
+- [x] Send — covered by comprehensive send test (all types, J5 + J6)
 
-this mean we should export all the types. in content
-then import new content
-and then reexport it showing the the export of the "old" and the new content
+Content types:
+
+- [x] Users
+- [x] Articles
+- [x] Categories
+- [x] Contacts
+- [x] Modules
+- [x] Menus
+- [x] Tags
+- [x] Fields
+
+Reference: <https://www.eshiol.it/joomla/j2xml/j2xml39.html> (screenshots and
+explanations of the functions)
+
+- [x] Export all content types, import new content, then re-export showing
+      old and new content — Done: Phase 5 import → re-export round-trip
+      verifies imported content survives an export cycle.
+
 ----
-please analyse, what is XMLRPC being used for in plugin?
+
+- [x] Analyse what XMLRPC is being used for in the plugin
+      — Done: XML-RPC was the legacy transfer mechanism; it has been fully
+      removed (Sender.php, Messages.php, eshiol/phpxmlrpc library). Transfer
+      now uses the Joomla Webservices REST API with token authentication.

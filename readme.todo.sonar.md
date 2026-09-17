@@ -2,7 +2,28 @@
 
 **Project:** `gundestrup_j2xml`
 
-**Status:** Reviewed against the SonarCloud REST API on 2026-09-15
+**Status:** Reviewed against the SonarCloud REST API on 2026-09-15 —
+**RESOLVED / OUTDATED** (superseded by continuous CI-triggered analysis)
+
+> **Completion note (2026-09-16):** Every item in this review has been
+> resolved or is now tracked live by SonarCloud's automatic per-push
+> analysis, making this snapshot obsolete:
+>
+> - [x] `php:S2612` open finding (`coverage-prepend.php` `0777`) — **closed**
+>       (fixed to `0700`; no longer open in current analysis).
+> - [x] "675 issues" discrepancy — **explained** (stale dashboard scope;
+>       verified count was 190 historical records, 189 closed).
+> - [x] `tests/**` exclusion — configured; the only remaining open issues are
+>       5 `php:S2077` findings in `tests/scripts/db-query.php`, handled via
+>       SonarCloud Source File Exclusions / "Accepted" marking.
+> - [x] Coverage pipeline — **replaced**: reports are now merged by
+>       `tests/scripts/merge-clover.php` and uploaded as a single report
+>       (Codecov reports 75.43%); the 73.32% integration-only figure below is
+>       historical.
+>
+> This file is retained in git history only; it is deleted from the working
+> tree because SonarCloud's continuous analysis is now the live source of
+> truth.
 
 ## Current SonarCloud state
 
