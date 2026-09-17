@@ -9,6 +9,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -235,19 +236,7 @@ class Tag extends Table
 
         if (isset($options['images']) && $options['images'])
         {
-            $text = html_entity_decode($item->description);
-            $_image = preg_match_all(self::IMAGE_MATCH_STRING, $text, $matches, PREG_PATTERN_ORDER);
-            if (count($matches[1]) > 0)
-            {
-                for ($i = 0; $i < count($matches[1]); $i ++)
-                {
-                    $_image = $matches[1][$i];
-                    if ($_image)
-                    {
-                        Image::export($_image, $xml, $options);
-                    }
-                }
-            }
+            self::exportImagesFromText(html_entity_decode($item->description), $xml, $options);
             $imgs = json_decode($item->images);
             if ($imgs)
             {

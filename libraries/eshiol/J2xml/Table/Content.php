@@ -9,6 +9,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -289,95 +290,14 @@ class Content extends Table
                     $table->save($data);
 
                     $item = $table->getItem();
-                    if ($keep_data == 1)
-                    {
-                        $sets = [];
-                        if (isset($data['modified']))
-                        {
-                            $sets[] = $db->quoteName('modified') . ' = ' . $db->quote($data['modified']);
-                        }
-                        if (isset($data['modified_by']))
-                        {
-                            $sets[] = $db->quoteName('modified_by') . ' = ' . $data['modified_by'];
-                        }
-                        if (count($sets))
-                        {
-                            $query = $db->getQuery()->clear()
-                                ->update($db->quoteName('#__content'))
-                                ->where($db->quoteName('id') . ' = ' . $item->id);
-                            foreach ($sets as $set)
-                            {
-                                $query->set($set);
-                            }
-                            $db->setQuery($query)->execute();
-                        }
-                    }
 
-                    if ($keep_frontpage == 0)
-                    {
-                        $query = "DELETE FROM #__content_frontpage WHERE content_id = " . $item->id;
-                    }
-                    elseif ($data['featured'] == 0)
-                    {
-                        $query = "DELETE FROM #__content_frontpage WHERE content_id = " . $item->id;
-                    }
-                    else
-                    {
-                        // Use query builder for cross-database compatibility (MySQL + PostgreSQL)
-                        $query = $db->getQuery()->clear()
-                            ->insert($db->quoteName('#__content_frontpage'))
-                            ->columns([$db->quoteName('content_id'), $db->quoteName('ordering')])
-                            ->values($item->id . ',' . $data['ordering']);
-                        if (!is_null($data['featured_up']))
-                        {
-                            $query->columns($db->quoteName('featured_up'))
-                                ->values($db->quote($data['featured_up']));
-                        }
-                        if (!is_null($data['featured_down']))
-                        {
-                            $query->columns($db->quoteName('featured_down'))
-                                ->values($db->quote($data['featured_down']));
-                        }
-                    }
-                    $db->setQuery($query)->execute();
+                    self::restoreModifiedFields($db, $data, $item->id, $keep_data);
+                    self::syncFrontpage($db, $data, $item->id, $keep_frontpage);
+                    self::syncRating($db, $data, $item->id, $keep_rating);
 
-                    if (($keep_rating == 0) || (!isset($data['rating_count'])) || ($data['rating_count'] == 0))
+                    if (($keep_id == 1) && ($id > 1) && !self::applySourceId($item, $id))
                     {
-                        $query = $db->getQuery()->clear()
-                            ->delete($db->quoteName('#__content_rating'))
-                            ->where($db->quoteName('content_id') . ' = ' . $item->id);
-                        $db->setQuery($query)->execute();
-                    }
-                    else
-                    {
-                        $rating = new \stdClass();
-                        $rating->content_id = $item->id;
-                        $rating->rating_count = $data['rating_count'];
-                        $rating->rating_sum = $data['rating_sum'];
-                        $rating->lastip = $_SERVER['REMOTE_ADDR'];
-                        try
-                        {
-                            $db->insertObject('#__content_rating', $rating);
-                        }
-                        catch (\Exception $ex)
-                        {
-                            $db->updateObject('#__content_rating', $rating, 'content_id');
-                        }
-                    }
-
-                    if (($keep_id == 1) && ($id > 1))
-                    {
-                        try
-                        {
-                            self::changeId($item->id, $id);
-
-                            $item->id = $id;
-                        }
-                        catch (\Exception $ex)
-                        {
-                            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_ARTICLE_ID_PRESENT', $item->title, $id, $item->id), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
-                            continue;
-                        }
+                        continue;
                     }
 
                     if ($id != $item->id)
@@ -394,6 +314,162 @@ class Content extends Table
                     \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_ARTICLE_NOT_IMPORTED', $data['title'], $id, $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
                 }
             }
+        }
+    }
+
+    /**
+     * Restore the exported modified/modified_by values after a save when
+     * keep_data is enabled (Joomla's save overwrites them).
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param array $data
+     *          the imported article data
+     * @param int $itemId
+     *          the saved article id
+     * @param int $keepData
+     *          the keep_data option
+     *
+     * @return void
+     */
+    private static function restoreModifiedFields ($db, $data, $itemId, $keepData)
+    {
+        if ($keepData != 1)
+        {
+            return;
+        }
+
+        $sets = [];
+        if (isset($data['modified']))
+        {
+            $sets[] = $db->quoteName('modified') . ' = ' . $db->quote($data['modified']);
+        }
+        if (isset($data['modified_by']))
+        {
+            $sets[] = $db->quoteName('modified_by') . ' = ' . $data['modified_by'];
+        }
+        if (!count($sets))
+        {
+            return;
+        }
+
+        $query = $db->getQuery()->clear()
+            ->update($db->quoteName('#__content'))
+            ->where($db->quoteName('id') . ' = ' . $itemId);
+        foreach ($sets as $set)
+        {
+            $query->set($set);
+        }
+        $db->setQuery($query)->execute();
+    }
+
+    /**
+     * Synchronise the frontpage (featured) assignment of an imported article.
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param array $data
+     *          the imported article data
+     * @param int $itemId
+     *          the saved article id
+     * @param int $keepFrontpage
+     *          the keep_frontpage option
+     *
+     * @return void
+     */
+    private static function syncFrontpage ($db, $data, $itemId, $keepFrontpage)
+    {
+        if (($keepFrontpage == 0) || ($data['featured'] == 0))
+        {
+            $query = "DELETE FROM #__content_frontpage WHERE content_id = " . $itemId;
+        }
+        else
+        {
+            // Use query builder for cross-database compatibility (MySQL + PostgreSQL)
+            $query = $db->getQuery()->clear()
+                ->insert($db->quoteName('#__content_frontpage'))
+                ->columns([$db->quoteName('content_id'), $db->quoteName('ordering')])
+                ->values($itemId . ',' . $data['ordering']);
+            if (!is_null($data['featured_up']))
+            {
+                $query->columns($db->quoteName('featured_up'))
+                    ->values($db->quote($data['featured_up']));
+            }
+            if (!is_null($data['featured_down']))
+            {
+                $query->columns($db->quoteName('featured_down'))
+                    ->values($db->quote($data['featured_down']));
+            }
+        }
+        $db->setQuery($query)->execute();
+    }
+
+    /**
+     * Synchronise the rating of an imported article.
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param array $data
+     *          the imported article data
+     * @param int $itemId
+     *          the saved article id
+     * @param int $keepRating
+     *          the keep_rating option
+     *
+     * @return void
+     */
+    private static function syncRating ($db, $data, $itemId, $keepRating)
+    {
+        if (($keepRating == 0) || (!isset($data['rating_count'])) || ($data['rating_count'] == 0))
+        {
+            $query = $db->getQuery()->clear()
+                ->delete($db->quoteName('#__content_rating'))
+                ->where($db->quoteName('content_id') . ' = ' . $itemId);
+            $db->setQuery($query)->execute();
+            return;
+        }
+
+        $rating = new \stdClass();
+        $rating->content_id = $itemId;
+        $rating->rating_count = $data['rating_count'];
+        $rating->rating_sum = $data['rating_sum'];
+        $rating->lastip = $_SERVER['REMOTE_ADDR'];
+        try
+        {
+            $db->insertObject('#__content_rating', $rating);
+        }
+        catch (\Exception $ex)
+        {
+            $db->updateObject('#__content_rating', $rating, 'content_id');
+        }
+    }
+
+    /**
+     * Restore the exported article id on the saved row when keep_id is
+     * enabled.
+     *
+     * @param \Joomla\CMS\Table\Table $item
+     *          the saved article
+     * @param int $id
+     *          the exported article id
+     *
+     * @return boolean true on success, false when the id is already taken
+     */
+    private static function applySourceId ($item, $id)
+    {
+        try
+        {
+            self::changeId($item->id, $id);
+
+            $item->id = $id;
+
+            return true;
+        }
+        catch (\Exception $ex)
+        {
+            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_ARTICLE_ID_PRESENT', $item->title, $id, $item->id), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
+
+            return false;
         }
     }
 
@@ -427,25 +503,17 @@ class Content extends Table
             $data['alias'] = (new \Joomla\CMS\Date\Date("now"))->format('Y-m-d-H-i-s');
         }
 
-        if (!isset($data['fulltext']))
+        // Apply default values for missing fields.
+        foreach (['fulltext' => '', 'metakey' => '', 'metadesc' => '', 'language' => '*', 'introtext' => ''] as $field => $default)
         {
-            $data['fulltext'] = '';
-        }
-        if (!isset($data['metakey']))
-        {
-            $data['metakey'] = '';
-        }
-        if (!isset($data['metadesc']))
-        {
-            $data['metadesc'] = '';
+            if (!isset($data[$field]))
+            {
+                $data[$field] = $default;
+            }
         }
         if (!isset($data['created_by']))
         {
             $data['created_by'] = $userId ?? \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
-        }
-        if (!isset($data['language']))
-        {
-            $data['language'] = '*';
         }
 
         // if (!$version->isCompatible('3.4') && isset($data['published']))
@@ -476,47 +544,54 @@ class Content extends Table
             $data['associations'] = [];
         }
 
+        self::resolveAssociations($data, $db);
+    }
+
+    /**
+     * Resolve the exported article associations to local article ids keyed
+     * by language.
+     *
+     * @param array $data
+     *          the article data being imported
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     *
+     * @return void
+     */
+    private static function resolveAssociations (&$data, $db)
+    {
         if (isset($data['associationlist']))
         {
-            foreach ($data['associationlist']['association'] as $association)
-            {
-                $id = self::getArticleId($association);
-                if ($id)
-                {
-                    $tag = $db->setQuery($db->getQuery()->clear()
-                        ->select($db->quoteName('language'))
-                        ->from($db->quoteName('#__content'))
-                        ->where($db->quoteName('id') . ' = ' . $id))
-                        ->loadResult();
-                    if ($tag !== '*')
-                    {
-                        $data['associations'][$tag] = $id;
-                    }
-                }
-            }
+            $associations = $data['associationlist']['association'] ?? [];
             unset($data['associationlist']);
         }
         elseif (isset($data['association']))
         {
-            $id = self::getArticleId($data['association']);
-            if ($id)
-            {
-                $tag = $db->setQuery($db->getQuery()->clear()
-                    ->select($db->quoteName('language'))
-                    ->from($db->quoteName('#__content'))
-                    ->where($db->quoteName('id') . ' = ' . $id))
-                    ->loadResult();
-                if ($tag !== '*')
-                {
-                    $data['associations'][$tag] = $id;
-                }
-            }
+            $associations = [$data['association']];
             unset($data['association']);
         }
-
-        if (!isset($data['introtext']))
+        else
         {
-            $data['introtext'] = '';
+            return;
+        }
+
+        foreach ($associations as $association)
+        {
+            $id = self::getArticleId($association);
+            if (!$id)
+            {
+                continue;
+            }
+
+            $tag = $db->setQuery($db->getQuery()->clear()
+                ->select($db->quoteName('language'))
+                ->from($db->quoteName('#__content'))
+                ->where($db->quoteName('id') . ' = ' . $id))
+                ->loadResult();
+            if ($tag !== '*')
+            {
+                $data['associations'][$tag] = $id;
+            }
         }
     }
 
@@ -605,90 +680,100 @@ class Content extends Table
 
         if (isset($options['images']) && $options['images'])
         {
-            $img = null;
-            $text = $item->introtext . $item->fulltext;
-            $_image = preg_match_all(self::IMAGE_MATCH_STRING, $text, $matches, PREG_PATTERN_ORDER);
-            if (count($matches[1]) > 0)
-            {
-                for ($i = 0; $i < count($matches[1]); $i ++)
-                {
-                    $_image = $matches[1][$i];
-                    if ($_image)
-                    {
-                        Image::export($_image, $xml, $options);
-                    }
-                }
-            }
-
-            $imgs = json_decode($item->images);
-            if ($imgs)
-            {
-                if (isset($imgs->image_fulltext))
-                {
-                    Image::export($imgs->image_fulltext, $xml, $options);
-                }
-
-                if (isset($imgs->image_intro))
-                {
-                    Image::export($imgs->image_intro, $xml, $options);
-                }
-            }
-
-        foreach($db->setQuery($db->getQuery()->clear()
-                ->select($db->quoteName('v.value'))
-                ->from($db->quoteName('#__fields_values', 'v'))
-                ->from($db->quoteName('#__fields', 'f'))
-                ->where($db->quoteName('f.id') . ' = ' . $db->quoteName('v.field_id'))
-                ->where($db->quoteName('v.item_id') . ' = ' . $db->quote((string) $id))
-                ->where($db->quoteName('f.type') . ' = ' . $db->quote('media')))
-                ->loadColumn() as $_image)
-            {
-                Image::export($_image, $xml, $options);
-            }
-
-            foreach($db->setQuery($db->getQuery()->clear()
-                ->select($db->quoteName('f.fieldparams'))
-                ->select($db->quoteName('v.value'))
-                ->from($db->quoteName('#__fields_values', 'v'))
-                ->from($db->quoteName('#__fields', 'f'))
-                ->where($db->quoteName('f.id') . ' = ' . $db->quoteName('v.field_id'))
-                ->where($db->quoteName('v.item_id') . ' = ' . $db->quote((string) $id))
-                ->where($db->quoteName('f.type') . ' = ' . $db->quote('imagelist')))
-                ->loadObjectList() as $field)
-            {
-                $params = json_decode($field->fieldparams);
-                $_image = ComponentHelper::getParams('com_media')->get('image_path', 'images') . '/' . (isset($params->directory) ? $params->directory . '/' : '') . $field->value;
-                Image::export($_image, $xml, $options);
-            }
-
-            foreach($db->setQuery($db->getQuery()->clear()
-                ->select($db->quoteName('v.value'))
-                ->from($db->quoteName('#__fields_values', 'v'))
-                ->from($db->quoteName('#__fields', 'f'))
-                ->where($db->quoteName('f.id') . ' = ' . $db->quoteName('v.field_id'))
-                ->where($db->quoteName('v.item_id') . ' = ' . $db->quote((string) $id))
-                ->where($db->quoteName('f.type') . ' = ' . $db->quote('editor')))
-                ->loadColumn() as $text)
-            {
-                \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($text, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-                $_image = preg_match_all(self::IMAGE_MATCH_STRING, $text, $matches, PREG_PATTERN_ORDER);
-                if (count($matches[1]) > 0)
-                {
-                    for ($i = 0; $i < count($matches[1]); $i ++)
-                    {
-                        $_image = $matches[1][$i];
-                        if ($_image)
-                        {
-                            Image::export($_image, $xml, $options);
-                        }
-                    }
-                }
-            }
+            self::exportImages($item, $id, $xml, $options, $db);
         }
 
         return $xml;
     }
 
+    /**
+     * Export the images referenced by the article text, the images field
+     * and the media/imagelist/editor custom fields.
+     *
+     * @param Content $item
+     *          the article being exported
+     * @param int $id
+     *          the article id
+     * @param \SimpleXMLElement $xml
+     *          the export document
+     * @param array $options
+     *          the export options
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     *
+     * @return void
+     */
+    private static function exportImages ($item, $id, &$xml, $options, $db)
+    {
+        self::exportImagesFromText($item->introtext . $item->fulltext, $xml, $options);
+
+        $imgs = json_decode($item->images);
+        if ($imgs)
+        {
+            if (isset($imgs->image_fulltext))
+            {
+                Image::export($imgs->image_fulltext, $xml, $options);
+            }
+
+            if (isset($imgs->image_intro))
+            {
+                Image::export($imgs->image_intro, $xml, $options);
+            }
+        }
+
+        foreach($db->setQuery($db->getQuery()->clear()
+            ->select($db->quoteName('v.value'))
+            ->from($db->quoteName('#__fields_values', 'v'))
+            ->from($db->quoteName('#__fields', 'f'))
+            ->where($db->quoteName('f.id') . ' = ' . $db->quoteName('v.field_id'))
+            ->where($db->quoteName('v.item_id') . ' = ' . $db->quote((string) $id))
+            ->where($db->quoteName('f.type') . ' = ' . $db->quote('media')))
+            ->loadColumn() as $_image)
+        {
+            Image::export($_image, $xml, $options);
+        }
+
+        foreach($db->setQuery($db->getQuery()->clear()
+            ->select($db->quoteName('f.fieldparams'))
+            ->select($db->quoteName('v.value'))
+            ->from($db->quoteName('#__fields_values', 'v'))
+            ->from($db->quoteName('#__fields', 'f'))
+            ->where($db->quoteName('f.id') . ' = ' . $db->quoteName('v.field_id'))
+            ->where($db->quoteName('v.item_id') . ' = ' . $db->quote((string) $id))
+            ->where($db->quoteName('f.type') . ' = ' . $db->quote('imagelist')))
+            ->loadObjectList() as $field)
+        {
+            $params = json_decode($field->fieldparams);
+            $_image = ComponentHelper::getParams('com_media')->get('image_path', 'images') . '/' . (isset($params->directory) ? $params->directory . '/' : '') . $field->value;
+            Image::export($_image, $xml, $options);
+        }
+
+        foreach($db->setQuery($db->getQuery()->clear()
+            ->select($db->quoteName('v.value'))
+            ->from($db->quoteName('#__fields_values', 'v'))
+            ->from($db->quoteName('#__fields', 'f'))
+            ->where($db->quoteName('f.id') . ' = ' . $db->quoteName('v.field_id'))
+            ->where($db->quoteName('v.item_id') . ' = ' . $db->quote((string) $id))
+            ->where($db->quoteName('f.type') . ' = ' . $db->quote('editor')))
+            ->loadColumn() as $text)
+        {
+            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($text, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
+            self::exportImagesFromText($text, $xml, $options);
+        }
+    }
+
+    /**
+     * Export the images referenced inside a text value.
+     *
+     * @param string $text
+     *          the text to scan for image references
+     * @param \SimpleXMLElement $xml
+     *          the export document
+     * @param array $options
+     *          the export options
+     *
+     * @return void
+     */
     /**
      *
      * {@inheritdoc}
@@ -748,18 +833,7 @@ class Content extends Table
         $maxid = (int) $db->setQuery($query)->loadResult();
         if ($newid > $maxid)
         {
-            $serverType = $db->getServerType();
-
-            if ($serverType === 'postgresql')
-            {
-                $query = 'ALTER SEQUENCE ' . $db->quoteName('#__content_id_seq') . ' RESTART WITH ' . ($newid + 1);
-            }
-            else
-            {
-                $query = 'ALTER TABLE ' . $db->quoteName('#__content') . ' AUTO_INCREMENT = ' . ($newid + 1);
-            }
-            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-            $db->setQuery($query)->execute();
+            self::resetAutoIncrement($db, $newid + 1, '#__content', '#__content_id_seq');
         }
 
         $query = $db->getQuery()->clear()

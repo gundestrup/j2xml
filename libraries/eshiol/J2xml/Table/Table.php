@@ -9,6 +9,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -315,35 +316,83 @@ class Table extends \Joomla\CMS\Table\Table
 
         foreach (get_object_vars($this) as $k => $v)
         {
-            // If the value is null or non-scalar, or the field is internal
-            // ignore it.
-            if (!is_scalar($v) || ($k[0] == '_'))
+            $item = $this->_serializeField($k, $v);
+            if ($item !== null)
             {
-                continue;
+                $xml[] = $item;
             }
-            if ($this->_excluded && in_array($k, $this->_excluded))
-            {
-                continue;
-            }
-            if ($this->_aliases && array_key_exists($k, $this->_aliases))
-            {
-                continue;
-            }
-            elseif ($this->_jsonEncode && in_array($k, $this->_jsonEncode))
-            {
-                $v = json_encode($v, JSON_NUMERIC_CHECK);
-            }
-            // collapse json variables
-            if ($v)
-            {
-                $x = json_decode($v);
-                if (($x != null) && ($x != $v))
-                {
-                    $v = json_encode($x, JSON_NUMERIC_CHECK);
-                }
-            }
-            $xml[] = $this->_setValue($k, $v);
         }
+
+        $xml = array_merge($xml, $this->_serializeAliases());
+
+        // Return the XML array imploded over new lines.
+        if ($tag)
+        {
+            $class = new \ReflectionClass($this);
+            $mainTag = strtolower($class->getShortName());
+            $ret = '<' . $mainTag . '>' . implode("\n", $xml) . '</' . $mainTag . '>';
+        }
+        else
+        {
+            $ret = implode("\n", $xml);
+        }
+
+        // Return the XML array imploded over new lines.
+        return $ret;
+    }
+
+    /**
+     * Serialise a single object property to an XML element.
+     *
+     * @param string $k
+     *          the property name
+     * @param mixed $v
+     *          the property value
+     *
+     * @return string|null the XML element, or null when the property
+     *         must be skipped (internal, excluded or aliased field)
+     */
+    private function _serializeField ($k, $v)
+    {
+        // If the value is null or non-scalar, or the field is internal
+        // ignore it.
+        if (!is_scalar($v) || ($k[0] == '_'))
+        {
+            return null;
+        }
+        if ($this->_excluded && in_array($k, $this->_excluded))
+        {
+            return null;
+        }
+        if ($this->_aliases && array_key_exists($k, $this->_aliases))
+        {
+            return null;
+        }
+        if ($this->_jsonEncode && in_array($k, $this->_jsonEncode))
+        {
+            $v = json_encode($v, JSON_NUMERIC_CHECK);
+        }
+        // collapse json variables
+        if ($v)
+        {
+            $x = json_decode($v);
+            if (($x != null) && ($x != $v))
+            {
+                $v = json_encode($x, JSON_NUMERIC_CHECK);
+            }
+        }
+
+        return $this->_setValue($k, $v);
+    }
+
+    /**
+     * Serialise the aliased queries to a list of XML elements.
+     *
+     * @return array the XML elements produced by the aliased queries
+     */
+    private function _serializeAliases ()
+    {
+        $xml = [];
 
         foreach ($this->_aliases as $k => $query)
         {
@@ -364,20 +413,7 @@ class Table extends \Joomla\CMS\Table\Table
             }
         }
 
-        // Return the XML array imploded over new lines.
-        if ($tag)
-        {
-            $class = new \ReflectionClass($this);
-            $mainTag = strtolower($class->getShortName());
-            $ret = '<' . $mainTag . '>' . implode("\n", $xml) . '</' . $mainTag . '>';
-        }
-        else
-        {
-            $ret = implode("\n", $xml);
-        }
-
-        // Return the XML array imploded over new lines.
-        return $ret;
+        return $xml;
     }
 
     protected function _setValue ($k, $v)
@@ -416,23 +452,7 @@ class Table extends \Joomla\CMS\Table\Table
         }
         elseif ($v != '')
         {
-            $v = htmlentities($v, ENT_NOQUOTES | ENT_SUBSTITUTE, "UTF-8");
-            $length = strlen($v);
-            for ($i = 0; $i < $length; $i ++)
-            {
-                $current = ord($v[$i]);
-                if (($current == 0x9) || ($current == 0xA) || ($current == 0xD) || (($current >= 0x20) && ($current <= 0xD7FF)) ||
-                    (($current >= 0xE000) && ($current <= 0xFFFD)) || (($current >= 0x10000) && ($current <= 0x10FFFF)))
-                {
-                    $xml .= chr($current);
-                }
-                else
-                {
-                    $xml .= " ";
-                }
-            }
-
-            $xml = '<' . $kOpen . '><![CDATA[' . $xml . ']]></' . $k . '>';
+            $xml = '<' . $kOpen . '><![CDATA[' . self::filterXmlChars($v) . ']]></' . $k . '>';
         }
         else
         {
@@ -440,6 +460,37 @@ class Table extends \Joomla\CMS\Table\Table
         }
 
         // Return the XML value.
+        return $xml;
+    }
+
+    /**
+     * Escape a string for use inside a CDATA section, replacing characters
+     * that are not valid in XML 1.0 with spaces.
+     *
+     * @param string $v
+     *          the value to filter
+     *
+     * @return string the filtered value
+     */
+    private static function filterXmlChars ($v)
+    {
+        $v = htmlentities($v, ENT_NOQUOTES | ENT_SUBSTITUTE, "UTF-8");
+        $xml = '';
+        $length = strlen($v);
+        for ($i = 0; $i < $length; $i ++)
+        {
+            $current = ord($v[$i]);
+            if (($current == 0x9) || ($current == 0xA) || ($current == 0xD) || (($current >= 0x20) && ($current <= 0xD7FF)) ||
+                (($current >= 0xE000) && ($current <= 0xFFFD)) || (($current >= 0x10000) && ($current <= 0x10FFFF)))
+            {
+                $xml .= chr($current);
+            }
+            else
+            {
+                $xml .= " ";
+            }
+        }
+
         return $xml;
     }
 
@@ -486,83 +537,32 @@ class Table extends \Joomla\CMS\Table\Table
         {
             $data['catid'] = self::getCategoryId($data['catid'], $params->get('extension'), $params->get($params->get('extension') . 'category_default'));
         }
-        if (isset($data['created_by']))
+
+        // Resolve user references to local user ids.
+        foreach (['created_by' => $userid, 'created_user_id' => $userid, 'modified_by' => 0, 'modified_user_id' => 0] as $field => $defaultUser)
         {
-            $data['created_by'] = self::getUserId($data['created_by'], $userid);
+            if (isset($data[$field]))
+            {
+                $data[$field] = self::getUserId($data[$field], $defaultUser);
+            }
         }
-        if (isset($data['created_user_id']))
-        {
-            $data['created_user_id'] = self::getUserId($data['created_user_id'], $userid);
-        }
-        if (isset($data['modified_by']))
-        {
-            $data['modified_by'] = self::getUserId($data['modified_by'], 0);
-        }
-        if (isset($data['modified_user_id']))
-        {
-            $data['modified_user_id'] = self::getUserId($data['modified_user_id'], 0);
-        }
+
         if (isset($data['access']))
         {
             $data['access'] = self::getAccessId($data['access']);
         }
-        if (isset($data['publish_up']))
-        {
-            $data['publish_up'] = self::fixDate($data['publish_up']);
-        }
-        if (isset($data['publish_down']))
-        {
-            $data['publish_down'] = self::fixDate($data['publish_down']);
-        }
-        if (isset($data['created']))
-        {
-            $data['created'] = self::fixDate($data['created']);
-        }
-        if (isset($data['modified']))
-        {
-            $data['modified'] = self::fixDate($data['modified']);
-        }
 
-        if (($params->get('version') == '15.9.0') || ($params->get('version') == '12.5.0'))
+        // Normalise date fields.
+        foreach (['publish_up', 'publish_down', 'created', 'modified'] as $field)
         {
-            if (isset($data['title']))
+            if (isset($data[$field]))
             {
-                $data['title'] = htmlspecialchars_decode($data['title']);
-            }
-            if (isset($data['introtext']))
-            {
-                $data['introtext'] = htmlspecialchars_decode($data['introtext']);
-            }
-            if (isset($data['fulltext']))
-            {
-                $data['fulltext'] = htmlspecialchars_decode($data['fulltext']);
-            }
-            if (isset($data['description']))
-            {
-                $data['description'] = htmlspecialchars_decode($data['description']);
+                $data[$field] = self::fixDate($data[$field]);
             }
         }
 
-        $import_fields = $params->get('fields', 0);
-        if ($import_fields)
-        {
-            if (isset($data['field']))
-            {
-                $data['com_fields'] = [
-                    $data['field']['name'] => $data['field']['value']
-                ];
-                unset($data['field']);
-            }
-            elseif (isset($data['fieldlist']['field']))
-            {
-                $data['com_fields'] = [];
-                foreach ($data['fieldlist']['field'] as $field)
-                {
-                    $data['com_fields'][$field['name']] = $field['value'];
-                }
-                unset($data['fieldlist']);
-            }
-        }
+        self::decodeLegacyFields($data, $params);
+        self::prepareFieldValues($data, $params);
 
         if (isset($data['tag']))
         {
@@ -579,6 +579,68 @@ class Table extends \Joomla\CMS\Table\Table
         {
             $registry = new \Joomla\Registry\Registry($data['params']);
             $data['params'] = $registry->toArray();
+        }
+    }
+
+    /**
+     * Decode htmlspecialchars-encoded fields in pre-19.2 XML documents.
+     *
+     * @param array $data
+     *          the array to be imported
+     * @param \Joomla\Registry\Registry $params
+     *          the parameters of the conversion
+     *
+     * @return void
+     */
+    private static function decodeLegacyFields (&$data, $params)
+    {
+        $version = $params->get('version');
+        if (($version != '15.9.0') && ($version != '12.5.0'))
+        {
+            return;
+        }
+
+        foreach (['title', 'introtext', 'fulltext', 'description'] as $field)
+        {
+            if (isset($data[$field]))
+            {
+                $data[$field] = htmlspecialchars_decode($data[$field]);
+            }
+        }
+    }
+
+    /**
+     * Map the exported custom field values to com_fields data.
+     *
+     * @param array $data
+     *          the array to be imported
+     * @param \Joomla\Registry\Registry $params
+     *          the parameters of the conversion
+     *
+     * @return void
+     */
+    private static function prepareFieldValues (&$data, $params)
+    {
+        if (!$params->get('fields', 0))
+        {
+            return;
+        }
+
+        if (isset($data['field']))
+        {
+            $data['com_fields'] = [
+                $data['field']['name'] => $data['field']['value']
+            ];
+            unset($data['field']);
+        }
+        elseif (isset($data['fieldlist']['field']))
+        {
+            $data['com_fields'] = [];
+            foreach ($data['fieldlist']['field'] as $field)
+            {
+                $data['com_fields'][$field['name']] = $field['value'];
+            }
+            unset($data['fieldlist']);
         }
     }
 
@@ -747,6 +809,59 @@ class Table extends \Joomla\CMS\Table\Table
     }
 
     /**
+     * Export the images referenced by img tags in the given HTML.
+     *
+     * @param string $text
+     *          the HTML to scan for images
+     * @param \SimpleXMLElement $xml
+     *          xml
+     * @param array $options
+     *          export options
+     *
+     * @return void
+     */
+    protected static function exportImagesFromText ($text, &$xml, $options)
+    {
+        preg_match_all(self::IMAGE_MATCH_STRING, $text, $matches, PREG_PATTERN_ORDER);
+        foreach ($matches[1] as $image)
+        {
+            if ($image)
+            {
+                Image::export($image, $xml, $options);
+            }
+        }
+    }
+
+    /**
+     * Advance a table's auto-increment/sequence past the given id so that
+     * imports keeping the source ids do not collide with new rows.
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param int $value
+     *          the next auto-increment value
+     * @param string $table
+     *          the table name
+     * @param string $sequence
+     *          the PostgreSQL sequence name
+     *
+     * @return void
+     */
+    protected static function resetAutoIncrement ($db, $value, $table, $sequence)
+    {
+        if ($db->getServerType() === 'postgresql')
+        {
+            $query = 'ALTER SEQUENCE ' . $db->quoteName($sequence) . ' RESTART WITH ' . $value;
+        }
+        else
+        {
+            $query = 'ALTER TABLE ' . $db->quoteName($table) . ' AUTO_INCREMENT = ' . $value;
+        }
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
+        $db->setQuery($query)->execute();
+    }
+
+    /**
      * Get the category id from the category path
      *
      * @param mixed $category
@@ -897,66 +1012,103 @@ class Table extends \Joomla\CMS\Table\Table
 
         if (is_object($xmlObject))
         {
-            $a = $xmlObject->attributes();
-            if ($a)
-            {
-                foreach ($a as $k => $v)
-                {
-                    $out[$k] = (string) $v;
-                }
-            }
-            if (count($xmlObject->children()) === 0)
-            {
-                if (trim($xmlObject))
-                {
-                    $v = preg_replace('/%u([0-9A-F]+)/', '&#x$1;', trim($xmlObject));
-                    if ($htmlEntityDecode)
-                    {
-                        $v = html_entity_decode($v, ENT_QUOTES, 'UTF-8');
-                    }
-                    if ($a)
-                    {
-                        $out['value'] = $v;
-                    }
-                    else
-                    {
-                        $out = $v;
-                    }
-                }
-            }
-            else
-            {
-                foreach ((array) $xmlObject as $index => $node)
-                {
-                    $out[$index] = self::xml2array($node, $htmlEntityDecode);
-                }
-            }
+            return self::node2array($xmlObject, $htmlEntityDecode, $out);
         }
-        elseif (is_array($xmlObject))
+
+        if (is_array($xmlObject))
         {
             foreach ($xmlObject as $index => $node)
             {
                 $out[$index] = self::xml2array($node, $htmlEntityDecode);
             }
+
+            return $out;
         }
-        elseif (is_string($xmlObject))
+
+        if (is_string($xmlObject))
         {
-            $out = preg_replace('/%u([0-9A-F]+)/', '&#x$1;', trim($xmlObject));
-            if ($htmlEntityDecode)
+            return self::decodeXmlString($xmlObject, $htmlEntityDecode);
+        }
+
+        $out = $xmlObject;
+        if ($htmlEntityDecode)
+        {
+            $out = html_entity_decode($out, ENT_QUOTES, 'UTF-8');
+        }
+
+        return $out;
+    }
+
+    /**
+     * Convert an XML element to an array, collecting attributes and
+     * either the text value or the child elements.
+     *
+     * @param \SimpleXMLElement $xmlObject
+     *          the element to convert
+     * @param boolean $htmlEntityDecode
+     *          decode html entities
+     * @param array|null $out
+     *          the array being built
+     *
+     * @return mixed the converted value
+     */
+    private static function node2array ($xmlObject, $htmlEntityDecode, $out)
+    {
+        $a = $xmlObject->attributes();
+        if ($a)
+        {
+            foreach ($a as $k => $v)
             {
-                $out = html_entity_decode($out, ENT_QUOTES, 'UTF-8');
+                $out[$k] = (string) $v;
             }
         }
-        else
+
+        if (count($xmlObject->children()) > 0)
         {
-            $out = $xmlObject;
-            if ($htmlEntityDecode)
+            foreach ((array) $xmlObject as $index => $node)
             {
-                $out = html_entity_decode($out, ENT_QUOTES, 'UTF-8');
+                $out[$index] = self::xml2array($node, $htmlEntityDecode);
+            }
+
+            return $out;
+        }
+
+        if (trim($xmlObject))
+        {
+            $v = self::decodeXmlString($xmlObject, $htmlEntityDecode);
+            if ($a)
+            {
+                $out['value'] = $v;
+            }
+            else
+            {
+                $out = $v;
             }
         }
 
         return $out;
+    }
+
+    /**
+     * Decode a text node value: convert %uXXXX escapes to XML entities
+     * and optionally decode html entities.
+     *
+     * @param string $v
+     *          the value to decode
+     * @param boolean $htmlEntityDecode
+     *          decode html entities
+     *
+     * @return string the decoded value
+     */
+    private static function decodeXmlString ($v, $htmlEntityDecode)
+    {
+        $v = preg_replace('/%u([0-9A-F]+)/', '&#x$1;', trim($v));
+        if ($htmlEntityDecode)
+        {
+            $v = html_entity_decode($v, ENT_QUOTES, 'UTF-8');
+        }
+
+        return $v;
     }
 
     /**

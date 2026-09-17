@@ -8,6 +8,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -101,14 +102,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
     public function doExecute()
     {
         // Merge the default translation with the current translation
-        $lang = $this->getLanguage();
-        $lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, false, false)
-            || $lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, true);
-        $lang->load('lib_j2xml', JPATH_SITE, null, false, false)
-            || $lang->load('lib_j2xml', JPATH_ADMINISTRATOR, null, false, false)
-            // Fallback to the lib_j2xml file in the default language
-            || $lang->load('lib_j2xml', JPATH_SITE, null, true)
-            || $lang->load('lib_j2xml', JPATH_ADMINISTRATOR, null, true);
+        $this->loadLanguages();
 
         $filename = $this->getInput()->get('f',null,'');
 
@@ -127,6 +121,78 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
         \Joomla\CMS\Log\Log::addLogger(array('text_file' => 'j2xml.php', 'extension' => 'com_j2xml'), \Joomla\CMS\Log\Log::ALL, array('lib_j2xml','cli_j2xml'));
         \Joomla\CMS\Log\Log::addLogger(array('logger' => 'echo', 'extension' => 'com_j2xml'), \Joomla\CMS\Log\Log::ALL & ~\Joomla\CMS\Log\Log::DEBUG, array('lib_j2xml','cli_j2xml'));
 
+        $data = $this->loadFile($filename);
+
+        libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
+        if (!$xml)
+        {
+            $this->reportXmlErrors();
+            exit(0);
+        }
+
+        \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
+        $results = $this->triggerEvent('onBeforeImport', array('cli_j2xml.import', &$xml));
+        if (!$xml || (strtoupper($xml->getName()) != 'J2XML') || !isset($xml['version']))
+        {
+            $this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
+            return;
+        }
+
+        $xmlVersion = $xml['version'];
+        $xmlVersionNumber = self::toVersionNumber($xmlVersion);
+
+        $j2xmlVersion = class_exists('eshiol\J2xmlpro\Version') ? eshiol\J2xmlpro\Version::$DOCVERSION : eshiol\J2xml\Version::$DOCVERSION;
+        $j2xmlVersionNumber = self::toVersionNumber($j2xmlVersion);
+
+        if (($xmlVersionNumber == $j2xmlVersionNumber) || ($xmlVersionNumber == "150900") || ($xmlVersionNumber == "120500"))
+        {
+            set_time_limit(120);
+            // set_time_limit(120);
+            $params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
+
+            $iparams = $this->buildImportParams($params, $xml);
+
+            $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $importer = class_exists('eshiol\J2xmlpro\Importer') ? new eshiol\J2xmlpro\Importer($db, $this) : new eshiol\J2xml\Importer($db, $this);
+            $importer->import($xml, $iparams);
+        }
+        else
+        {
+            $this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED', $xmlVersion),'error');
+        }
+    }
+
+    /**
+     * Load the J2XML translations, falling back to the default language.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function loadLanguages()
+    {
+        $lang = $this->getLanguage();
+        $lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, false, false)
+            || $lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, true);
+        $lang->load('lib_j2xml', JPATH_SITE, null, false, false)
+            || $lang->load('lib_j2xml', JPATH_ADMINISTRATOR, null, false, false)
+            // Fallback to the lib_j2xml file in the default language
+            || $lang->load('lib_j2xml', JPATH_SITE, null, true)
+            || $lang->load('lib_j2xml', JPATH_ADMINISTRATOR, null, true);
+    }
+
+    /**
+     * Read the import file (gzip-compressed or plain) as UTF-8.
+     *
+     * @param   string  $filename  the file to import
+     *
+     * @return  string
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function loadFile($filename)
+    {
         $data = implode(gzfile($filename));
         if (!$data)
         {
@@ -138,110 +204,100 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
             $data = mb_convert_encoding($data, 'UTF-8');
         }
 
-        libxml_use_internal_errors(true);
-        $xml = simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NONET);
-        if (!$xml)
-        {
-            $errors = libxml_get_errors();
-            foreach ($errors as $error) {
-                $msg = $error->code.' - '.$error->message.' at line '.$error->line;
-                switch ($error->level) {
-                    default:
-                    case LIBXML_ERR_WARNING:
-                        $this->out(sprintf('%d - %s at line %d',
-                            $error->message, $error->line,
-                            'message')
-                        );
-                        break;
-                    case LIBXML_ERR_ERROR:
-                        $this->out(sprintf('%d - %s at line %d',
-                            $error->message, $error->line,
-                            'notice')
-                        );
-                        break;
-                    case LIBXML_ERR_FATAL:
-                        $this->out(sprintf('%d - %s at line %d',
-                            $error->message, $error->line,
-                            'error')
-                        );
-                        break;
-                }
-            }
-            libxml_clear_errors();
-            exit(0);
-        }
+        return $data;
+    }
 
-        if (!$xml)
-        {
-            $this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
-            exit(0);
-        }
-
-        \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
-        $results = $this->triggerEvent('onBeforeImport', array('cli_j2xml.import', &$xml));
-        if (!$xml)
-        {
-            $this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
-        }
-        elseif (strtoupper($xml->getName()) != 'J2XML')
-        {
-            $this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
-        }
-        elseif(!isset($xml['version']))
-        {
-            $this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
-        }
-        else
-        {
-            $xmlVersion = $xml['version'];
-            $version = explode(".", $xmlVersion);
-            $xmlVersionNumber = $version[0] . substr('0' . $version[1], strlen($version[1]) - 1) . substr('0' . $version[2], strlen($version[2]) - 1);
-
-            $j2xmlVersion = class_exists('eshiol\J2xmlpro\Version') ? eshiol\J2xmlpro\Version::$DOCVERSION : eshiol\J2xml\Version::$DOCVERSION;
-            $version = explode(".", $j2xmlVersion);
-            $j2xmlVersionNumber = $version[0] . substr('0' . $version[1], strlen($version[1]) - 1) . substr('0' . $version[2], strlen($version[2]) - 1);
-
-            if (($xmlVersionNumber == $j2xmlVersionNumber) || ($xmlVersionNumber == "150900") || ($xmlVersionNumber == "120500"))
-            {
-                set_time_limit(120);
-                // set_time_limit(120);
-                $params = \Joomla\CMS\Component\ComponentHelper::getParams('com_j2xml');
-
-                $iparams = new \Joomla\Registry\Registry();
-                $iparams->set('version', (string) $xml['version']);
-                $iparams->set('categories', $params->get('import_categories', 1));
-                $iparams->set('contacts', $params->get('import_contacts', 1));
-                $iparams->set('fields', $params->get('import_fields', 1));
-                $iparams->set('images', $params->get('import_images', 1));
-                $iparams->set('keep_id', $params->get('keep_id', 0));
-                $iparams->set('tags', $params->get('import_tags', 1));
-                $iparams->set('users', $params->get('import_users', 1));
-                $iparams->set('superusers', $params->get('import_superusers', 0));
-                $iparams->set('usernotes', $params->get('import_usernotes', 1));
-                $iparams->set('viewlevels', $params->get('import_viewlevels', 1));
-                $iparams->set('content', $params->get('import_content', 1));
-                $iparams->set('weblinks', $params->get('import_weblinks'));
-                $iparams->set('logger', 'cli');
-
-                $iparams->set('keep_frontpage', $params->get('keep_frontpage'));
-                $iparams->set('keep_rating', $params->get('keep_rating'));
-
-                if ($params->get('keep_category', 1) == 2)
-                {
-                    $iparams->set('content_category_forceto', $params->get('category'));
-                }
-
-                $iparams->set('keep_data', $params->get('keep_data'));
-
-                $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-                $importer = class_exists('eshiol\J2xmlpro\Importer') ? new eshiol\J2xmlpro\Importer($db, $this) : new eshiol\J2xml\Importer($db, $this);
-                $importer->import($xml, $iparams);
-            }
-            else
-            {
-                $this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED', $xmlVersion),'error');
+    /**
+     * Output the libxml errors collected while parsing the import file.
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function reportXmlErrors()
+    {
+        foreach (libxml_get_errors() as $error) {
+            switch ($error->level) {
+                default:
+                case LIBXML_ERR_WARNING:
+                    $this->out(sprintf('%d - %s at line %d',
+                        $error->message, $error->line,
+                        'message')
+                    );
+                    break;
+                case LIBXML_ERR_ERROR:
+                    $this->out(sprintf('%d - %s at line %d',
+                        $error->message, $error->line,
+                        'notice')
+                    );
+                    break;
+                case LIBXML_ERR_FATAL:
+                    $this->out(sprintf('%d - %s at line %d',
+                        $error->message, $error->line,
+                        'error')
+                    );
+                    break;
             }
         }
+        libxml_clear_errors();
+    }
+
+    /**
+     * Convert a dotted version string to the packed numeric form used to
+     * compare J2XML document versions.
+     *
+     * @param   string  $version  the version string (e.g. "4.5.2")
+     *
+     * @return  string
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private static function toVersionNumber($version)
+    {
+        $version = explode(".", (string) $version);
+
+        return $version[0] . substr('0' . $version[1], strlen($version[1]) - 1) . substr('0' . $version[2], strlen($version[2]) - 1);
+    }
+
+    /**
+     * Build the import parameter registry from the component options.
+     *
+     * @param   \Joomla\Registry\Registry  $params  the component options
+     * @param   \SimpleXMLElement          $xml     the document being imported
+     *
+     * @return  \Joomla\Registry\Registry
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function buildImportParams($params, $xml)
+    {
+        $iparams = new \Joomla\Registry\Registry();
+        $iparams->set('version', (string) $xml['version']);
+        $iparams->set('categories', $params->get('import_categories', 1));
+        $iparams->set('contacts', $params->get('import_contacts', 1));
+        $iparams->set('fields', $params->get('import_fields', 1));
+        $iparams->set('images', $params->get('import_images', 1));
+        $iparams->set('keep_id', $params->get('keep_id', 0));
+        $iparams->set('tags', $params->get('import_tags', 1));
+        $iparams->set('users', $params->get('import_users', 1));
+        $iparams->set('superusers', $params->get('import_superusers', 0));
+        $iparams->set('usernotes', $params->get('import_usernotes', 1));
+        $iparams->set('viewlevels', $params->get('import_viewlevels', 1));
+        $iparams->set('content', $params->get('import_content', 1));
+        $iparams->set('weblinks', $params->get('import_weblinks'));
+        $iparams->set('logger', 'cli');
+
+        $iparams->set('keep_frontpage', $params->get('keep_frontpage'));
+        $iparams->set('keep_rating', $params->get('keep_rating'));
+
+        if ($params->get('keep_category', 1) == 2)
+        {
+            $iparams->set('content_category_forceto', $params->get('category'));
+        }
+
+        $iparams->set('keep_data', $params->get('keep_data'));
+
+        return $iparams;
     }
 
     /**

@@ -9,6 +9,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -198,25 +199,7 @@ class User extends Table
         {
             self::prepareData($record, $data, $params);
 
-            if (isset($data['group']))
-            {
-                // group can be a single value or an array (multiple <group> elements)
-                $groups = (array) $data['group'];
-                foreach ($groups as $g)
-                {
-                    $data['groups'][] = parent::getUsergroupId($g);
-                }
-                unset($data['group']);
-            }
-            elseif (isset($data['grouplist']))
-            {
-                $data['groups'] = [];
-                foreach ($data['grouplist']['group'] as $v)
-                {
-                    $data['groups'][] = parent::getUsergroupId($v);
-                }
-                unset($data['grouplist']);
-            }
+            self::resolveGroups($data);
 
             if (!$import_superusers && isset($data['groups']) && in_array(8, $data['groups']))
             {
@@ -224,52 +207,21 @@ class User extends Table
                 continue;
             }
 
-            $existingUserId = $db->setQuery(
-                    $db->getQuery()->clear()
-                        ->select($db->quoteName('id'))
-                        ->from($db->quoteName('#__users'))
-                        ->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
-                ->loadResult();
+            $existingUserId = self::findUserId($db, $data['username']);
 
-            if ($import_password && isset($data['password']))
-            {
-                $data['password_crypted'] = $data['password'];
-                $data['password2'] = $data['password'] = \Joomla\CMS\Language\Text::_('LIB_J2XML_PASSWORD_NOT_AVAILABLE');
-            }
-            elseif ($import_password && isset($data['password_clear']))
-            {
-                $data['password'] = $data['password2'] = $data['password_clear'];
-            }
-            elseif (!$existingUserId)
-            {
-                $data['password'] = $data['password2'] = \Joomla\CMS\User\UserHelper::genRandomPassword();
-            }
-            else
-            {
-                unset($data['password'], $data['password2'], $data['password_clear'], $data['password_crypted']);
-            }
+            self::resolvePassword($data, $import_password, $existingUserId);
 
             $userId = $data['id'] ?? 0;
             unset($data['id']);
 
-            $data['id'] = $db->setQuery(
-                    $db->getQuery()->clear()
-                        ->select($db->quoteName('id'))
-                        ->from($db->quoteName('#__users'))
-                        ->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
-                ->loadResult();
+            $data['id'] = self::findUserId($db, $data['username']);
 
             if (!$data['id'] || ($import_users == 2))
             {
                 $user = $mvcFactory->createModel('User', 'Administrator', ['ignore_request' => true]);
                 $result = $user->save($data);
 
-                $id = $db->setQuery(
-                        $db->getQuery()->clear()
-                            ->select($db->quoteName('id'))
-                            ->from($db->quoteName('#__users'))
-                            ->where($db->quoteName('username') . ' = ' . $db->quote($data['username'])))
-                    ->loadResult();
+                $id = self::findUserId($db, $data['username']);
 
                 if ($id)
                 {
@@ -299,63 +251,10 @@ class User extends Table
 
                     if (($userId != $id) && ($keepId == 1))
                     {
-                        $id = $user->getState('user.id');
-                        $query = $db->getQuery()->clear()
-                            ->update('#__users')
-                            ->set($db->quoteName('id') . ' = ' . $userId)
-                            ->where($db->quoteName('id') . ' = ' . $id);
-                        $db->setQuery($query)->execute();
-
-                        $query = $db->getQuery()->clear()
-                            ->update('#__user_usergroup_map')
-                            ->set($db->quoteName('user_id') . ' = ' . $userId)
-                            ->where($db->quoteName('user_id') . ' = ' . $id);
-                        $db->setQuery($query)->execute();
-
-                        if ($userId >= $autoincrement)
-                        {
-                            $autoincrement = $userId + 1;
-                        }
-
-                        $id = $userId;
+                        $id = self::restoreUserId($db, $user, $userId, $id, $autoincrement);
                     }
 
-                    try
-                    {
-                        $query = $db->getQuery()->clear()
-                            ->delete($db->quoteName('#__user_profiles'))
-                            ->where($db->quoteName('user_id') . ' = ' . $id);
-                        $db->setQuery($query)->execute();
-
-                        if (isset($data['profile']))
-                        {
-                            $query = $db->getQuery()->clear()->insert($db->quoteName('#__user_profiles'));
-                            $query->values($id . ', ' . $db->quote($data['profile']['name']) . ', ' . $db->quote($data['profile']['value']) . ', 1');
-                            $db->setQuery($query)->execute();
-                        }
-                        elseif (isset($data['profilelist']))
-                        {
-                            $query = $db->getQuery()->clear()->insert($db->quoteName('#__user_profiles'));
-                            $order = 1;
-                            $query->columns(
-                                    $db->quoteName(
-                                            [
-                                                    'user_id',
-                                                    'profile_key',
-                                                    'profile_value',
-                                                    'ordering'
-                                            ]));
-                            foreach ($data['profilelist']['profile'] as $v)
-                            {
-                                $query->values($id . ', ' . $db->quote($v['name']) . ', ' . $db->quote($v['value']) . ', ' . $order ++);
-                            }
-                            $db->setQuery($query)->execute();
-                        }
-                    }
-                    catch (\Exception $e)
-                    {
-                        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NO_PROFILE', $data['name']), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
-                    }
+                    self::syncProfile($db, $data, $id);
                 }
                 else
                 {
@@ -374,23 +273,192 @@ class User extends Table
             }
         }
 
-        $serverType = $db->getServerType();
         if ($autoincrement > $maxid)
         {
-            if ($serverType === 'postgresql')
-            {
-                $query = 'ALTER SEQUENCE ' . $db->quoteName('#__users_id_seq') . ' RESTART WITH ' . $autoincrement;
-            }
-            else
-            {
-                $query = 'ALTER TABLE ' . $db->quoteName('#__users') . ' AUTO_INCREMENT = ' . $autoincrement;
-            }
-            $db->setQuery($query)->execute();
-            $maxid = $autoincrement;
+            self::resetAutoIncrement($db, $autoincrement, '#__users', '#__users_id_seq');
         }
 
         $params->set('imported_users', json_encode($users));
     }
+
+    /**
+     * Get the local user id for a username.
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param string $username
+     *          the username to look up
+     *
+     * @return int|null the user id if the user exists
+     */
+    private static function findUserId ($db, $username)
+    {
+        return $db->setQuery(
+                $db->getQuery()->clear()
+                    ->select($db->quoteName('id'))
+                    ->from($db->quoteName('#__users'))
+                    ->where($db->quoteName('username') . ' = ' . $db->quote($username)))
+            ->loadResult();
+    }
+
+    /**
+     * Resolve the exported group references to local usergroup ids.
+     *
+     * @param array $data
+     *          the user data being imported
+     *
+     * @return void
+     */
+    private static function resolveGroups (&$data)
+    {
+        if (isset($data['group']))
+        {
+            // group can be a single value or an array (multiple <group> elements)
+            $groups = (array) $data['group'];
+            foreach ($groups as $g)
+            {
+                $data['groups'][] = parent::getUsergroupId($g);
+            }
+            unset($data['group']);
+        }
+        elseif (isset($data['grouplist']))
+        {
+            $data['groups'] = [];
+            foreach ($data['grouplist']['group'] as $v)
+            {
+                $data['groups'][] = parent::getUsergroupId($v);
+            }
+            unset($data['grouplist']);
+        }
+    }
+
+    /**
+     * Resolve the password fields according to the password import option
+     * and whether the user already exists.
+     *
+     * @param array $data
+     *          the user data being imported
+     * @param int $importPassword
+     *          the password import option
+     * @param int|null $existingUserId
+     *          the id of the existing user, if any
+     *
+     * @return void
+     */
+    private static function resolvePassword (&$data, $importPassword, $existingUserId)
+    {
+        if ($importPassword && isset($data['password']))
+        {
+            $data['password_crypted'] = $data['password'];
+            $data['password2'] = $data['password'] = \Joomla\CMS\Language\Text::_('LIB_J2XML_PASSWORD_NOT_AVAILABLE');
+        }
+        elseif ($importPassword && isset($data['password_clear']))
+        {
+            $data['password'] = $data['password2'] = $data['password_clear'];
+        }
+        elseif (!$existingUserId)
+        {
+            $data['password'] = $data['password2'] = \Joomla\CMS\User\UserHelper::genRandomPassword();
+        }
+        else
+        {
+            unset($data['password'], $data['password2'], $data['password_clear'], $data['password_crypted']);
+        }
+    }
+
+    /**
+     * Restore the exported user id on the saved row when keep_user_id is
+     * enabled.
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param mixed $user
+     *          the user model used for the save
+     * @param int $userId
+     *          the exported user id
+     * @param int $id
+     *          the assigned user id
+     * @param int $autoincrement
+     *          the highest user id assigned so far
+     *
+     * @return int the restored user id
+     */
+    private static function restoreUserId ($db, $user, $userId, $id, &$autoincrement)
+    {
+        $id = $user->getState('user.id');
+        $query = $db->getQuery()->clear()
+            ->update('#__users')
+            ->set($db->quoteName('id') . ' = ' . $userId)
+            ->where($db->quoteName('id') . ' = ' . $id);
+        $db->setQuery($query)->execute();
+
+        $query = $db->getQuery()->clear()
+            ->update('#__user_usergroup_map')
+            ->set($db->quoteName('user_id') . ' = ' . $userId)
+            ->where($db->quoteName('user_id') . ' = ' . $id);
+        $db->setQuery($query)->execute();
+
+        if ($userId >= $autoincrement)
+        {
+            $autoincrement = $userId + 1;
+        }
+
+        return $userId;
+    }
+
+    /**
+     * Replace the user profile values with the exported ones.
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param array $data
+     *          the imported user data
+     * @param int $id
+     *          the saved user id
+     *
+     * @return void
+     */
+    private static function syncProfile ($db, $data, $id)
+    {
+        try
+        {
+            $query = $db->getQuery()->clear()
+                ->delete($db->quoteName('#__user_profiles'))
+                ->where($db->quoteName('user_id') . ' = ' . $id);
+            $db->setQuery($query)->execute();
+
+            if (isset($data['profile']))
+            {
+                $query = $db->getQuery()->clear()->insert($db->quoteName('#__user_profiles'));
+                $query->values($id . ', ' . $db->quote($data['profile']['name']) . ', ' . $db->quote($data['profile']['value']) . ', 1');
+                $db->setQuery($query)->execute();
+            }
+            elseif (isset($data['profilelist']))
+            {
+                $query = $db->getQuery()->clear()->insert($db->quoteName('#__user_profiles'));
+                $order = 1;
+                $query->columns(
+                        $db->quoteName(
+                                [
+                                        'user_id',
+                                        'profile_key',
+                                        'profile_value',
+                                        'ordering'
+                                ]));
+                foreach ($data['profilelist']['profile'] as $v)
+                {
+                    $query->values($id . ', ' . $db->quote($v['name']) . ', ' . $db->quote($v['value']) . ', ' . $order ++);
+                }
+                $db->setQuery($query)->execute();
+            }
+        }
+        catch (\Exception $e)
+        {
+            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USER_NO_PROFILE', $data['name']), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
+        }
+    }
+
+
 
     /**
      *

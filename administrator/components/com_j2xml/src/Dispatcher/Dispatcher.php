@@ -5,9 +5,8 @@
  *
  * @version     __DEPLOY_VERSION__
  *
- * @author      Helios Ciancio <info (at) eshiol (dot) it>
- * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio <info (at) eshiol (dot) it> (https://www.eshiol.it). All Rights Reserved.
+ * @author      Svend Gundestrup
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  */
 

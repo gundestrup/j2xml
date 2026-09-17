@@ -9,6 +9,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -142,47 +143,7 @@ class Module extends \eshiol\J2xml\Table\Table
                 $table->bind($data);
                 if ($table->store())
                 {
-                    $query = $db->getQuery()->clear()
-                        ->delete('#__modules_menu')
-                        ->where($db->quoteName('moduleid') . ' = ' . $table->id);
-                    $db->setQuery($query)->execute();
-                    if (isset($data['menus']))
-                    {
-                        $query->clear()->insert('#__modules_menu');
-
-                        if ($data['menus'] == 'all')
-                        {
-                            $query->values($table->id . ', 0');
-                        }
-                        else
-                        {
-                            $include = ($data['menus'] == 'exclude') ? - 1 : 1;
-                            if (isset($data['menu']))
-                            {
-                                $query->values($table->id . ', ' . ($include * parent::getMenuId($data['menu'])));
-                            }
-                            elseif (isset($data['menulist']))
-                            {
-                                foreach ($data['menulist']['menu'] as $v)
-                                {
-                                    $m = parent::getMenuId($v);
-                                    if ($m)
-                                    {
-                                        $query->values($table->id . ', ' . ($include * $m));
-                                    }
-                                }
-                            }
-                        }
-                        try
-                        {
-                            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-                            $db->setQuery($query)->execute();
-                        }
-                        catch(\Exception $ex)
-                        {
-                            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
-                        }
-                    }
+                    self::syncModuleMenus($db, $table, $data);
                     \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MODULE_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
                     // Trigger the onContentAfterSave event.
                 }
@@ -192,6 +153,67 @@ class Module extends \eshiol\J2xml\Table\Table
                 }
                 $table = null;
             }
+        }
+    }
+
+    /**
+     * Rebuild the modules-menu assignments for an imported module.
+     *
+     * @param \Joomla\Database\DatabaseDriver $db
+     *          the database connector
+     * @param \eshiol\J2xml\Table\Module $table
+     *          the saved module table
+     * @param array $data
+     *          the imported module data
+     *
+     * @return void
+     */
+    private static function syncModuleMenus ($db, $table, $data)
+    {
+        $query = $db->getQuery()->clear()
+            ->delete('#__modules_menu')
+            ->where($db->quoteName('moduleid') . ' = ' . $table->id);
+        $db->setQuery($query)->execute();
+
+        if (!isset($data['menus']))
+        {
+            return;
+        }
+
+        $query->clear()->insert('#__modules_menu');
+
+        if ($data['menus'] == 'all')
+        {
+            $query->values($table->id . ', 0');
+        }
+        else
+        {
+            $include = ($data['menus'] == 'exclude') ? - 1 : 1;
+            if (isset($data['menu']))
+            {
+                $query->values($table->id . ', ' . ($include * parent::getMenuId($data['menu'])));
+            }
+            elseif (isset($data['menulist']))
+            {
+                foreach ($data['menulist']['menu'] as $v)
+                {
+                    $m = parent::getMenuId($v);
+                    if ($m)
+                    {
+                        $query->values($table->id . ', ' . ($include * $m));
+                    }
+                }
+            }
+        }
+
+        try
+        {
+            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
+            $db->setQuery($query)->execute();
+        }
+        catch(\Exception $ex)
+        {
+            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
         }
     }
 }

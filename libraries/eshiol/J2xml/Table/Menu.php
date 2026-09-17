@@ -9,6 +9,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -187,83 +188,14 @@ class Menu extends \eshiol\J2xml\Table\Table
                     $table->load($data['id']);
                 }
 
-                if (isset($data['component_id']) && $data['component_id'])
+                if (!self::resolveComponentId($db, $data))
                 {
-                    $query = $db->getQuery()->clear()
-                        ->select($db->quoteName('extension_id'))
-                        ->from($db->quoteName('#__extensions'))
-                        ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
-                        ->where($db->quoteName('element') . ' = ' . $db->quote($data['component_id']));
-                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-                    $component = $db->setQuery($query)->loadResult();
-
-                    if (!$component)
-                    {
-                        $error = \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_ERROR_COMPONENT_NOT_FOUND', $data['component_id']);
-                        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
-                        continue;
-                    }
-                }
-                else
-                {
-                    $component = 0;
+                    continue;
                 }
 
-                $data['component_id'] = $component;
-
-                if ($data['type'] == 'component')
+                if (!self::resolveMenuLink($db, $data))
                 {
-                    if (isset($data['link']) && $data['link'])
-                    {
-                        $args = [];
-                        parse_str(parse_url($data['link'], PHP_URL_QUERY), $args);
-                        if (isset($args['option']))
-                        {
-                            if ($args['option'] == 'com_content')
-                            {
-                                if (isset($args['view']) && ($args['view'] == 'article'))
-                                {
-                                    if (empty($data['article_id']))
-                                    {
-                                        $error = \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_ARTICLE_NOT_FOUND', 0);
-                                        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
-                                        continue;
-
-                                    }
-
-                                    $args['id'] = self::getArticleId($data['article_id']);
-                                    if ($args['id'] == 0)
-                                    {
-                                        $error = \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_ARTICLE_NOT_FOUND', $data['article_id']);
-                                        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
-                                        continue;
-                                    }
-                                    $data['link'] = 'index.php?' . http_build_query($args);
-                                }
-                            }
-                            else
-                            {
-                                $query = $db->getQuery()->clear()
-                                    ->select($db->quoteName('extension_id'))
-                                    ->from($db->quoteName('#__extensions'))
-                                    ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
-                                    ->where($db->quoteName('element') . ' = ' . $db->quote($args['option']));
-                                \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-                                $component = $db->setQuery($query)->loadResult();
-                                if (!$component)
-                                {
-                                    $error = \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_ERROR_COMPONENT_NOT_FOUND', $args['option']);
-                                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
-                                    continue;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], \Joomla\CMS\Language\Text::_('LIB_J2XML_ERROR_UNKNOWN')), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
-                            continue;
-                        }
-                    }
+                    continue;
                 }
 
                 // Trigger the onContentBeforeSave event.
@@ -281,6 +213,127 @@ class Menu extends \eshiol\J2xml\Table\Table
                 $table = null;
             }
         }
+    }
+
+    /**
+     * Get the local extension id for a component element.
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param string $element
+     *          the component element (e.g. com_content)
+     *
+     * @return int|null the extension id if the component is installed
+     */
+    private static function findComponentId ($db, $element)
+    {
+        $query = $db->getQuery()->clear()
+            ->select($db->quoteName('extension_id'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
+            ->where($db->quoteName('element') . ' = ' . $db->quote($element));
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
+
+        return $db->setQuery($query)->loadResult();
+    }
+
+    /**
+     * Resolve the exported component name to the local extension id.
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param array $data
+     *          the menu item data being imported
+     *
+     * @return boolean false (and logs a warning) when the component is not
+     *         installed
+     */
+    private static function resolveComponentId ($db, &$data)
+    {
+        if (!isset($data['component_id']) || !$data['component_id'])
+        {
+            $data['component_id'] = 0;
+
+            return true;
+        }
+
+        $component = self::findComponentId($db, $data['component_id']);
+        if (!$component)
+        {
+            $error = \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_ERROR_COMPONENT_NOT_FOUND', $data['component_id']);
+            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
+
+            return false;
+        }
+
+        $data['component_id'] = $component;
+
+        return true;
+    }
+
+    /**
+     * Rewrite a component menu item link to reference the local article id.
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param array $data
+     *          the menu item data being imported
+     *
+     * @return boolean false (and logs an error) when the link cannot be
+     *         resolved
+     */
+    private static function resolveMenuLink ($db, &$data)
+    {
+        if (($data['type'] != 'component') || !isset($data['link']) || !$data['link'])
+        {
+            return true;
+        }
+
+        $args = [];
+        parse_str(parse_url($data['link'], PHP_URL_QUERY), $args);
+        if (!isset($args['option']))
+        {
+            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], \Joomla\CMS\Language\Text::_('LIB_J2XML_ERROR_UNKNOWN')), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
+
+            return false;
+        }
+
+        if ($args['option'] == 'com_content')
+        {
+            if (isset($args['view']) && ($args['view'] == 'article'))
+            {
+                if (empty($data['article_id']))
+                {
+                    $error = \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_ARTICLE_NOT_FOUND', 0);
+                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
+
+                    return false;
+                }
+
+                $args['id'] = self::getArticleId($data['article_id']);
+                if ($args['id'] == 0)
+                {
+                    $error = \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_ARTICLE_NOT_FOUND', $data['article_id']);
+                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
+
+                    return false;
+                }
+                $data['link'] = 'index.php?' . http_build_query($args);
+            }
+        }
+        else
+        {
+            $component = self::findComponentId($db, $args['option']);
+            if (!$component)
+            {
+                $error = \Joomla\CMS\Language\Text::sprintf('LIB_J2XML_ERROR_COMPONENT_NOT_FOUND', $args['option']);
+                \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_MENU_NOT_IMPORTED', $data['title'], $error), \Joomla\CMS\Log\Log::WARNING, 'lib_j2xml'));
+
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

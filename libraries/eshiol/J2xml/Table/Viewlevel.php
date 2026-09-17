@@ -9,6 +9,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -149,59 +150,7 @@ class Viewlevel extends Table
                     $table->load($data['id']);
                 }
 
-                // Add rules to the viewlevel data.
-                $rules_id = [];
-                if (isset($data['rule']))
-                {
-                    $rules_id[] = $data['rule'];
-                    unset($data['rule']);
-                }
-                if (isset($data['rulelist']))
-                {
-                    foreach ($data['rulelist']['rule'] as $v)
-                    {
-                        $rules_id[] = $v;
-                    }
-                    unset($data['rulelist']);
-                }
-
-                for ($i = 0; $i < count($rules_id); $i ++)
-                {
-                    $usergroup = parent::getUsergroupId($rules_id[$i]);
-                    if ($usergroup !== null)
-                    {
-                        $rules_id[$i] = $usergroup;
-                    }
-                    else
-                    {
-                        $groups = json_decode($rules_id[$i]);
-                        $g = [];
-                        $id = 0;
-
-                        for ($j = 0; $j < count($groups); $j ++)
-                        {
-                            $g[] = $groups[$j];
-                            $group = json_encode($g, JSON_NUMERIC_CHECK);
-                            $usergroup = parent::getUsergroupId($group);
-                            if ($usergroup !== null)
-                            {
-                                $id = $usergroup;
-                            }
-                            else // import usergroup
-                            {
-                                $u = new \Joomla\CMS\Table\Usergroup($db); // \Joomla\CMS\Table\Table::getInstance('Usergroup');
-                                $u->save([
-                                        'title' => $groups[$j],
-                                        'parent_id' => $id
-                                ]);
-                                $id = $u->id;
-                                \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERGROUP_IMPORTED', $groups[$j]), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
-                            }
-                        }
-                        $rules_id[$i] = $id;
-                    }
-                }
-                $data['rules'] = json_encode($rules_id, JSON_NUMERIC_CHECK);
+                self::resolveRules($data, $db);
 
                 if ($table->save($data))
                 {
@@ -215,6 +164,89 @@ class Viewlevel extends Table
                 $table = null;
             }
         }
+    }
+
+    /**
+     * Resolve the exported usergroup rules to local usergroup ids,
+     * importing missing usergroups when needed.
+     *
+     * @param array $data
+     *          the viewlevel data being imported
+     * @param \Joomla\Database\DatabaseDriver $db
+     *          the database connector
+     *
+     * @return void
+     */
+    private static function resolveRules (&$data, $db)
+    {
+        // Add rules to the viewlevel data.
+        $rules_id = [];
+        if (isset($data['rule']))
+        {
+            $rules_id[] = $data['rule'];
+            unset($data['rule']);
+        }
+        if (isset($data['rulelist']))
+        {
+            foreach ($data['rulelist']['rule'] as $v)
+            {
+                $rules_id[] = $v;
+            }
+            unset($data['rulelist']);
+        }
+
+        for ($i = 0; $i < count($rules_id); $i ++)
+        {
+            $rules_id[$i] = self::resolveUsergroup($rules_id[$i], $db);
+        }
+        $data['rules'] = json_encode($rules_id, JSON_NUMERIC_CHECK);
+    }
+
+    /**
+     * Resolve an exported usergroup path to the local usergroup id,
+     * importing missing groups one level at a time.
+     *
+     * @param string $rule
+     *          the exported usergroup id or JSON path
+     * @param \Joomla\Database\DatabaseDriver $db
+     *          the database connector
+     *
+     * @return int the local usergroup id
+     */
+    private static function resolveUsergroup ($rule, $db)
+    {
+        $usergroup = parent::getUsergroupId($rule);
+        if ($usergroup !== null)
+        {
+            return $usergroup;
+        }
+
+        $groups = json_decode($rule);
+        $g = [];
+        $id = 0;
+
+        for ($j = 0; $j < count($groups); $j ++)
+        {
+            $g[] = $groups[$j];
+            $group = json_encode($g, JSON_NUMERIC_CHECK);
+            $usergroup = parent::getUsergroupId($group);
+            if ($usergroup !== null)
+            {
+                $id = $usergroup;
+            }
+            else // import usergroup
+            {
+                $u = new \Joomla\CMS\Table\Usergroup($db); // \Joomla\CMS\Table\Table::getInstance('Usergroup');
+                $u->save([
+                        'title' => $groups[$j],
+                        'parent_id' => $id
+                ]);
+                $id = $u->id;
+                \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERGROUP_IMPORTED', $groups[$j]), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
+            }
+        }
+
+        return $id;
     }
 
     /**

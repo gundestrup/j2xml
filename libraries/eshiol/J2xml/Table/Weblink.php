@@ -9,6 +9,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -140,31 +141,38 @@ class Weblink extends Table
 
         if (isset($options['images']) && $options['images'])
         {
-            $_image = preg_match_all(self::IMAGE_MATCH_STRING, $item->description, $matches, PREG_PATTERN_ORDER);
-            if (count($matches[1]) > 0)
+            self::exportImages($item, $xml, $options);
+        }
+    }
+
+    /**
+     * Export the images referenced by the weblink description and the
+     * images field.
+     *
+     * @param Weblink $item
+     *          the weblink being exported
+     * @param \SimpleXMLElement $xml
+     *          the export document
+     * @param array $options
+     *          the export options
+     *
+     * @return void
+     */
+    private static function exportImages ($item, &$xml, $options)
+    {
+        self::exportImagesFromText($item->description, $xml, $options);
+
+        $imgs = json_decode($item->images);
+        if ($imgs)
+        {
+            if (isset($imgs->image_first))
             {
-                for ($i = 0; $i < count($matches[1]); $i ++)
-                {
-                    $_image = $matches[1][$i];
-                    if ($_image)
-                    {
-                        Image::export($_image, $xml, $options);
-                    }
-                }
+                Image::export($imgs->image_first, $xml, $options);
             }
 
-            $imgs = json_decode($item->images);
-            if ($imgs)
+            if (isset($imgs->image_second))
             {
-                if (isset($imgs->image_first))
-                {
-                    Image::export($imgs->image_first, $xml, $options);
-                }
-
-                if (isset($imgs->image_second))
-                {
-                    Image::export($imgs->image_second, $xml, $options);
-                }
+                Image::export($imgs->image_second, $xml, $options);
             }
         }
     }

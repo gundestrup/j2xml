@@ -59,7 +59,6 @@ The package is composed of Joomla extensions bundled together by
 │   └── webservices/j2xml/       # Joomla REST import endpoint
 ├── .github/                    # Issue templates, PR template, CI workflows (ci.yml)
 ├── .semgrep.yml                # Semgrep security rules (local + CI)
-├── .codefactor.yml             # CodeFactor exclude paths
 ├── sonar-project.properties    # SonarCloud configuration (exclusions, project key)
 ├── codecov.yml                 # Codecov configuration (coverage targets, ignores)
 ├── VERSION                     # Single source of truth for release version
@@ -117,6 +116,12 @@ The package is composed of Joomla extensions bundled together by
   to `eshiol.log.php` by default (configurable via component/plugin params).
 - **License header:** every PHP file begins with the standard
   `@package` / `@copyright` / `@license` GPL-3.0 block. Keep it on new files.
+- **Fork attribution:** this is a fork of `eshiol/j2xml`. Files modified by
+  the fork keep the original `@copyright` line and gain a second line
+  `@copyright Copyright (C) 2026 Svend Gundestrup.` directly below it.
+  Files authored entirely by the fork carry only the fork copyright.
+  The convention is documented in `NOTICE`; `LICENSE` and `NOTICE` are
+  bundled into every built package zip.
 - **Version placeholders:** manifests and PHP headers use
   `__DEPLOY_VERSION__` and `__DEPLOY_DATE__` — these are replaced at release
   time. Do not hard-code version numbers in manifests.
@@ -191,8 +196,10 @@ commit the zips. For a release, run the release check and attach
 
 - **Semgrep Pro** — security scanning via `.semgrep.yml` (local + CI).
   Suppress false positives with `// nosemgrep: <rule-id>` on the flagged line.
-- **CodeFactor** — automated code review via `.codefactor.yml`.
-  Excludes `media/**`, `tests/**`, `vendor/**`, `node_modules/**`.
+- **CodeFactor** — automated code review via the GitHub integration.
+  CodeFactor does not read a repo config file for path exclusions; ignored
+  files are configured in the CodeFactor UI under repository
+  Settings → Ignore Files (currently `media/lib_eshiol_j2xml/js/*`).
 - **SonarCloud** — static analysis via `sonar-project.properties`
   (project key: `gundestrup_j2xml`, org: `gundestrup`).
   Excludes `media/**`, `build/**`, `tests/**`, `vendor/**`, `node_modules/**`.

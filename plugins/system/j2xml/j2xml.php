@@ -9,6 +9,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -118,7 +119,40 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin implements SubscriberI
             return;
         }
 
-        $input = $app->getInput();
+        $contentType = $this->resolveContentType($app->getInput());
+        if ($contentType === null)
+        {
+            return;
+        }
+
+        // Only render if J2XML view exists and J2XML Library is loaded
+        if (!class_exists('eshiol\\J2xml\\Exporter') || !method_exists('eshiol\\J2xml\\Exporter', $contentType))
+        {
+            return;
+        }
+
+        if (file_exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/' . $contentType . '.php')
+            || file_exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/default.php'))
+        {
+            $this->addToolbarButtons($db, $contentType);
+        }
+
+        // Trigger the onAfterDispatch event.
+        // \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
+        // \Joomla\CMS\Factory::getApplication()->triggerEvent('onLoadJS');
+    }
+
+    /**
+     * Resolve the J2XML content type for the current view, or null when the
+     * view is not eligible for the export/send buttons.
+     *
+     * @param \Joomla\Input\Input $input
+     *          the request input
+     *
+     * @return string|null
+     */
+    private function resolveContentType ($input)
+    {
         $option = $input->get('option');
         $contentType = substr($option, 4);
 
@@ -133,105 +167,125 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin implements SubscriberI
         {
             if (($view != 'contents') && ($view != 'articles') && ($view != 'featured'))
             {
-                return;
+                return null;
             }
-
         }
         elseif ($contentType == 'users')
         {
             if ($view == 'notes')
             {
-                $contentType = 'usernotes';
+                return 'usernotes';
             }
-            elseif ($view != $allowedView)
+            if ($view != $allowedView)
             {
-                return;
+                return null;
             }
         }
         elseif ($view != $allowedView)
         {
-            return;
+            return null;
         }
 
-        // Only render if J2XML view exists and J2XML Library is loaded
-        if (!class_exists('eshiol\\J2xml\\Exporter') || !method_exists('eshiol\\J2xml\\Exporter', $contentType))
+        return $contentType;
+    }
+
+    /**
+     * Add the J2XML export and send modal buttons to the toolbar.
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param string $contentType
+     *          the resolved J2XML content type
+     *
+     * @return void
+     */
+    private function addToolbarButtons ($db, $contentType)
+    {
+        $bar = \Joomla\CMS\Toolbar\Toolbar::getInstance('toolbar');
+
+        $buttonClass = 'button-download btn btn-sm';
+
+        foreach ($bar->getItems() as $button)
         {
-            return;
-        }
-
-        if (file_exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/' . $contentType . '.php')
-            || file_exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/default.php'))
-        {
-            $bar = \Joomla\CMS\Toolbar\Toolbar::getInstance('toolbar');
-
-            $buttonClass = 'button-download btn btn-sm';
-
-            foreach ($bar->getItems() as $button)
+            if (gettype($button) != 'array')
             {
-                if (gettype($button) != 'array')
+                if ($button->getName() == 'status-group')
                 {
-                    if ($button->getName() == 'status-group')
-                    {
-                        $bar = $button->getChildToolbar();
-                        $buttonClass = 'button-download dropdown-item';
-                        break;
-                    }
+                    $bar = $button->getChildToolbar();
+                    $buttonClass = 'button-download dropdown-item';
+                    break;
                 }
             }
-            $iconExport = 'icon-download';
-            $iconSend = 'icon-out';
-            $layout = new \Joomla\CMS\Layout\FileLayout('joomla.toolbar.modal');
-
-            $layout->addIncludePath(JPATH_PLUGINS . '/system/j2xml/layouts');
-            $selector = 'j2xmlExport';
-            $dHtml  = $layout->render(
-                [
-                    'selector' => $selector,
-                    'icon'     => $iconExport,
-                    'text'     => \Joomla\CMS\Language\Text::_('JTOOLBAR_EXPORT'),
-                    'title'    => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_EXPORT_' . strtoupper($contentType)),
-                    'class'    => $buttonClass,
-                    'doTask'   => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=export&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
-                    'ok'       => \Joomla\CMS\Language\Text::_('JTOOLBAR_EXPORT'),
-                    'onclick'  => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name=&quot;cid[]&quot;]:checked\').forEach(function(cb){cids.push(cb.value);});document.querySelector(\'#' . $selector . 'Modal iframe\').contentWindow.document.getElementById(\'jform_cid\').value=cids;'
-                ]);
-
-            $bar->appendButton('Custom', $dHtml, 'download');
-
-            // Check if the J2XML webservices plugin is enabled (REST API).
-            $query = $db->getQuery()->clear()
-                ->select($db->quoteName('extension_id'))
-                ->from($db->quoteName('#__extensions'))
-                ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
-                ->where($db->quoteName('folder') . ' = ' . $db->quote('webservices'))
-                ->where($db->quoteName('element') . ' = ' . $db->quote('j2xml'));
-            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
-
-            if ($db->setQuery($query)->loadResult())
-            {
-                \Joomla\CMS\Language\Text::script('LIB_J2XML_ERROR_UNKNOWN');
-
-                $selector = 'j2xmlSend';
-                $dHtml  = $layout->render(
-                    [
-                        'selector'       => $selector,
-                        'icon'           => $iconSend,
-                        'text'           => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
-                        'title'          => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_SEND_' . strtoupper($contentType)),
-                        'class'          => $buttonClass,
-                        'doTask'         => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=send&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
-                        'ok'             => \Joomla\CMS\Language\Text::_('PLG_SYSTEM_J2XML_BUTTON_SEND'),
-                        'onclick'        => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name=&quot;cid[]&quot;]:checked\').forEach(function(cb){cids.push(cb.value);});document.querySelector(\'#' . $selector . 'Modal iframe\').contentWindow.document.getElementById(\'jform_cid\').value=cids;',
-                        'formValidation' => true
-                    ]);
-                $bar->appendButton('Custom', $dHtml, 'send');
-            }
         }
 
-        // Trigger the onAfterDispatch event.
-        // \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
-        // \Joomla\CMS\Factory::getApplication()->triggerEvent('onLoadJS');
+        $layout = new \Joomla\CMS\Layout\FileLayout('joomla.toolbar.modal');
+        $layout->addIncludePath(JPATH_PLUGINS . '/system/j2xml/layouts');
 
-        return;
+        $dHtml = $layout->render(
+            $this->modalButtonData('j2xmlExport', 'icon-download', 'JTOOLBAR_EXPORT', 'PLG_SYSTEM_J2XML_EXPORT_', 'export', $contentType, $buttonClass));
+        $bar->appendButton('Custom', $dHtml, 'download');
+
+        // Check if the J2XML webservices plugin is enabled (REST API).
+        $query = $db->getQuery()->clear()
+            ->select($db->quoteName('extension_id'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+            ->where($db->quoteName('folder') . ' = ' . $db->quote('webservices'))
+            ->where($db->quoteName('element') . ' = ' . $db->quote('j2xml'));
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
+
+        if (!$db->setQuery($query)->loadResult())
+        {
+            return;
+        }
+
+        \Joomla\CMS\Language\Text::script('LIB_J2XML_ERROR_UNKNOWN');
+
+        $dHtml = $layout->render(
+            $this->modalButtonData('j2xmlSend', 'icon-out', 'PLG_SYSTEM_J2XML_BUTTON_SEND', 'PLG_SYSTEM_J2XML_SEND_', 'send', $contentType, $buttonClass, true));
+        $bar->appendButton('Custom', $dHtml, 'send');
+    }
+
+    /**
+     * Build the display data for a toolbar modal button.
+     *
+     * @param string $selector
+     *          the modal selector
+     * @param string $icon
+     *          the button icon class
+     * @param string $textKey
+     *          the language key used for both the button text and ok label
+     * @param string $titlePrefix
+     *          the language key prefix for the modal title
+     * @param string $view
+     *          the com_j2xml view to load in the modal
+     * @param string $contentType
+     *          the resolved J2XML content type
+     * @param string $buttonClass
+     *          the button css class
+     * @param boolean $formValidation
+     *          enable form validation on the modal ok button
+     *
+     * @return array the layout display data
+     */
+    private function modalButtonData ($selector, $icon, $textKey, $titlePrefix, $view, $contentType, $buttonClass, $formValidation = false)
+    {
+        $data = [
+            'selector' => $selector,
+            'icon'     => $icon,
+            'text'     => \Joomla\CMS\Language\Text::_($textKey),
+            'title'    => \Joomla\CMS\Language\Text::_($titlePrefix . strtoupper($contentType)),
+            'class'    => $buttonClass,
+            'doTask'   => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=' . $view . '&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
+            'ok'       => \Joomla\CMS\Language\Text::_($textKey),
+            'onclick'  => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name=&quot;cid[]&quot;]:checked\').forEach(function(cb){cids.push(cb.value);});document.querySelector(\'#' . $selector . 'Modal iframe\').contentWindow.document.getElementById(\'jform_cid\').value=cids;'
+        ];
+
+        if ($formValidation)
+        {
+            $data['formValidation'] = true;
+        }
+
+        return $data;
     }
 }

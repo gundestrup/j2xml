@@ -17,6 +17,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+- Refactored the long legacy import/export methods across
+  `libraries/eshiol/J2xml/Table/*`, `cli/j2xml.php`, `ImportModel`, the API
+  `ImportController`, and the system plugin into cohesive private helpers,
+  resolving the CodeFactor "Complex Method" findings without changing
+  import/export behaviour.
+- Consolidated the duplicated `<img>` scan loop and the MySQL/PostgreSQL
+  auto-increment reset into shared base helpers
+  (`Table::exportImagesFromText()`, `Table::resetAutoIncrement()`).
+- Files changed or authored by this fork now carry an additional
+  `@copyright Copyright (C) 2026 Svend Gundestrup` line; fork-authored files
+  (API controller, service providers, dispatcher, extension class,
+  Webservices plugin, test suite, PHPStan stubs) carry the fork copyright
+  only. See `NOTICE`.
+
+### Added
+
+- `NOTICE` file documenting the fork provenance and attribution convention.
+- `LICENSE` and `NOTICE` are now bundled inside every built package zip.
+
+### Removed
+
+- Removed `.codefactor.yml` — CodeFactor does not read repository config
+  files; path exclusions are configured in the CodeFactor UI
+  (Settings → Ignore Files).
+
+---
+
 ## [4.5.2] - 2026-09-15
 
 ### Removed

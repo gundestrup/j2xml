@@ -9,6 +9,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -151,21 +152,7 @@ class Category extends Table
             }
             else
             {
-                $query = $db->getQuery()->clear()
-                    ->select([
-                        $db->quoteName('id'),
-                        $db->quoteName('title'),
-                        $db->quoteName('path')
-                ])
-                    ->from($db->quoteName('#__categories'))
-                    ->where($db->quoteName('extension') . ' = ' . $db->quote($extension))
-                    ->where($db->quoteName('path') . ' = ' . $db->quote($path));
-                if ($keep_id)
-                {
-                    $query->where($db->quoteName('id') . ' = ' . $id);
-                }
-                $db->setQuery($query);
-                $category = $db->loadObject();
+                $category = self::findCategory($db, $extension, $path, $keep_id ? $id : null);
 
                 $table = new \Joomla\CMS\Table\Category($db);
                 if (!$category || ($import_categories == 2))
@@ -174,16 +161,7 @@ class Category extends Table
 
                     if (!$category && ($keep_id == 1))
                     {
-                        $query = $db->getQuery()->clear()
-                            ->select([
-                                $db->quoteName('id'),
-                                $db->quoteName('title')
-                        ])
-                            ->from($db->quoteName('#__categories'))
-                            ->where($db->quoteName('extension') . ' = ' . $db->quote($extension))
-                            ->where($db->quoteName('path') . ' = ' . $db->quote($path));
-                        $db->setQuery($query);
-                        $category = $db->loadObject();
+                        $category = self::findCategory($db, $extension, $path);
                     }
 
                     if (!$category) // new category
@@ -243,29 +221,7 @@ class Category extends Table
                     {
                         if (!$category && ($keep_id == 1) && ($id > 1))
                         {
-                            try
-                            {
-                                $query = $db->getQuery()->clear()
-                                    ->update($db->quoteName('#__categories'))
-                                    ->set($db->quoteName('id') . ' = ' . $id)
-                                    ->where($db->quoteName('id') . ' = ' . $table->id);
-                                $db->setQuery($query)->execute();
-                                $table->id = $id;
-
-                                $query = $db->getQuery()->clear()
-                                    ->update($db->quoteName('#__assets'))
-                                    ->set($db->quoteName('name') . ' = ' . $db->quote($data['extension'] . '.category.' . $id))
-                                    ->where($db->quoteName('id') . ' = ' . $table->asset_id);
-                                $db->setQuery($query)->execute();
-
-                                if ($id >= $autoincrement)
-                                {
-                                    $autoincrement = $id + 1;
-                                }
-                            }
-                            catch (\Exception $ex)
-                            {
-                            }
+                            self::restoreCategoryId($db, $table, $data['extension'], $id, $autoincrement);
                         }
                         // Rebuild the tree path.
                         $table->rebuildPath();
@@ -298,21 +254,92 @@ class Category extends Table
             }
             if ($keep_id && ($autoincrement > $maxid))
             {
-                $serverType = $db->getServerType();
-
-                if ($serverType === 'postgresql')
-                {
-                    $query = 'ALTER SEQUENCE ' . $db->quoteName('#__categories_id_seq') . ' RESTART WITH ' . $autoincrement;
-                }
-                else
-                {
-                    $query = 'ALTER TABLE ' . $db->quoteName('#__categories') . ' AUTO_INCREMENT = ' . $autoincrement;
-                }
-                $db->setQuery($query)->execute();
+                self::resetAutoIncrement($db, $autoincrement, '#__categories', '#__categories_id_seq');
                 $maxid = $autoincrement;
             }
         }
     }
+
+    /**
+     * Find a category by extension and path, optionally restricted to a
+     * specific id (keep_id imports).
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param string $extension
+     *          the category extension
+     * @param string $path
+     *          the category path
+     * @param int|null $id
+     *          restrict to this id when set
+     *
+     * @return mixed the category row if found, otherwise null/false
+     */
+    private static function findCategory ($db, $extension, $path, $id = null)
+    {
+        $query = $db->getQuery()->clear()
+            ->select([
+                $db->quoteName('id'),
+                $db->quoteName('title'),
+                $db->quoteName('path')
+        ])
+            ->from($db->quoteName('#__categories'))
+            ->where($db->quoteName('extension') . ' = ' . $db->quote($extension))
+            ->where($db->quoteName('path') . ' = ' . $db->quote($path));
+        if (!is_null($id))
+        {
+            $query->where($db->quoteName('id') . ' = ' . $id);
+        }
+        $db->setQuery($query);
+
+        return $db->loadObject();
+    }
+
+    /**
+     * Restore the exported category id on the saved row when keep_id is
+     * enabled, and rename the matching asset.
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param \Joomla\CMS\Table\Category $table
+     *          the saved category
+     * @param string $extension
+     *          the category extension
+     * @param int $id
+     *          the exported category id
+     * @param int $autoincrement
+     *          the highest category id assigned so far
+     *
+     * @return void
+     */
+    private static function restoreCategoryId ($db, $table, $extension, $id, &$autoincrement)
+    {
+        try
+        {
+            $query = $db->getQuery()->clear()
+                ->update($db->quoteName('#__categories'))
+                ->set($db->quoteName('id') . ' = ' . $id)
+                ->where($db->quoteName('id') . ' = ' . $table->id);
+            $db->setQuery($query)->execute();
+            $table->id = $id;
+
+            $query = $db->getQuery()->clear()
+                ->update($db->quoteName('#__assets'))
+                ->set($db->quoteName('name') . ' = ' . $db->quote($extension . '.category.' . $id))
+                ->where($db->quoteName('id') . ' = ' . $table->asset_id);
+            $db->setQuery($query)->execute();
+
+            if ($id >= $autoincrement)
+            {
+                $autoincrement = $id + 1;
+            }
+        }
+        catch (\Exception $ex)
+        {
+        }
+    }
+
+
 
     /**
      * Export data
@@ -352,19 +379,7 @@ class Category extends Table
         {
             if (isset($options['content']) && $options['content'])
             {
-                $table = '#__' . substr($item->extension, 4);
-                $extension = '\\eshiol\\J2xml\\Table\\' . ucfirst(substr($item->extension, 4));
-                $query = $db->getQuery()->clear()
-                    ->select('id')
-                    ->from($table)
-                    ->where('catid = ' . $id);
-                $db->setQuery($query);
-                $ids_content = $db->loadColumn();
-                $options['categories'] = 0;
-                foreach ($ids_content as $id_content)
-                {
-                    $extension::export($id_content, $xml, $options);
-                }
+                self::exportCategoryContent($db, $item, $id, $xml, $options);
             }
         }
         $options['content'] = 0;
@@ -400,29 +415,7 @@ class Category extends Table
 
         if (isset($options['images']) && $options['images'])
         {
-            $img = null;
-            $text = html_entity_decode($item->description);
-            $_image = preg_match_all(self::IMAGE_MATCH_STRING, $text, $matches, PREG_PATTERN_ORDER);
-            if (count($matches[1]) > 0)
-            {
-                for ($i = 0; $i < count($matches[1]); $i ++)
-                {
-                    $_image = $matches[1][$i];
-                    if ($_image)
-                    {
-                        Image::export($_image, $xml, $options);
-                    }
-                }
-            }
-
-            $imgs = json_decode($item->params);
-            if ($imgs)
-            {
-                if (isset($imgs->image))
-                {
-                    Image::export($imgs->image, $xml, $options);
-                }
-            }
+            self::exportCategoryImages($item, $xml, $options);
         }
 
         if (isset($options['tags']) && $options['tags'])
@@ -432,6 +425,66 @@ class Category extends Table
             foreach ($itemtags as $itemtag)
             {
                 Tag::export($itemtag->tag_id, $xml, $options);
+            }
+        }
+    }
+
+    /**
+     * Export the content items belonging to a category (when the extension
+     * supports it).
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param \Joomla\CMS\Table\Category $item
+     *          the category being exported
+     * @param int $id
+     *          the category id
+     * @param \SimpleXMLElement $xml
+     *          xml
+     * @param array $options
+     *          export options
+     *
+     * @return void
+     */
+    private static function exportCategoryContent ($db, $item, $id, &$xml, &$options)
+    {
+        $table = '#__' . substr($item->extension, 4);
+        $extension = '\\eshiol\\J2xml\\Table\\' . ucfirst(substr($item->extension, 4));
+        $query = $db->getQuery()->clear()
+            ->select('id')
+            ->from($table)
+            ->where('catid = ' . $id);
+        $db->setQuery($query);
+        $ids_content = $db->loadColumn();
+        $options['categories'] = 0;
+        foreach ($ids_content as $id_content)
+        {
+            $extension::export($id_content, $xml, $options);
+        }
+    }
+
+    /**
+     * Export the images referenced by a category description and params.
+     *
+     * @param \Joomla\CMS\Table\Category $item
+     *          the category being exported
+     * @param \SimpleXMLElement $xml
+     *          xml
+     * @param array $options
+     *          export options
+     *
+     * @return void
+     */
+    private static function exportCategoryImages ($item, &$xml, $options)
+    {
+        self::exportImagesFromText(html_entity_decode($item->description), $xml, $options);
+
+        $imgs = json_decode($item->params);
+        if ($imgs)
+        {
+            if (isset($imgs->image))
+            {
+                Image::export($imgs->image, $xml, $options);
             }
         }
     }

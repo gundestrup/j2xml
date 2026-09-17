@@ -55,6 +55,9 @@ make_zip() {
     local zipname="$2"
     local zipfile="$OUTPUT_DIR/$zipname"
     rm -f "$zipfile"
+    # Every distributed package carries the license and fork provenance.
+    cp "$ROOT_DIR/LICENSE" "$staging/"
+    cp "$ROOT_DIR/NOTICE" "$staging/"
     (cd "$staging" && zip -r -q "$zipfile" .)
     echo "  Built: $zipname"
 }

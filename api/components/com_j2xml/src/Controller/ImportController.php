@@ -5,9 +5,8 @@
  *
  * @version     __DEPLOY_VERSION__
  *
- * @author      Helios Ciancio <info (at) eshiol (dot) it>
- * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved.
+ * @author      Svend Gundestrup
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -75,13 +74,81 @@ class ImportController extends BaseController
             || $lang->load('lib_j2xml', JPATH_SITE, null, true);
 
         // Read the raw XML body.
-        $raw = file_get_contents('php://input');
+        $raw = $this->readRequestBody($app);
 
         if (empty($raw))
         {
             http_response_code(400);
             echo new JsonResponse(null, Text::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), true);
             $app->close();
+        }
+
+        // Extract the XML declaration and parse.
+        $raw = strstr($raw, '<?xml version="1.0" ');
+
+        libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($raw, 'SimpleXMLElement', LIBXML_PARSEHUGE | LIBXML_NONET);
+
+        if (!$xml)
+        {
+            http_response_code(400);
+            echo new JsonResponse(null, $this->libxmlErrors(), true);
+            $app->close();
+        }
+
+        if (strtoupper($xml->getName()) !== 'J2XML' || !isset($xml['version']))
+        {
+            http_response_code(400);
+            echo new JsonResponse(null, Text::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), true);
+            $app->close();
+        }
+
+        $params = $this->buildImportParams($app, $xml);
+
+        // Fire onContentBeforeImport event.
+        PluginHelper::importPlugin('j2xml');
+        $app->triggerEvent('onContentBeforeImport', ['com_j2xml.api', &$xml, $params]);
+
+        // Run the import.
+        $importer = class_exists('eshiol\\J2xmlpro\\Importer')
+            ? new \eshiol\J2xmlpro\Importer()
+            : new \eshiol\J2xml\Importer();
+
+        try
+        {
+            $importer->import($xml, $params);
+        }
+        catch (\Throwable $e)
+        {
+            // The import may throw during post-save workflow hooks
+            // (e.g. ArticleModel::getForm() fails in the API context).
+            // The data is typically already saved by this point, so we
+            // log the error and continue to return a response.
+            Log::add(new LogEntry('Import error: ' . $e->getMessage(), Log::WARNING, 'com_j2xml'));
+        }
+
+        // Collect the message queue and return as JSON.
+        echo new JsonResponse($this->collectMessages($app));
+        $app->close();
+    }
+
+    /**
+     * Read the request body, handling gzip compression and a JSON wrapper
+     * carrying the XML in a "data" field.
+     *
+     * @param   \Joomla\CMS\Application\CMSApplicationInterface  $app  the application
+     *
+     * @return  string the raw XML body (empty when the body is empty)
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function readRequestBody($app): string
+    {
+        $raw = file_get_contents('php://input');
+
+        if (empty($raw))
+        {
+            return '';
         }
 
         // Handle gzip-compressed body.
@@ -107,35 +174,41 @@ class ImportController extends BaseController
             }
         }
 
-        // Extract the XML declaration and parse.
-        $raw = strstr($raw, '<?xml version="1.0" ');
+        return $raw;
+    }
 
-        libxml_use_internal_errors(true);
-        $xml = simplexml_load_string($raw, 'SimpleXMLElement', LIBXML_PARSEHUGE | LIBXML_NONET);
-
-        if (!$xml)
+    /**
+     * Format the collected libxml errors and clear the error buffer.
+     *
+     * @return  string
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function libxmlErrors(): string
+    {
+        $msg = [];
+        foreach (libxml_get_errors() as $error)
         {
-            http_response_code(400);
-            $errors = libxml_get_errors();
-            $msg = [];
-            foreach ($errors as $error)
-            {
-                $msg[] = $error->code . ' - ' . $error->message;
-            }
-            libxml_clear_errors();
-            echo new JsonResponse(null, implode("\n", $msg), true);
-            $app->close();
+            $msg[] = $error->code . ' - ' . $error->message;
         }
+        libxml_clear_errors();
 
-        if (strtoupper($xml->getName()) !== 'J2XML' || !isset($xml['version']))
-        {
-            http_response_code(400);
-            echo new JsonResponse(null, Text::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), true);
-            $app->close();
-        }
+        return implode("\n", $msg);
+    }
 
-        // Build import options from the "options" query param, falling
-        // back to the component's global configuration.
+    /**
+     * Build the import parameter registry from the "options" query param,
+     * falling back to the component's global configuration.
+     *
+     * @param   \Joomla\CMS\Application\CMSApplicationInterface  $app  the application
+     * @param   \SimpleXMLElement                                $xml  the document being imported
+     *
+     * @return  \Joomla\Registry\Registry
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function buildImportParams($app, $xml): Registry
+    {
         $optionsParam = $app->getInput()->getString('options', '{}');
         $fparams = new Registry($optionsParam);
 
@@ -165,32 +238,23 @@ class ImportController extends BaseController
         $params->set('keep_data', $fparams->get('keep_data', $cparams->get('keep_data', 0)));
         $params->set('version', (string) $xml['version']);
 
-        // Fire onContentBeforeImport event.
-        PluginHelper::importPlugin('j2xml');
-        $app->triggerEvent('onContentBeforeImport', ['com_j2xml.api', &$xml, $params]);
+        return $params;
+    }
 
-        // Run the import.
-        $importer = class_exists('eshiol\\J2xmlpro\\Importer')
-            ? new \eshiol\J2xmlpro\Importer()
-            : new \eshiol\J2xml\Importer();
-
-        try
-        {
-            $importer->import($xml, $params);
-        }
-        catch (\Throwable $e)
-        {
-            // The import may throw during post-save workflow hooks
-            // (e.g. ArticleModel::getForm() fails in the API context).
-            // The data is typically already saved by this point, so we
-            // log the error and continue to return a response.
-            Log::add(new LogEntry('Import error: ' . $e->getMessage(), Log::WARNING, 'com_j2xml'));
-        }
-
-        // Collect the message queue and return as JSON.
-        $messages = $app->getMessageQueue();
+    /**
+     * Collect the application message queue as a plain array for the JSON
+     * response.
+     *
+     * @param   \Joomla\CMS\Application\CMSApplicationInterface  $app  the application
+     *
+     * @return  array
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function collectMessages($app): array
+    {
         $items = [];
-        foreach ($messages as $msg)
+        foreach ($app->getMessageQueue() as $msg)
         {
             $items[] = [
                 'type'    => $msg['type'],
@@ -198,8 +262,7 @@ class ImportController extends BaseController
             ];
         }
 
-        echo new JsonResponse($items);
-        $app->close();
+        return $items;
     }
 
     /**

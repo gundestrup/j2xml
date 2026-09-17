@@ -1,0 +1,24 @@
+J2XML
+=====
+
+This product is a fork of J2XML by Helios Ciancio (https://www.eshiol.it),
+originally published at https://github.com/eshiol/j2xml under the
+GNU General Public License v3.
+
+Fork:   https://github.com/gundestrup/j2xml
+Forked and maintained by: Svend Gundestrup
+
+This version has been modified pursuant to the GNU General Public License:
+it targets Joomla! 5 and 6 with PHP 8.4/8.5 and drops support for older
+Joomla! and PHP versions. See CHANGELOG.md for the list of changes.
+
+Files modified or authored by the fork carry an additional copyright line:
+
+    * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
+
+below the original copyright notice. All original copyright notices and
+license terms are retained unchanged.
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 3 as published
+by the Free Software Foundation. See LICENSE for the full license text.

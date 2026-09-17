@@ -8,6 +8,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -98,29 +99,26 @@ class ImportModel extends FormModel
 
         $installType = $app->getInput()->getWord('installtype');
 
-        if ($package === null)
+        switch ($installType)
         {
-            switch ($installType)
-            {
-                case 'folder':
-                    // Remember the 'Import from Directory' path.
-                    $app->getUserStateFromRequest($this->context . '.install_directory', 'install_directory');
-                    $package = $this->_getDataFromFolder();
-                    break;
+            case 'folder':
+                // Remember the 'Import from Directory' path.
+                $app->getUserStateFromRequest($this->context . '.install_directory', 'install_directory');
+                $package = $this->_getDataFromFolder();
+                break;
 
-                case 'upload':
-                    $package = $this->_getDataFromUpload();
-                    break;
+            case 'upload':
+                $package = $this->_getDataFromUpload();
+                break;
 
-                case 'url':
-                    $package = $this->_getDataFromUrl();
-                    break;
+            case 'url':
+                $package = $this->_getDataFromUrl();
+                break;
 
-                default:
-                    $app->setUserState('com_j2xml.message', Text::_('COM_J2XML_NO_IMPORT_TYPE_FOUND'));
+            default:
+                $app->setUserState('com_j2xml.message', Text::_('COM_J2XML_NO_IMPORT_TYPE_FOUND'));
 
-                    return false;
-            }
+                return false;
         }
 
         Log::add(new LogEntry('package: ' . print_r($package, true), Log::DEBUG, 'com_j2xml'));
@@ -133,12 +131,105 @@ class ImportModel extends FormModel
         }
 
         $data = new \stdClass();
-        $rawData = file_get_contents($package['packagefile']);
-
-        if ($rawData === false)
+        $data->content = $this->readPackageFile($package['packagefile']);
+        if ($data->content === false)
         {
             $app->setUserState('com_j2xml.message', Text::_('COM_J2XML_MSG_IMPORT_WARNXMLUPLOADERROR'));
 
+            return false;
+        }
+        Log::add(new LogEntry('data: ' . $data->content, Log::DEBUG, 'com_j2xml'));
+
+        $params = $this->buildImportParams();
+
+        // This event allows a custom import of the data or a customization of the data:
+        PluginHelper::importPlugin('j2xml');
+
+        $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentPrepareData', ['com_j2xml.import', &$data, $params]);
+
+        if (in_array(false, $results, true))
+        {
+            Log::add(new LogEntry(Text::_('LIB_J2XML_MSG_PLUGIN_ERROR'), Log::ERROR, 'com_j2xml'));
+
+            $this->cleanupPackage($installType, $package);
+
+            return false;
+        }
+
+        $data->content = strstr($data->content, '<?xml version="1.0" ');
+
+        $xml = simplexml_load_string($data->content, 'SimpleXMLElement', LIBXML_PARSEHUGE | LIBXML_NONET);
+        if (!$xml)
+        {
+            return;
+        }
+
+        if ((strtoupper($xml->getName()) != 'J2XML') || !isset($xml['version']))
+        {
+            Log::add(new LogEntry(Text::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), Log::ERROR, 'com_j2xml'));
+
+            return false;
+        }
+
+        Log::add(new LogEntry('Importing...', Log::DEBUG, 'com_j2xml'));
+
+        $xmlVersion = $xml['version'];
+        $version = explode(".", $xmlVersion);
+        $xmlVersionNumber = $version[0] . substr('0' . $version[1], strlen($version[1]) - 1) . substr('0' . $version[2], strlen($version[2]) - 1);
+
+        $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onValidateData', [&$xml, $params]);
+
+        $db = $this->getDatabase();
+        $importer = class_exists('\eshiol\J2xmlpro\Importer') ? new \eshiol\J2xmlpro\Importer($db, \Joomla\CMS\Factory::getApplication()) : new \eshiol\J2xml\Importer($db, \Joomla\CMS\Factory::getApplication());
+        if (!$importer->isSupported($xmlVersionNumber) && !in_array(true, $results, true))
+        {
+            Log::add(new LogEntry(Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED', $xmlVersion), Log::ERROR, 'com_j2xml'));
+
+            return false;
+        }
+
+        $params->set('version', (string) $xml['version']);
+
+        $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentBeforeImport', ['com_j2xml.import', &$xml, $params]);
+
+        try
+        {
+            $importer->import($xml, $params);
+        }
+        catch (\Throwable $e)
+        {
+            // The import may throw on database-specific SQL (e.g.
+            // PostgreSQL vs MySQL syntax differences).  Log the error
+            // and continue so the user sees a message rather than a
+            // raw HTTP 500.
+            Log::add(new LogEntry('Import error: ' . $e->getMessage(), Log::ERROR, 'com_j2xml'));
+            $app->enqueueMessage($e->getMessage(), 'error');
+        }
+
+        $this->cleanupPackage($installType, $package);
+
+        // Clear the cached extension data and menu cache
+        //$this->cleanCache('com_content', 0);
+        //$this->cleanCache('com_content', 1);
+
+        return true;
+    }
+
+    /**
+     * Read the uploaded package file, transparently decoding gzip data.
+     *
+     * @param   string  $file  the package file path
+     *
+     * @return  string|false the file content, or false on failure
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function readPackageFile($file)
+    {
+        $rawData = file_get_contents($file);
+
+        if ($rawData === false)
+        {
             return false;
         }
 
@@ -147,16 +238,19 @@ class ImportModel extends FormModel
             $rawData = gzdecode($rawData);
         }
 
-        if ($rawData === false)
-        {
-            $app->setUserState('com_j2xml.message', Text::_('COM_J2XML_MSG_IMPORT_WARNXMLUPLOADERROR'));
+        return $rawData;
+    }
 
-            return false;
-        }
-
-        $data->content = $rawData;
-        Log::add(new LogEntry('data: ' . $data->content, Log::DEBUG, 'com_j2xml'));
-
+    /**
+     * Build the import parameter registry by merging the submitted form
+     * options over the component defaults.
+     *
+     * @return  \Joomla\Registry\Registry
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function buildImportParams()
+    {
         $jform = \Joomla\CMS\Factory::getApplication()->getInput()->post->get('jform', [], 'array');
 
         $fparams = new \Joomla\Registry\Registry($jform);
@@ -191,101 +285,34 @@ class ImportModel extends FormModel
 
         Log::add(new LogEntry('params: ' . print_r($params->toArray(), true), Log::DEBUG, 'com_j2xml'));
 
-        // This event allows a custom import of the data or a customization of the data:
-        PluginHelper::importPlugin('j2xml');
+        return $params;
+    }
 
-        $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentPrepareData', ['com_j2xml.import', &$data, $params]);
-
-        if (in_array(false, $results, true))
-        {
-            Log::add(new LogEntry(Text::_('LIB_J2XML_MSG_PLUGIN_ERROR'), Log::ERROR, 'com_j2xml'));
-
-            if (in_array($installType, ['upload', 'url']))
-            {
-                InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
-            }
-
-            return false;
-        }
-
-        $data->content = strstr($data->content, '<?xml version="1.0" ');
-
-        $xml = simplexml_load_string($data->content, 'SimpleXMLElement', LIBXML_PARSEHUGE | LIBXML_NONET);
-        if (!$xml)
+    /**
+     * Cleanup temporary upload/URL install files, but never a user-provided
+     * directory.
+     *
+     * @param   string  $installType  the import source (folder, upload, url)
+     * @param   array   $package      the package definition
+     *
+     * @return  void
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function cleanupPackage($installType, $package)
+    {
+        if (!in_array($installType, ['upload', 'url'], true))
         {
             return;
         }
-        elseif (strtoupper($xml->getName()) != 'J2XML')
+
+        if (!is_file($package['packagefile']))
         {
-            Log::add(new LogEntry(Text::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), Log::ERROR, 'com_j2xml'));
-            return false;
-        }
-        elseif (!isset($xml['version']))
-        {
-            Log::add(new LogEntry(Text::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), Log::ERROR, 'com_j2xml'));
-            return false;
-        }
-        else
-        {
-            Log::add(new LogEntry('Importing...', Log::DEBUG, 'com_j2xml'));
-
-            $xmlVersion = $xml['version'];
-            $version = explode(".", $xmlVersion);
-            $xmlVersionNumber = $version[0] . substr('0' . $version[1], strlen($version[1]) - 1) . substr('0' . $version[2], strlen($version[2]) - 1);
-
-            $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onValidateData', [&$xml, $params]);
-
-            $db = $this->getDatabase();
-            $importer = class_exists('\eshiol\J2xmlpro\Importer') ? new \eshiol\J2xmlpro\Importer($db, \Joomla\CMS\Factory::getApplication()) : new \eshiol\J2xml\Importer($db, \Joomla\CMS\Factory::getApplication());
-            if ($importer->isSupported($xmlVersionNumber) || in_array(true, $results, true))
-            {
-                $params->set('version', (string) $xml['version']);
-
-                $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentBeforeImport', ['com_j2xml.import', &$xml, $params]);
-
-                try
-                {
-                    $importer->import($xml, $params);
-                }
-                catch (\Throwable $e)
-                {
-                    // The import may throw on database-specific SQL (e.g.
-                    // PostgreSQL vs MySQL syntax differences).  Log the error
-                    // and continue so the user sees a message rather than a
-                    // raw HTTP 500.
-                    Log::add(new LogEntry('Import error: ' . $e->getMessage(), Log::ERROR, 'com_j2xml'));
-                    $app->enqueueMessage($e->getMessage(), 'error');
-                }
-
-                if (in_array($installType, ['upload', 'url'], true))
-                {
-                    InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
-                }
-            }
-            else
-            {
-                Log::add(new LogEntry(Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED', $xmlVersion), Log::ERROR, 'com_j2xml'));
-                return false;
-            }
+            $config = \Joomla\CMS\Factory::getApplication()->getConfig();
+            $package['packagefile'] = $config->get('tmp_path') . '/' . $package['packagefile'];
         }
 
-        // Cleanup temporary upload/URL install files, but never a user-provided directory.
-        if (in_array($installType, ['upload', 'url'], true))
-        {
-            if (!is_file($package['packagefile']))
-            {
-                $config = \Joomla\CMS\Factory::getApplication()->getConfig();
-                $package['packagefile'] = $config->get('tmp_path') . '/' . $package['packagefile'];
-            }
-
-            InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
-        }
-
-        // Clear the cached extension data and menu cache
-        //$this->cleanCache('com_content', 0);
-        //$this->cleanCache('com_content', 1);
-
-        return true;
+        InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
     }
 
     /**
