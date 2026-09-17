@@ -8,7 +8,15 @@
       "Exec(git log)",
       "Exec(git branch)",
       "Exec(php -l)",
-      "Exec(php cli/j2xml.php)"
+      "Exec(php cli/j2xml.php)",
+      "Exec(semgrep)",
+      "Exec(composer)",
+      "Exec(vendor/bin/phpstan)",
+      "Exec(vendor/bin/phpunit)",
+      "Exec(./scripts/)",
+      "Exec(shellcheck)",
+      "Exec(xmllint)",
+      "Exec(docker)"
     ],
     "deny": [
       "Exec(sudo)",
