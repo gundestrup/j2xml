@@ -9,17 +9,19 @@ Joomla version in which the API is scheduled for removal.
 
 ## 1. `HTMLHelper::_('bootstrap.renderModal')`
 
-|| | |
-|---|---|---|
+| | | |
+| --- | --- | --- |
 | **Deprecated in** | Joomla 5.1 |
 | **Removed in** | Joomla 6.0 (scheduled) |
 | **Priority** | Medium |
 
 **Files**
+
 - `plugins/system/j2xml/layouts/joomla/toolbar/modal.php:67`
 - `administrator/components/com_j2xml/views/import/tmpl/default.php:126`
 
 **Current code**
+
 ```php
 echo HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal', [...]);
 ```
@@ -27,7 +29,7 @@ echo HTMLHelper::_('bootstrap.renderModal', $selector . 'Modal', [...]);
 **Recommended replacement**
 Use the JoomlaDialog web-component API (`<joomla-dialog>`) introduced in
 Joomla 5.1.  See:
-https://manual.joomla.org/docs/general-concepts/dialogs/
+<https://manual.joomla.org/docs/general-concepts/dialogs/>
 
 **Why deferred**
 The modal UI is not covered by the automated test suite.  Replacing
@@ -38,13 +40,14 @@ verification.  The deprecated API still works in Joomla 5 and 6.
 
 ## 2. `triggerEvent()` (soft-deprecated event dispatch)
 
-|| | |
-|---|---|---|
+| | | |
+| --- | --- | --- |
 | **Deprecated in** | Joomla 5.0 (soft deprecation) |
 | **Removed in** | Joomla 6.0+ (event dispatcher pattern recommended) |
 | **Priority** | Low |
 
 **Files (18 active occurrences)**
+
 - `libraries/eshiol/J2xml/Exporter.php` — 10 calls via `$this->app->triggerEvent('onJ2xmlAfterExport', [...])` (lines 226, 271, 316, 360, 404, 448, 492, 538, 584, 629)
 - `libraries/eshiol/J2xml/Importer.php:251` — `$this->app->triggerEvent('onContentAfterImport', [...])`
 - `libraries/eshiol/J2xml/Table/Content.php:619` — `Factory::getApplication()->triggerEvent('onJ2xmlBeforeExportContent', [...])`
@@ -54,6 +57,7 @@ verification.  The deprecated API still works in Joomla 5 and 6.
 - `cli/j2xml.php:157` — `$this->triggerEvent('onBeforeImport', [...])`
 
 **Current code**
+
 ```php
 // In Exporter/Importer (dependency-injected):
 $results = $this->app->triggerEvent('onJ2xmlAfterExport', [...]);
@@ -64,6 +68,7 @@ $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentBeforeI
 
 **Recommended replacement**
 Use the Joomla 5+ event dispatcher pattern with concrete event classes:
+
 ```php
 use Joomla\Event\Event;
 $event = new Event('onContentAfterImport', [...]);
@@ -82,13 +87,14 @@ need proper event classes.  `triggerEvent()` still works in Joomla 5/6.
 
 ## 3. `$table->getError()` / `$user->getError()`
 
-|| | |
-|---|---|---|
+| | | |
+| --- | --- | --- |
 | **Deprecated in** | Joomla 4.0 (inherited from JObject) |
 | **Removed in** | Joomla 7.0 (scheduled) |
 | **Priority** | Low |
 
 **Files (15 occurrences across 13 files)**
+
 - `libraries/eshiol/J2xml/Table/Category.php:294`
 - `libraries/eshiol/J2xml/Table/Contact.php:276`
 - `libraries/eshiol/J2xml/Table/Content.php:451, 456`
@@ -104,6 +110,7 @@ need proper event classes.  `triggerEvent()` still works in Joomla 5/6.
 - `libraries/eshiol/J2xml/Table/Weblink.php:249`
 
 **Current code**
+
 ```php
 $table->getError()
 ```
@@ -111,6 +118,7 @@ $table->getError()
 **Recommended replacement**
 Joomla Table classes throw exceptions on error in Joomla 5+.  Wrap
 `store()` / `bind()` in try/catch and use `$e->getMessage()`:
+
 ```php
 try {
     $table->store();
@@ -133,12 +141,14 @@ exception-based error handling doesn't break the import flow.
 | **Priority** | Low (code style) |
 
 **Files**
+
 - `libraries/eshiol/J2xml/Exporter.php` — `$_image_path`, `$_admin`, `$_option`
 - `libraries/eshiol/J2xml/Importer.php` — `$_nullDate`, `$_user`, `$_user_id`, `$_now`, `$_option`, `$_usergroups`
 - `libraries/eshiol/J2xml/Table/Table.php` — `$_excluded`, `$_aliases`, `$_jsonEncode`
 
 **Recommended replacement**
 Rename to camelCase without leading underscore:
+
 ```php
 private $imagePath = 'images';
 protected $excluded = [];
@@ -158,12 +168,14 @@ rename but large diff; should be done in a dedicated refactor commit.
 | **Priority** | Low (code quality) |
 
 **Files**
+
 - All View classes in `administrator/components/com_j2xml/src/View/` — missing return types on `display()`, `__construct()`
 - All Controller classes in `administrator/components/com_j2xml/src/Controller/` — missing return types on `execute()`, `getModel()`, `display()`
 - Property declarations using `@var` annotations instead of native types in Table classes
 
 **Recommended replacement**
 Add PHP 8.0+ native types:
+
 ```php
 public function display(?string $tpl = null): void
 protected array $excluded = [];
@@ -178,16 +190,18 @@ base class signatures.
 
 ## 6. `script.php` — class-based installer instead of `InstallerScriptInterface`
 
-|| | |
-|---|---|---|
+| | | |
+| --- | --- | --- |
 | **Deprecated in** | Joomla 5.0 (soft deprecation) |
 | **Removed in** | Not scheduled for removal |
 | **Priority** | Low |
 
 **File**
+
 - `administrator/components/com_j2xml/script.php:25`
 
 **Current code**
+
 ```php
 class Com_J2xmlInstallerScript
 {
@@ -198,6 +212,7 @@ class Com_J2xmlInstallerScript
 ```
 
 **Recommended replacement**
+
 ```php
 return new class () implements InstallerScriptInterface {
     public function install(InstallerAdapter $adapter): bool { }
@@ -215,16 +230,18 @@ thorough testing on a real installation.
 
 ## 7. `Factory::$user` static property in test bootstrap
 
-|| | |
-|---|---|---|
+| | | |
+| --- | --- | --- |
 | **Deprecated in** | Joomla 5.0 |
 | **Removed in** | Joomla 6.0+ (container-based injection recommended) |
 | **Priority** | Low (test code only) |
 
 **File**
+
 - `tests/scripts/bootstrap.php:57` — `Joomla\CMS\Factory::$user = $user;`
 
 **Current code**
+
 ```php
 Joomla\CMS\Factory::$user = $user;
 ```
@@ -248,7 +265,7 @@ Joomla 6.0+.  No direct CLI-compatible replacement exists yet.
 _Last verified: 2026-09-15 — all 7 categories still have active occurrences; line references in the historical details should be refreshed when each item is addressed._
 
 | # | Pattern | Occurrences | Priority | Target version |
-|---|---------|-------------|----------|----------------|
+| --- | --------- | ------------- | ---------- | ---------------- |
 | 1 | `bootstrap.renderModal` | 2 | Medium | 4.1 |
 | 2 | `triggerEvent()` | 18 | Low | 5.0 |
 | 3 | `->getError()` | 14 | Low | 5.0 |
