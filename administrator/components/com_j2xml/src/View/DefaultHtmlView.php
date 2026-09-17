@@ -40,7 +40,7 @@ class DefaultHtmlView extends HtmlView
         $this->_addPath('template', JPATH_THEMES . '/' . $app->getTemplate() . '/html/com_j2xml/default');
     }
 
-    public function display($tpl = null)
+    public function display($tpl = null): void
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
@@ -60,7 +60,7 @@ class DefaultHtmlView extends HtmlView
         parent::display($tpl);
     }
 
-    protected function addToolbar()
+    protected function addToolbar(): void
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 

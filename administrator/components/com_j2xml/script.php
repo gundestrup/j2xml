@@ -19,75 +19,77 @@
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Installer\InstallerAdapter;
+use Joomla\CMS\Installer\InstallerScriptInterface;
+use Joomla\Database\DatabaseAwareInterface;
+use Joomla\Database\DatabaseAwareTrait;
 
 /**
- *
+ * J2XML installer script (Joomla 5/6 InstallerScriptInterface form).
  */
-class Com_J2xmlInstallerScript
+return new class () implements InstallerScriptInterface, DatabaseAwareInterface
 {
+    use DatabaseAwareTrait;
+
     /**
      * The J2XML Version we are updating from
      *
-     * @var    string
+     * @var    string|null
      * @since  3.9.232
      */
-    protected $fromVersion = null;
-
-    /**
-     * Database object.
-     *
-     * @var    \Joomla\Database\DatabaseDriver
-     * @since  3.9.232
-     */
-    protected $db;
+    protected ?string $fromVersion = null;
 
     /**
      * This method is called after a extension is installed.
      *
-     * @param  \stdClass $parent - Parent object calling this method.
+     * @param   InstallerAdapter  $adapter  the adapter calling this method
      *
-     * @return void
+     * @return  boolean  true on success
      */
-    public function install($parent)
+    public function install(InstallerAdapter $adapter): bool
     {
+        return true;
     }
- 
+
     /**
      * This method is called after a extension is uninstalled.
      *
-     * @param  \stdClass $parent - Parent object calling this method.
+     * @param   InstallerAdapter  $adapter  the adapter calling this method
      *
-     * @return void
+     * @return  boolean  true on success
      */
-    public function uninstall($parent) 
+    public function uninstall(InstallerAdapter $adapter): bool
     {
+        return true;
     }
 
     /**
      * This method is called after a extension is updated.
      *
-     * @param  \stdClass $parent - Parent object calling object.
+     * @param   InstallerAdapter  $adapter  the adapter calling this method
      *
-     * @return void
+     * @return  boolean  true on success
      */
-    public function update($parent) 
+    public function update(InstallerAdapter $adapter): bool
     {
         $this->deleteUnexistingFiles();
+
+        return true;
     }
 
     /**
      * Function to act prior to installation process begins
      *
-     * @param   string     $action     Which action is happening (install|uninstall|discover_install|update)
-     * @param   Installer  $installer  The class calling this method
+     * @param   string            $type     Which action is happening (install|uninstall|discover_install|update)
+     * @param   InstallerAdapter  $adapter  the adapter calling this method
      *
-     * @return  boolean  True on success
+     * @return  boolean  true on success
      */
-    public function preflight($action, $installer)
+    public function preflight(string $type, InstallerAdapter $adapter): bool
     {
-       if ($action === 'update')
+        if ($type === 'update')
         {
-            $db    = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $db    = $this->getDatabase();
             $query = $db->getQuery()->clear()
                 ->select('*')
                 ->from($db->quoteName('#__extensions'))
@@ -97,12 +99,12 @@ class Com_J2xmlInstallerScript
             $db->setQuery($query);
 
             $j2xml = $db->loadObject();
-        
+
             if ($j2xml)
             {
                 $manifestValues = json_decode($j2xml->manifest_cache, true);
 
-                if (array_key_exists('version', $manifestValues))
+                if (is_array($manifestValues) && array_key_exists('version', $manifestValues))
                 {
                     $this->fromVersion = $manifestValues['version'];
 
@@ -122,19 +124,19 @@ class Com_J2xmlInstallerScript
     /**
      * Runs right after any installation action is preformed on the extension.
      *
-     * @param  string   $type    - Type of PostFlight action. Possible values are:
-     *                           - * install
-     *                           - * update
-     *                           - * discover_install
-     * @param  \stdClass $parent - Parent object calling object.
+     * @param   string            $type     Type of PostFlight action. Possible values are:
+     *                                      - * install
+     *                                      - * update
+     *                                      - * discover_install
+     * @param   InstallerAdapter  $adapter  the adapter calling this method
      *
-     * @return void
+     * @return  boolean  true on success
      */
-    function postflight($type, $parent)
+    public function postflight(string $type, InstallerAdapter $adapter): bool
     {
         // Add token column to #__j2xml_websites if the table exists
         // (created by J2XML Pro).
-        $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $db = $this->getDatabase();
         $tables = $db->getTableList();
         $prefix = $db->getPrefix();
         $tableName = $prefix . 'j2xml_websites';
@@ -146,11 +148,12 @@ class Com_J2xmlInstallerScript
             {
                 $db->setQuery(
                     'ALTER TABLE ' . $db->quoteName('#__j2xml_websites')
-                    . ' ADD COLUMN ' . $db->quoteName('token') . ' TEXT NULL AFTER '
-                    . $db->quoteName('password')
+                    . ' ADD COLUMN ' . $db->quoteName('token') . ' TEXT NULL'
                 )->execute();
             }
         }
+
+        return true;
     }
 
     /**
@@ -158,7 +161,7 @@ class Com_J2xmlInstallerScript
      *
      * @return  void
      */
-    public function deleteUnexistingFiles()
+    public function deleteUnexistingFiles(): void
     {
         $files = [
             /*
@@ -210,4 +213,4 @@ class Com_J2xmlInstallerScript
             }
         }
     }
-}
+};

@@ -36,21 +36,21 @@ class AbstractRawView extends HtmlView
      *
      * @var array
      */
-    protected $ids;
+    protected array $ids = [];
 
     /**
      * The params object.
      *
      * @var Registry
      */
-    protected $params;
+    protected Registry $params;
 
     /**
      * The export method name (e.g. 'content', 'categories').
      *
      * @var string
      */
-    protected $exportMethod = '';
+    protected string $exportMethod = '';
 
     /**
      * Constructor.
@@ -80,7 +80,7 @@ class AbstractRawView extends HtmlView
      *
      * @return  boolean
      */
-    public function display($tpl = null)
+    public function display($tpl = null): bool
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 

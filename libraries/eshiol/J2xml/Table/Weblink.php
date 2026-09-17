@@ -19,6 +19,7 @@
 namespace eshiol\J2xml\Table;
 
 use eshiol\J2xml\Table\Table;
+use Joomla\CMS\Component\ComponentHelper;
 
 /**
  *
@@ -53,29 +54,29 @@ class Weblink extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        // $this->_aliases['tag']='SELECT t.path FROM #__tags t,
+        // $this->aliases['tag']='SELECT t.path FROM #__tags t,
         // #__contentitem_tag_map m WHERE type_alias =
         // "com_weblinks.weblink" AND t.id = m.tag_id AND m.content_item_id
         // = '. (int)$this->id;
-        $this->_aliases['tag'] = (string) $this->_db->getQuery()->clear()
-            ->select($this->_db->quoteName('t.path'))
-            ->from($this->_db->quoteName('#__tags', 't'))
-            ->from($this->_db->quoteName('#__contentitem_tag_map', 'm'))
-            ->where($this->_db->quoteName('type_alias') . ' = ' . $this->_db->quote('com_weblinks.weblink'))
-            ->where($this->_db->quoteName('t.id') . ' = ' . $this->_db->quoteName('m.tag_id'))
-            ->where($this->_db->quoteName('m.content_item_id') . ' = ' . $this->_db->quote((string) $this->id));
+        $this->aliases['tag'] = (string) $this->getDatabase()->getQuery()->clear()
+            ->select($this->getDatabase()->quoteName('t.path'))
+            ->from($this->getDatabase()->quoteName('#__tags', 't'))
+            ->from($this->getDatabase()->quoteName('#__contentitem_tag_map', 'm'))
+            ->where($this->getDatabase()->quoteName('type_alias') . ' = ' . $this->getDatabase()->quote('com_weblinks.weblink'))
+            ->where($this->getDatabase()->quoteName('t.id') . ' = ' . $this->getDatabase()->quoteName('m.tag_id'))
+            ->where($this->getDatabase()->quoteName('m.content_item_id') . ' = ' . $this->getDatabase()->quote((string) $this->id));
 
-        $query = $this->_db->getQuery()->clear();
-        $this->_aliases['association'] = (string) $query
-            ->select($query->concatenate([$this->_db->quoteName('cc.path'), $this->_db->quoteName('c.alias')], '/'))
-            ->from($this->_db->quoteName('#__associations', 'asso1'))
-            ->join('INNER', $this->_db->quoteName('#__associations', 'asso2') . ' ON ' . $this->_db->quoteName('asso1.key') . ' = ' . $this->_db->quoteName('asso2.key'))
-            ->join('INNER', $this->_db->quoteName('#__weblinks', 'c') . ' ON ' . $this->_db->quoteName('asso2.id') . ' = ' . $this->_db->quoteName('c.id'))
-            ->join('INNER', $this->_db->quoteName('#__categories', 'cc') . ' ON ' . $this->_db->quoteName('c.catid') . ' = ' . $this->_db->quoteName('cc.id'))
+        $query = $this->getDatabase()->getQuery()->clear();
+        $this->aliases['association'] = (string) $query
+            ->select($query->concatenate([$this->getDatabase()->quoteName('cc.path'), $this->getDatabase()->quoteName('c.alias')], '/'))
+            ->from($this->getDatabase()->quoteName('#__associations', 'asso1'))
+            ->join('INNER', $this->getDatabase()->quoteName('#__associations', 'asso2') . ' ON ' . $this->getDatabase()->quoteName('asso1.key') . ' = ' . $this->getDatabase()->quoteName('asso2.key'))
+            ->join('INNER', $this->getDatabase()->quoteName('#__weblinks', 'c') . ' ON ' . $this->getDatabase()->quoteName('asso2.id') . ' = ' . $this->getDatabase()->quoteName('c.id'))
+            ->join('INNER', $this->getDatabase()->quoteName('#__categories', 'cc') . ' ON ' . $this->getDatabase()->quoteName('c.catid') . ' = ' . $this->getDatabase()->quoteName('cc.id'))
             ->where([
-                $this->_db->quoteName('asso1.id') . ' = ' . (int) $this->id,
-                $this->_db->quoteName('asso1.context') . ' = ' . $this->_db->quote('com_weblinks.item'),
-                $this->_db->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
+                $this->getDatabase()->quoteName('asso1.id') . ' = ' . (int) $this->id,
+                $this->getDatabase()->quoteName('asso1.context') . ' = ' . $this->getDatabase()->quote('com_weblinks.item'),
+                $this->getDatabase()->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
 
         return parent::toXML($mapKeysToText);
     }
@@ -203,10 +204,11 @@ class Weblink extends Table
 
         $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 
-        // Check if component is installed
-        $db->setQuery("SELECT enabled FROM #__extensions WHERE name = 'com_weblinks'");
-        if (!$db->loadResult())
+        // Check if the component is installed and enabled.
+        if (!ComponentHelper::isEnabled('com_weblinks'))
+        {
             return;
+        }
 
         $params->set('extension', 'com_weblinks');
         $params->def('category_default', self::getCategoryId('uncategorised', 'com_weblinks'));

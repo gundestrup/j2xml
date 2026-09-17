@@ -37,7 +37,7 @@ class Table extends \Joomla\CMS\Table\Table
      * @var array
      * @since 1.5.3.39
      */
-    protected $_excluded = [];
+    protected array $excluded = [];
 
     /**
      * An array of key names to be exported as alias
@@ -45,7 +45,7 @@ class Table extends \Joomla\CMS\Table\Table
      * @var array
      * @since 1.5.3.39
      */
-    protected $_aliases = [];
+    protected array $aliases = [];
 
     /**
      * An array of key names to be exported in json encoded format
@@ -53,7 +53,7 @@ class Table extends \Joomla\CMS\Table\Table
      * @var array
      * @since 13.6.116
      */
-    protected $_jsonEncode = [];
+    protected array $jsonEncode = [];
 
     /**
      *
@@ -82,7 +82,7 @@ class Table extends \Joomla\CMS\Table\Table
 
         parent::__construct($table, $key, $db);
 
-        $this->_excluded = [
+        $this->excluded = [
             'asset_id',
             'parent_id',
             'lft',
@@ -91,12 +91,12 @@ class Table extends \Joomla\CMS\Table\Table
             'checked_out',
             'checked_out_time'
         ];
-        $this->_aliases = [];
+        $this->aliases = [];
     }
 
     /**
      * Build the SQL alias query for custom fields (including subform fields)
-     * and store it in $this->_aliases['field'].
+     * and store it in $this->aliases['field'].
      *
      * Shared by Content::toXML() and User::toXML() to avoid code duplication.
      *
@@ -105,40 +105,40 @@ class Table extends \Joomla\CMS\Table\Table
      */
     protected function buildFieldAliases(): void
     {
-        $serverType = $this->_db->getServerType();
+        $serverType = $this->getDatabase()->getServerType();
 
         // Non-subform field values
-        $query = $this->_db->getQuery()->clear()
-            ->select($this->_db->quoteName('f.name'))
-            ->select($this->_db->quoteName('v.value'))
-            ->from($this->_db->quoteName('#__fields_values', 'v'))
-            ->from($this->_db->quoteName('#__fields', 'f'))
-            ->where($this->_db->quoteName('f.id') . ' = ' . $this->_db->quoteName('v.field_id'))
-            ->where($this->_db->quoteName('v.item_id') . ' = ' . $this->_db->quote((string) $this->id));
-        $query->where($this->_db->quoteName('f.type') . ' <> ' . $this->_db->quote('subform'));
-        $this->_aliases['field'] = (string) $query;
+        $query = $this->getDatabase()->getQuery()->clear()
+            ->select($this->getDatabase()->quoteName('f.name'))
+            ->select($this->getDatabase()->quoteName('v.value'))
+            ->from($this->getDatabase()->quoteName('#__fields_values', 'v'))
+            ->from($this->getDatabase()->quoteName('#__fields', 'f'))
+            ->where($this->getDatabase()->quoteName('f.id') . ' = ' . $this->getDatabase()->quoteName('v.field_id'))
+            ->where($this->getDatabase()->quoteName('v.item_id') . ' = ' . $this->getDatabase()->quote((string) $this->id));
+        $query->where($this->getDatabase()->quoteName('f.type') . ' <> ' . $this->getDatabase()->quote('subform'));
+        $this->aliases['field'] = (string) $query;
 
         // Map field IDs to names for subform processing
-        $query = $this->_db->getQuery()->clear()
-            ->select($this->_db->quoteName('f.id'))
-            ->select($this->_db->quoteName('f.name'))
-            ->from($this->_db->quoteName('#__fields', 'f'));
+        $query = $this->getDatabase()->getQuery()->clear()
+            ->select($this->getDatabase()->quoteName('f.id'))
+            ->select($this->getDatabase()->quoteName('f.name'))
+            ->from($this->getDatabase()->quoteName('#__fields', 'f'));
         $fields = [];
-        foreach ($this->_db->setQuery($query)->loadObjectList() as $field)
+        foreach ($this->getDatabase()->setQuery($query)->loadObjectList() as $field)
         {
             $fields['field' . $field->id] = $field->name;
         }
 
         // Subform field values — decode, rename field IDs to names, re-encode, UNION
-        $query = $this->_db->getQuery()->clear()
-            ->select($this->_db->quoteName('f.name'))
-            ->select($this->_db->quoteName('v.value'))
-            ->from($this->_db->quoteName('#__fields_values', 'v'))
-            ->from($this->_db->quoteName('#__fields', 'f'))
-            ->where($this->_db->quoteName('f.type') . ' = ' . $this->_db->quote('subform'))
-            ->where($this->_db->quoteName('f.id') . ' = ' . $this->_db->quoteName('v.field_id'))
-            ->where($this->_db->quoteName('v.item_id') . ' = ' . $this->_db->quote((string) $this->id));
-        $fieldValues = $this->_db->setQuery($query)->loadObjectList();
+        $query = $this->getDatabase()->getQuery()->clear()
+            ->select($this->getDatabase()->quoteName('f.name'))
+            ->select($this->getDatabase()->quoteName('v.value'))
+            ->from($this->getDatabase()->quoteName('#__fields_values', 'v'))
+            ->from($this->getDatabase()->quoteName('#__fields', 'f'))
+            ->where($this->getDatabase()->quoteName('f.type') . ' = ' . $this->getDatabase()->quote('subform'))
+            ->where($this->getDatabase()->quoteName('f.id') . ' = ' . $this->getDatabase()->quoteName('v.field_id'))
+            ->where($this->getDatabase()->quoteName('v.item_id') . ' = ' . $this->getDatabase()->quote((string) $this->id));
+        $fieldValues = $this->getDatabase()->setQuery($query)->loadObjectList();
         foreach ($fieldValues as $field)
         {
             $subformValue = json_decode($field->value, true);
@@ -152,14 +152,14 @@ class Table extends \Joomla\CMS\Table\Table
             }
             $subformValue = json_encode($subformValue, true);
 
-            $query = $this->_db->getQuery()->clear()
-                ->select($this->_db->quote($field->name))
-                ->select($this->_db->quote($subformValue));
+            $query = $this->getDatabase()->getQuery()->clear()
+                ->select($this->getDatabase()->quote($field->name))
+                ->select($this->getDatabase()->quote($subformValue));
             if ($serverType === 'sqlserver')
             {
-                $query->from($this->_db->quoteName('DUAL'));
+                $query->from($this->getDatabase()->quoteName('DUAL'));
             }
-            $this->_aliases['field'] .= ' UNION ' . (string) $query;
+            $this->aliases['field'] .= ' UNION ' . (string) $query;
         }
     }
 
@@ -238,61 +238,61 @@ class Table extends \Joomla\CMS\Table\Table
         {
             if (isset($this->created_by))
             {
-                $this->_aliases['created_by'] = (string) $this->_db->getQuery()->clear()
-                    ->select($this->_db->quoteName('username'))
-                    ->from($this->_db->quoteName('#__users'))
-                    ->where($this->_db->quoteName('id') . ' = ' . (int) $this->created_by);
+                $this->aliases['created_by'] = (string) $this->getDatabase()->getQuery()->clear()
+                    ->select($this->getDatabase()->quoteName('username'))
+                    ->from($this->getDatabase()->quoteName('#__users'))
+                    ->where($this->getDatabase()->quoteName('id') . ' = ' . (int) $this->created_by);
             }
             if (isset($this->created_user_id))
             {
-                $this->_aliases['created_user_id'] = (string) $this->_db->getQuery()->clear()
-                    ->select($this->_db->quoteName('username'))
-                    ->from($this->_db->quoteName('#__users'))
-                    ->where($this->_db->quoteName('id') . ' = ' . (int) $this->created_user_id);
+                $this->aliases['created_user_id'] = (string) $this->getDatabase()->getQuery()->clear()
+                    ->select($this->getDatabase()->quoteName('username'))
+                    ->from($this->getDatabase()->quoteName('#__users'))
+                    ->where($this->getDatabase()->quoteName('id') . ' = ' . (int) $this->created_user_id);
             }
             if (isset($this->modified_by))
             {
-                $this->_aliases['modified_by'] = (string) $this->_db->getQuery()->clear()
-                    ->select($this->_db->quoteName('username'))
-                    ->from($this->_db->quoteName('#__users'))
-                    ->where($this->_db->quoteName('id') . ' = ' . (int) $this->modified_by);
+                $this->aliases['modified_by'] = (string) $this->getDatabase()->getQuery()->clear()
+                    ->select($this->getDatabase()->quoteName('username'))
+                    ->from($this->getDatabase()->quoteName('#__users'))
+                    ->where($this->getDatabase()->quoteName('id') . ' = ' . (int) $this->modified_by);
             }
             if (isset($this->modified_user_id))
             {
-                $this->_aliases['modified_user_id'] = (string) $this->_db->getQuery()->clear()
-                    ->select($this->_db->quoteName('username'))
-                    ->from($this->_db->quoteName('#__users'))
-                    ->where($this->_db->quoteName('id') . ' = ' . (int) $this->modified_user_id);
+                $this->aliases['modified_user_id'] = (string) $this->getDatabase()->getQuery()->clear()
+                    ->select($this->getDatabase()->quoteName('username'))
+                    ->from($this->getDatabase()->quoteName('#__users'))
+                    ->where($this->getDatabase()->quoteName('id') . ' = ' . (int) $this->modified_user_id);
             }
             if (isset($this->catid))
             {
-                $this->_aliases['catid'] = (string) $this->_db->getQuery()->clear()
-                    ->select($this->_db->quoteName('path'))
-                    ->from($this->_db->quoteName('#__categories'))
-                    ->where($this->_db->quoteName('id') . ' = ' . (int) $this->catid);
+                $this->aliases['catid'] = (string) $this->getDatabase()->getQuery()->clear()
+                    ->select($this->getDatabase()->quoteName('path'))
+                    ->from($this->getDatabase()->quoteName('#__categories'))
+                    ->where($this->getDatabase()->quoteName('id') . ' = ' . (int) $this->catid);
             }
             if (isset($this->access))
             {
-                $query = $this->_db->getQuery()->clear();
-                $serverType = $this->_db->getServerType();
+                $query = $this->getDatabase()->getQuery()->clear();
+                $serverType = $this->getDatabase()->getServerType();
 
                 if ($serverType === 'postgresql')
                 {
                     $query->select(
-                        'CASE WHEN ' . $this->_db->quoteName('v.id') . '<=6 THEN TO_CHAR(' . $this->_db->quoteName('v.id') . ', \'9\') ELSE ' .
-                        $this->_db->quoteName('v.title') . ' END');
+                        'CASE WHEN ' . $this->getDatabase()->quoteName('v.id') . '<=6 THEN TO_CHAR(' . $this->getDatabase()->quoteName('v.id') . ', \'9\') ELSE ' .
+                        $this->getDatabase()->quoteName('v.title') . ' END');
                 }
                 else
                 {
                     $query->select(
-                        'IF(' . $this->_db->quoteName('v.id') . '<=6, ' . $this->_db->quoteName('v.id') . ', ' . $this->_db->quoteName('v.title') .
+                        'IF(' . $this->getDatabase()->quoteName('v.id') . '<=6, ' . $this->getDatabase()->quoteName('v.id') . ', ' . $this->getDatabase()->quoteName('v.title') .
                         ')');
                 }
-                $query->from($this->_db->quoteName('#__viewlevels', 'v'))
+                $query->from($this->getDatabase()->quoteName('#__viewlevels', 'v'))
                     ->join('RIGHT',
-                        $this->_db->quoteName($this->_tbl, 'a') . ' ON ' . $this->_db->quoteName('v.id') . ' = ' . $this->_db->quoteName('a.access'))
-                    ->where($this->_db->quoteName('a.id') . ' = ' . (int) $this->id);
-                $this->_aliases['access'] = (string) $query;
+                        $this->getDatabase()->quoteName($this->_tbl, 'a') . ' ON ' . $this->getDatabase()->quoteName('v.id') . ' = ' . $this->getDatabase()->quoteName('a.access'))
+                    ->where($this->getDatabase()->quoteName('a.id') . ' = ' . (int) $this->id);
+                $this->aliases['access'] = (string) $query;
             }
         }
         return $ret;
@@ -360,15 +360,15 @@ class Table extends \Joomla\CMS\Table\Table
         {
             return null;
         }
-        if ($this->_excluded && in_array($k, $this->_excluded))
+        if ($this->excluded && in_array($k, $this->excluded))
         {
             return null;
         }
-        if ($this->_aliases && array_key_exists($k, $this->_aliases))
+        if ($this->aliases && array_key_exists($k, $this->aliases))
         {
             return null;
         }
-        if ($this->_jsonEncode && in_array($k, $this->_jsonEncode))
+        if ($this->jsonEncode && in_array($k, $this->jsonEncode))
         {
             $v = json_encode($v, JSON_NUMERIC_CHECK);
         }
@@ -394,9 +394,9 @@ class Table extends \Joomla\CMS\Table\Table
     {
         $xml = [];
 
-        foreach ($this->_aliases as $k => $query)
+        foreach ($this->aliases as $k => $query)
         {
-            $v = $this->_db->setQuery($query)->loadObjectList();
+            $v = $this->getDatabase()->setQuery($query)->loadObjectList();
 
             if (count($v) == 1)
             {

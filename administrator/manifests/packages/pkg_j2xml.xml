@@ -4,11 +4,11 @@
 	<packagename>j2xml</packagename>
 	<description><![CDATA[J2XML __DEPLOY_VERSION__ for Joomla! 5.x & 6.x]]></description>
 
-	<author>Helios Ciancio</author>
+	<author>Helios Ciancio / Svend Gundestrup (fork maintainer)</author>
 	<authorEmail>info (at) eshiol (dot) it</authorEmail>
 	<authorUrl>www.eshiol.it</authorUrl>
 	<creationDate>__DEPLOY_DATE__</creationDate>
-	<copyright><![CDATA[(C) 2010 - 2026 Helios Ciancio. All Rights Reserved.]]></copyright>
+	<copyright><![CDATA[(C) 2010 - 2026 Helios Ciancio. All Rights Reserved.; (C) 2026 Svend Gundestrup. All Rights Reserved.]]></copyright>
 	<license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3</license>
 	<version>__DEPLOY_VERSION__</version>
 

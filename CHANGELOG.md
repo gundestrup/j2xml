@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [4.5.3] - 2026-09-17
+
 ### Changed
 
 - Refactored the long legacy import/export methods across
@@ -29,6 +33,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consolidated the duplicated `<img>` scan loop and the MySQL/PostgreSQL
   auto-increment reset into shared base helpers
   (`Table::exportImagesFromText()`, `Table::resetAutoIncrement()`).
+- Replaced all deprecated `HTMLHelper::_('bootstrap.renderModal')` modals with
+  the Joomla Dialog Web Component (`<joomla-dialog>`): the toolbar
+  Export/Send dialogs and the import options dialog are now created lazily
+  through the `JoomlaDialog` API with `popupButtons` callbacks. Removed the
+  unused Joomla 4 Bootstrap modal fallback and dead `showParentModal()` helper.
+- Retained the legacy browser uploader fallback alongside the modern FormData
+  upload flow so older browsers remain supported.
+- Replaced all `triggerEvent()` calls with
+  `getDispatcher()->dispatch(...)`, using `PrepareDataEvent` for
+  `onContentPrepareData` and generic `Joomla\Event\Event` for J2XML custom
+  events (event names, argument order and mutable args preserved).
+- Renamed J2XML-owned underscore-prefixed properties to camelCase native
+  types (`excluded`, `aliases`, `jsonEncode`, `option`, `nullDate`, `user`,
+  `userId`, `now`) and removed dead properties (`_image_path`, `_admin`,
+  `_usergroups`).
+- Added native type declarations across views, controllers, models and
+  private helpers (return types on overrides only — Joomla's untyped parent
+  parameters cannot be narrowed).
+- Converted `administrator/components/com_j2xml/script.php` from the legacy
+  named installer class to an `InstallerScriptInterface` anonymous class with
+  adapter-injected database (the legacy path triggers `E_USER_DEPRECATED` on
+  Joomla 6); removed the unreferenced `plugins/system/j2xml/enable.php` file.
+- `tests/scripts/bootstrap.php` now boots the CMS `ConsoleApplication` and
+  loads the test identity via `IdentityAware::loadIdentity()` instead of the
+  deprecated `Factory::$user` static.
+- Kept `$table->getError()` / `$user->getError()` calls in place: Joomla 5/6
+  `Table::store()` and `User::save()` catch exceptions internally into
+  `setError()`, so `getError()` remains the only way to retrieve the failure
+  message — the same approach Joomla core itself uses.
+- Replaced system-plugin and Weblinks extension checks with Joomla's
+  `ComponentHelper::isEnabled()` and `PluginHelper::isEnabled()` APIs, and
+  reused the injected application in the API controller.
+- Replaced all 278 direct J2XML references to Joomla's deprecated parent `$_db`
+  property with the built-in `getDatabase()` API.
+- Kept the optional Pro token-column migration portable by removing the
+  MySQL-only `AFTER password` clause; the same `ALTER TABLE` now works on
+  MySQL and PostgreSQL.
 - Files changed or authored by this fork now carry an additional
   `@copyright Copyright (C) 2026 Svend Gundestrup` line; fork-authored files
   (API controller, service providers, dispatcher, extension class,
@@ -37,11 +78,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `.sonarcloud.properties` configures SonarCloud AutoScan to exclude test-only
+  helpers from production issue analysis; CI-based scans continue to use
+  `sonar-project.properties`.
+- `scripts/check-tests.sh --postgresql` runs the PostgreSQL integration leg
+  independently, and stale fixed-name containers from other Compose projects
+  are removed before each suite starts.
 - `NOTICE` file documenting the fork provenance and attribution convention.
 - `LICENSE` and `NOTICE` are now bundled inside every built package zip.
 
 ### Removed
 
+- Removed the unreferenced system-plugin installer script
+  `plugins/system/j2xml/enable.php`, the empty `com_j2xml.j2xml` asset alias,
+  and the Joomla 4-era Bootstrap modal fallback.
 - Removed `.codefactor.yml` — CodeFactor does not read repository config
   files; path exclusions are configured in the CodeFactor UI
   (Settings → Ignore Files).

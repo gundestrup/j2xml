@@ -3,7 +3,7 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/gundestrup/j2xml)
 [![PHP](https://img.shields.io/badge/PHP-8.4%20%26%208.5-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![Joomla](https://img.shields.io/badge/Joomla!-5%20%26%206-5091CD?logo=joomla&logoColor=white)](https://www.joomla.org/)
-[![Version](https://img.shields.io/badge/version-4.5.2-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-4.5.3-blue.svg)](./CHANGELOG.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL_v3-blue.svg)](./LICENSE)
 [![Changelog](https://img.shields.io/badge/CHANGELOG-Updated-brightgreen.svg)](./CHANGELOG.md)
 [![GitHub issues](https://img.shields.io/github/issues/gundestrup/j2xml?logo=github)](https://github.com/gundestrup/j2xml/issues)
@@ -140,6 +140,10 @@ in this fork:
 
 # Full: integration tests against Docker Joomla 5 + 6
 ./scripts/check-tests.sh
+
+# Single database legs, if needed
+./scripts/check-tests.sh --mysql
+./scripts/check-tests.sh --postgresql
 
 # Everything: quality + tests (pre-release validation)
 ./scripts/check-all.sh

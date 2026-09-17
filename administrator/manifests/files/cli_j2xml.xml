@@ -2,10 +2,10 @@
 <extension version="3.0" type="file" method="upgrade">
   <name>cli_j2xml</name>
   <creationDate>__DEPLOY_DATE__</creationDate>
-  <author>Helios Ciancio</author>
+  <author>Helios Ciancio / Svend Gundestrup (fork maintainer)</author>
   <authorEmail>info@eshiol.it</authorEmail>
   <authorUrl>www.eshiol.it</authorUrl>
-  <copyright><![CDATA[(C) 2010 - 2026 Helios Ciancio <info (at) eshiol (dot) it> (https://www.eshiol.it). All Rights Reserved.]]></copyright>
+  <copyright><![CDATA[(C) 2010 - 2026 Helios Ciancio <info (at) eshiol (dot) it> (https://www.eshiol.it). All Rights Reserved.; (C) 2026 Svend Gundestrup. All Rights Reserved.]]></copyright>
   <license>GNU/GPL v3</license>
   <version>__DEPLOY_VERSION__</version>
   <description>CLI_J2XML_XML_DESCRIPTION</description>

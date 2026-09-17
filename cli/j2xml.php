@@ -99,7 +99,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
      *
      * @since   2.5.1
      */
-    public function doExecute()
+    public function doExecute(): void
     {
         // Merge the default translation with the current translation
         $this->loadLanguages();
@@ -132,7 +132,8 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
         }
 
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
-        $results = $this->triggerEvent('onBeforeImport', array('cli_j2xml.import', &$xml));
+        $this->getDispatcher()->dispatch('onBeforeImport',
+            new \Joomla\Event\Event('onBeforeImport', array('cli_j2xml.import', &$xml)));
         if (!$xml || (strtoupper($xml->getName()) != 'J2XML') || !isset($xml['version']))
         {
             $this->out(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'),'error');
@@ -140,7 +141,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
         }
 
         $xmlVersion = $xml['version'];
-        $xmlVersionNumber = self::toVersionNumber($xmlVersion);
+        $xmlVersionNumber = self::toVersionNumber((string) $xmlVersion);
 
         $j2xmlVersion = class_exists('eshiol\J2xmlpro\Version') ? eshiol\J2xmlpro\Version::$DOCVERSION : eshiol\J2xml\Version::$DOCVERSION;
         $j2xmlVersionNumber = self::toVersionNumber($j2xmlVersion);
@@ -170,7 +171,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
      *
      * @since   __DEPLOY_VERSION__
      */
-    private function loadLanguages()
+    private function loadLanguages(): void
     {
         $lang = $this->getLanguage();
         $lang->load('com_j2xml', JPATH_ADMINISTRATOR, null, false, false)
@@ -191,12 +192,12 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
      *
      * @since   __DEPLOY_VERSION__
      */
-    private function loadFile($filename)
+    private function loadFile(string $filename): string
     {
         $data = implode(gzfile($filename));
         if (!$data)
         {
-            $data = file_get_contents($filename); // NOSONAR — CLI-only script, user already has filesystem access
+            $data = (string) file_get_contents($filename); // NOSONAR — CLI-only script, user already has filesystem access
         }
 
         if (!mb_detect_encoding($data, 'UTF-8'))
@@ -214,7 +215,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
      *
      * @since   __DEPLOY_VERSION__
      */
-    private function reportXmlErrors()
+    private function reportXmlErrors(): void
     {
         foreach (libxml_get_errors() as $error) {
             switch ($error->level) {
@@ -252,7 +253,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
      *
      * @since   __DEPLOY_VERSION__
      */
-    private static function toVersionNumber($version)
+    private static function toVersionNumber(string $version): string
     {
         $version = explode(".", (string) $version);
 
@@ -269,7 +270,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
      *
      * @since   __DEPLOY_VERSION__
      */
-    private function buildImportParams($params, $xml)
+    private function buildImportParams(\Joomla\Registry\Registry $params, \SimpleXMLElement $xml): \Joomla\Registry\Registry
     {
         $iparams = new \Joomla\Registry\Registry();
         $iparams->set('version', (string) $xml['version']);
@@ -310,7 +311,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
      *
      * @since   2.5.1
      */
-    public function enqueueMessage($msg, $type = 'message')
+    public function enqueueMessage($msg, $type = 'message'): void
     {
         $this->out(sprintf("%s - %s",self::$codes[$type],$msg));
     }
@@ -325,7 +326,7 @@ class J2xmlCli extends \Joomla\CMS\Application\CliApplication
      *
      * @since   4.5.0
      */
-    public function getName()
+    public function getName(): string
     {
         return 'cli';
     }

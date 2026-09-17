@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
 # =============================================================================
 # J2XML Comprehensive Feature Test Suite
 #
@@ -521,15 +522,17 @@ else
     fail "Toolbar J5: Export button NOT visible on Contacts list"
 fi
 
-# Verify the rendered toolbar action carries the real checkbox selector and modal target.
-# This is the server-rendered part of pressing Export; the request below verifies the
-# browser-produced cid list reaches the raw export endpoint correctly.
+# Verify the rendered toolbar action carries the real checkbox selector and the
+# joomla-dialog trigger. This is the server-rendered part of pressing Export; the
+# request below verifies the browser-produced cid list reaches the raw export
+# endpoint correctly.
 ARTICLES_HTML_J5=$(curl -s -b "$COOKIE_FILE" "$JOOMLA5_URL/administrator/index.php?option=com_content&view=articles" 2>/dev/null)
 if [[ "$ARTICLES_HTML_J5" == *'name=&quot;cid[]&quot;'* ]] && \
-   [[ "$ARTICLES_HTML_J5" == *'j2xmlExportModal iframe'* ]]; then
-    pass "UI J5: Export dropdown contains the checkbox selector and export modal"
+   [[ "$ARTICLES_HTML_J5" == *'id="j2xmlExportOpen"'* ]] && \
+   [[ "$ARTICLES_HTML_J5" == *'joomla-dialog'* ]]; then
+    pass "UI J5: Export dropdown contains the checkbox selector and export dialog"
 else
-    fail "UI J5: Export dropdown is missing checkbox selection wiring or modal target"
+    fail "UI J5: Export dropdown is missing checkbox selection wiring or dialog trigger"
 fi
 
 J5_UI_TWO_ID=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT id FROM #__content WHERE alias='j2xml-ui-selection-two'")
@@ -1175,13 +1178,14 @@ else
     fail "Asset J6: core.js NOT loaded — admin.js will fail with 'Joomla is not defined'"
 fi
 
-# Check that the export button does NOT have data-bs-toggle="modal" on the joomla-toolbar-button
-# (Bootstrap 5 auto-initializes a Modal on the button itself, causing "Cannot read properties
-# of undefined (reading 'backdrop')" error)
+# Check that the export button does NOT have data-bs-toggle="modal" on the
+# joomla-toolbar-button (Bootstrap 5 auto-initializes a Modal on the button
+# itself, causing "Cannot read properties of undefined (reading 'backdrop')").
+# The button now opens a lazily-created joomla-dialog via id j2xmlExportOpen.
 if python3 -c "
 import sys, re
 html = sys.stdin.read()
-match = re.search(r'<joomla-toolbar-button[^>]*j2xmlExportModal[^>]*>', html)
+match = re.search(r'<joomla-toolbar-button[^>]*j2xmlExportOpen[^>]*>', html)
 if match:
     tag = match.group(0)
     sys.exit(0 if 'data-bs-toggle' not in tag else 1)

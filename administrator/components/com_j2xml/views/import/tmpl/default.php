@@ -30,9 +30,9 @@ $ui = 'uitab';
 
 /** @var \Joomla\CMS\WebAsset\WebAssetManager $wa */
 $wa = $this->document->getWebAssetManager();
-$wa->useScript('com_j2xml.j2xml')
+$wa->useScript('com_j2xml.library')
     ->useScript('com_j2xml.admin')
-    ->useScript('bootstrap.modal')
+    ->useScript('joomla.dialog')
     ->useStyle('com_j2xml.admin');
 
 Text::script('LIB_J2XML_MSG_FILE_FORMAT_NOT_SUPPORTED');
@@ -104,9 +104,12 @@ Factory::getApplication()->getLanguage()->load('com_j2xml.sys');
 <?php
 // Trigger the onLoadJS event.
 PluginHelper::importPlugin('j2xml');
-Factory::getApplication()->triggerEvent('onLoadJS');
+Factory::getApplication()->getDispatcher()->dispatch('onLoadJS', new \Joomla\Event\Event('onLoadJS'));
 
-// Load the import options modal using JoomlaDialog API
+// Build the import options dialog lazily with the JoomlaDialog API
+// (joomla-dialog web component, J5.1+/J6). popupButtons contain JS
+// callbacks, so the dialog must be constructed via `new JoomlaDialog()`
+// before it is attached to the DOM — buttons render on connect.
 $selector = 'j2xmlImport';
 $modalUrl = Route::_('index.php?' . http_build_query([
     'option' => 'com_j2xml',
@@ -115,23 +118,51 @@ $modalUrl = Route::_('index.php?' . http_build_query([
     'tmpl'   => 'component',
     Session::getFormToken() => 1,
 ]));
+?>
+<script>
+(function () {
+    if (typeof eshiol === 'undefined') {
+        window.eshiol = {};
+    }
+    if (typeof eshiol.j2xml === 'undefined') {
+        eshiol.j2xml = {};
+    }
 
-// Build the modal footer buttons
-$cancelBtn = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-hidden="true">'
-    . Text::_('JTOOLBAR_CANCEL') . '</button>';
-$importBtn = '<button type="button" class="btn btn-success" data-bs-dismiss="modal" aria-hidden="true"'
-    . ' data-j2xml-task="import-modal">'
-    . Text::_('COM_J2XML_IMPORT') . '</button>';
-
-echo HTMLHelper::_(
-    'bootstrap.renderModal',
-    $selector . 'Modal',
-    [
-        'title'      => Text::_('COM_J2XML_IMPORT'),
-        'url'        => $modalUrl,
-        'height'     => '420px',
-        'width'      => '300px',
-        'modalWidth' => '50',
-        'footer'     => $cancelBtn . $importBtn,
-    ]
-);
+    eshiol.j2xml.showImportDialog = function () {
+        var existing = document.getElementById('<?php echo $selector; ?>Modal');
+        if (existing) {
+            existing.show();
+            return;
+        }
+        customElements.whenDefined('joomla-dialog').then(function () {
+            var Dialog = customElements.get('joomla-dialog');
+            var dialog = new Dialog({
+                id: '<?php echo $selector; ?>Modal',
+                popupType: 'iframe',
+                src: <?php echo json_encode(str_replace('&amp;', '&', $modalUrl)); ?>,
+                textHeader: <?php echo json_encode(Text::_('COM_J2XML_IMPORT')); ?>,
+                width: '50vw',
+                height: '420px',
+                popupButtons: [
+                    {
+                        label: <?php echo json_encode(Text::_('JTOOLBAR_CANCEL')); ?>,
+                        className: 'btn btn-secondary',
+                        onClick: function () { dialog.close(); }
+                    },
+                    {
+                        label: <?php echo json_encode(Text::_('COM_J2XML_IMPORT')); ?>,
+                        className: 'btn btn-success',
+                        onClick: function () {
+                            if (eshiol.j2xml && typeof eshiol.j2xml.importerModal === 'function') {
+                                eshiol.j2xml.importerModal();
+                            }
+                            dialog.close();
+                        }
+                    }
+                ]
+            });
+            dialog.show();
+        });
+    };
+})();
+</script>

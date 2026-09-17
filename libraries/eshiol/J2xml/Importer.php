@@ -47,17 +47,15 @@ use Joomla\Database\DatabaseInterface;
 class Importer
 {
 
-    protected $_nullDate;
+    protected string $nullDate = '';
 
-    protected $_user;
+    protected ?\Joomla\CMS\User\User $user = null;
 
-    protected $_user_id;
+    protected int $userId = 0;
 
-    protected $_now;
+    protected string $now = '';
 
-    protected $_option;
-
-    protected $_usergroups;
+    protected ?string $option = null;
 
     /**
      * The application instance.
@@ -65,7 +63,7 @@ class Importer
      * @var CMSApplicationInterface
      * @since __DEPLOY_VERSION__
      */
-    protected $app;
+    protected CMSApplicationInterface $app;
 
     /**
      * CONSTRUCTOR
@@ -90,11 +88,11 @@ class Importer
         $jlang->load('lib_j2xml', JPATH_SITE, $jlang->getDefault(), true);
         $jlang->load('lib_j2xml', JPATH_SITE, null, true);
 
-        $this->_user     = $app->getIdentity();
-        $this->_nullDate = $db->getNullDate();
-        $this->_user_id  = $this->_user ? $this->_user->get('id') : 0;
-        $this->_now      = (new \Joomla\CMS\Date\Date("now"))->format("%Y-%m-%d-%H-%M-%S");
-        $this->_option   = (PHP_SAPI != 'cli') ? $app->getInput()->getCmd('option') : 'cli_' .
+        $this->user     = $app->getIdentity();
+        $this->nullDate = $db->getNullDate();
+        $this->userId  = $this->user ? (int) $this->user->get('id') : 0;
+        $this->now      = (new \Joomla\CMS\Date\Date("now"))->format("%Y-%m-%d-%H-%M-%S");
+        $this->option   = (PHP_SAPI != 'cli') ? $app->getInput()->getCmd('option') : 'cli_' .
                  strtolower(get_class($app));
 
         try {
@@ -225,11 +223,12 @@ class Importer
         {
             \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
             // Trigger the onAfterImport event.
-            $this->app->triggerEvent('onContentAfterImport', [
-                'com_j2xml.import',
-                &$xml,
-                $params
-            ]);
+            $this->app->getDispatcher()->dispatch('onContentAfterImport',
+                new \Joomla\Event\Event('onContentAfterImport', [
+                    'com_j2xml.import',
+                    &$xml,
+                    $params
+                ]));
         }
 
         return true;
@@ -243,7 +242,7 @@ class Importer
      * @return boolean
      * @since  21.12.353
      */
-    public function isSupported(String $version)
+    public function isSupported(string $version): bool
     {
         return in_array($version, ["211200", "190200", "150900", "120500"]);
     }

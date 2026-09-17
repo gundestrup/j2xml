@@ -219,22 +219,20 @@ The surviving code is concentrated in:
 
 ### Current state
 
-All 84 `@author` tags, all 84 `@copyright` tags, the LICENSE file,
-and all 6 manifest `<author>` elements still attribute **only** the
-original upstream author (Helios Ciancio).  No file in the codebase
-marks the fork modifications or names the fork maintainer, despite
-~65% of the codebase being new or substantively changed.
+The original audit below has been superseded. Modified upstream-derived PHP
+and JavaScript files retain Helios Ciancio's notice and now carry a second
+copyright line for Svend Gundestrup. Files authored by the fork carry Svend's
+copyright alone. The root LICENSE, extension manifests, NOTICE, CHANGELOG,
+and AGENTS.md identify the fork and its maintainer.
 
 ### GPL v3 requirements
 
-The project is licensed under GPL v3 (or later).  Section 5(a)
-requires that modified versions carry "prominent notices stating
-that you modified it, and giving a relevant date."  The current
-state — where modified files show only the original author's
-copyright with no modification notice — does not satisfy this
-requirement.
+The project is licensed under GPL v3 (or later). Section 5(a) requires
+modified versions to carry prominent notices stating that they were modified
+and giving a relevant date. The current headers, LICENSE, manifests, and
+NOTICE now provide that attribution.
 
-### Recommended changes
+### Historical recommendations (completed or superseded)
 
 #### 1. Modified files (51 files that survived with changes)
 

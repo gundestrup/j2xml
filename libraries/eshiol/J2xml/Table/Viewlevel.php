@@ -52,11 +52,11 @@ class Viewlevel extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        $this->_excluded = array_merge($this->_excluded, [
+        $this->excluded = array_merge($this->excluded, [
                 'rules'
         ]);
 
-        $serverType = $this->_db->getServerType();
+        $serverType = $this->getDatabase()->getServerType();
 
         // Build the IN-clause value from the JSON-encoded rules.  An empty
         // rules array ("[]" or "") would produce "IN ()" which is invalid
@@ -70,7 +70,7 @@ class Viewlevel extends Table
 
         if ($serverType === 'postgresql')
         {
-            $this->_aliases['rule'] = '
+            $this->aliases['rule'] = '
                 WITH RECURSIVE usergroups(id, title, parent_id, depth, path) AS (
                   SELECT tn.id, tn.title, tn.parent_id, 1::INT AS depth, tn.title::TEXT AS path
                   FROM #__usergroups AS tn
@@ -85,11 +85,11 @@ class Viewlevel extends Table
         }
         else
         {
-            $this->_aliases['rule'] = (string) $this->_db->getQuery()->clear()
-                ->select($this->_db->quoteName('title'))
-                ->from($this->_db->quoteName('#__j2xml_usergroups', 'g'))
+            $this->aliases['rule'] = (string) $this->getDatabase()->getQuery()->clear()
+                ->select($this->getDatabase()->quoteName('title'))
+                ->from($this->getDatabase()->quoteName('#__j2xml_usergroups', 'g'))
                 ->where(
-                    $this->_db->quoteName('g.id') . ' IN ' . $rulesIn);
+                    $this->getDatabase()->quoteName('g.id') . ' IN ' . $rulesIn);
         }
 
         return parent::toXML($mapKeysToText);

@@ -50,7 +50,7 @@ class ExportController extends BaseController
      *
      * @return  void
      */
-    public function display($cachable = false, $urlparams = false)
+    public function display($cachable = false, $urlparams = false): void
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
@@ -118,7 +118,7 @@ class ExportController extends BaseController
      *
      * @return  mixed   The return value from the task
      */
-    public function execute($task)
+    public function execute($task): mixed
     {
         $format = $this->input->getCmd('format');
         if ($format === 'json')

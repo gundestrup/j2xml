@@ -51,20 +51,25 @@ if (!$container->has('Joomla\\Database\\DatabaseInterface')) {
     $container->register(new \Joomla\CMS\Service\Provider\Database(), $config);
 }
 
-// Get the database directly
+// Get the database directly (the container already registers the key)
 $db = $container->get('Joomla\\Database\\DatabaseInterface');
 
-// Register the database in the container (replaces deprecated Factory::$database)
-$container->set('Joomla\\Database\\DatabaseInterface', $db);
+// Create the CMS console application, the same entry point used by
+// Joomla's own cli/joomla.php: alias the session to the CLI driver,
+// resolve the application from the container and register it with
+// Factory so Factory::getApplication() works in test scripts.
+$container->alias('session', 'session.cli')
+    ->alias('JSession', 'session.cli')
+    ->alias(\Joomla\CMS\Session\Session::class, 'session.cli')
+    ->alias(\Joomla\Session\Session::class, 'session.cli')
+    ->alias(\Joomla\Session\SessionInterface::class, 'session.cli');
 
-// Set up a dummy user (admin).
-// Factory::$user is deprecated since Joomla 5.0 but is still the only
-// mechanism that works in a minimal CLI bootstrap without a full
-// application/session. The container-based replacement requires an
-// application identity (set via IdentityAware::setIdentity()), which is
-// not available here. Test code only; not shipped in the package.
-$user = new Joomla\CMS\User\User(['id' => 42, 'name' => 'Admin', 'username' => 'admin']);
-Joomla\CMS\Factory::$user = $user;
+$app = $container->get(\Joomla\Console\Application::class);
+Joomla\CMS\Factory::$application = $app;
+
+// Load a dummy admin identity via IdentityAware::loadIdentity()
+// (replaces deprecated Factory::$user).
+$app->loadIdentity(new Joomla\CMS\User\User(['id' => 42, 'name' => 'Admin', 'username' => 'admin']));
 
 // Register the J* alias for DatabaseDriver if needed
 if (!class_exists('JDatabaseDriver')) {

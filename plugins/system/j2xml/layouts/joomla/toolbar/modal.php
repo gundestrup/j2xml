@@ -21,10 +21,10 @@
 defined('_JEXEC') or die('Restricted access.');
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 
 Factory::getApplication()->getDocument()->getWebAssetManager()
+    ->useScript('joomla.dialog')
     ->useScript('webcomponent.toolbar-button');
 
 /**
@@ -48,11 +48,10 @@ $text    = isset($displayData['text']) ? $displayData['text'] : '';
 $cancel   = isset($displayData['cancel']) ? $displayData['cancel'] : Text::_('JCANCEL');
 $ok    = isset($displayData['ok']) ? $displayData['ok'] : Text::_('JOK');
 $onclick  = isset($displayData['onclick']) ? $displayData['onclick'] : '';
-$validate = !empty($formValidation) ? ' form-validation' : '';
+$modalUrl = str_replace('&amp;', '&', (string) $displayData['doTask']);
 ?>
 
-<joomla-toolbar-button<?php echo $id; ?> onclick="document.getElementById('<?php echo $selector; ?>Modal').open();
-    document.body.appendChild(document.getElementById('<?php echo $selector; ?>Modal'));">
+<joomla-toolbar-button<?php echo $id; ?> id="<?php echo $selector; ?>Open">
 <<?php echo $tagName; ?>
     class="<?php echo $class ?? ''; ?>"
     <?php echo $htmlAttributes ?? ''; ?>
@@ -63,23 +62,57 @@ $validate = !empty($formValidation) ? ' form-validation' : '';
 </<?php echo $tagName; ?>>
 </joomla-toolbar-button>
 
-<!-- Render the modal -->
-<?php
-echo HTMLHelper::_('bootstrap.renderModal',
-    $selector . 'Modal',
-    [
-        'url'        => $displayData['doTask'],
-        'title'    => $title,
-        'modalWidth'  => '40',
-        'height'      => '310px',
-        'closeButton' => true,
-        'footer'      => '<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">'
-                    . $cancel . '</button>'
-                    .'<joomla-toolbar-button' . $validate
-                    . ' onclick="' . $onclick . 'var iframe=document.querySelector(\'#' . $selector . 'Modal iframe\');if(iframe&&iframe.contentWindow){iframe.contentWindow.document.getElementById(\'' . $selector . 'OkBtn\').click();}"'
-                    . '>'
-                    . '<button class="btn btn-success" type="button">'
-                    . $ok . '</button>'
-                    .'</joomla-toolbar-button>'
-    ]
-);
+<!-- Open the options dialog on click (joomla-dialog web component, J5.1+/J6) -->
+<script>
+(function () {
+    var init = function () {
+        var trigger = document.getElementById('<?php echo $selector; ?>Open');
+        if (!trigger || trigger.dataset.j2xmlDialogBound) {
+            return;
+        }
+        trigger.dataset.j2xmlDialogBound = '1';
+        trigger.addEventListener('click', function () {
+            var existing = document.getElementById('<?php echo $selector; ?>Modal');
+            if (existing) {
+                existing.show();
+                return;
+            }
+            customElements.whenDefined('joomla-dialog').then(function () {
+                var Dialog = customElements.get('joomla-dialog');
+                var dialog = new Dialog({
+                    id: '<?php echo $selector; ?>Modal',
+                    popupType: 'iframe',
+                    src: <?php echo json_encode($modalUrl); ?>,
+                    textHeader: <?php echo json_encode(strip_tags($title)); ?>,
+                    width: '40vw',
+                    height: '310px',
+                    popupButtons: [
+                        {
+                            label: <?php echo json_encode($cancel); ?>,
+                            className: 'btn btn-secondary',
+                            onClick: function () { dialog.close(); }
+                        },
+                        {
+                            label: <?php echo json_encode($ok); ?>,
+                            className: 'btn btn-success',
+                            onClick: function () {
+                                <?php echo $onclick; ?>
+                                var iframe = dialog.getBody() ? dialog.getBody().querySelector('iframe') : null;
+                                if (iframe && iframe.contentWindow) {
+                                    iframe.contentWindow.document.getElementById('<?php echo $selector; ?>OkBtn').click();
+                                }
+                            }
+                        }
+                    ]
+                });
+                dialog.show();
+            });
+        });
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>

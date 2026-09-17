@@ -230,6 +230,7 @@ namespace Joomla\CMS\Application
         public function getInput(): Input;
         public function getLanguage(): Language;
         public function getIdentity(): User;
+        public function getDispatcher(): \Joomla\Event\DispatcherInterface;
         public function triggerEvent(string $eventName, array $arguments = []): array;
     }
 
@@ -259,6 +260,7 @@ namespace Joomla\CMS\Application
         public function getLanguage(): Language { return new Language(); }
         public function getIdentity(): User { return new User(); }
         public function getConfig(): Registry { return new Registry(); }
+        public function getDispatcher(): \Joomla\Event\DispatcherInterface { return new \Joomla\Event\Dispatcher(); }
         public function triggerEvent(string $eventName, array $arguments = []): array { return []; }
         public function getContainer(): \Joomla\DI\Container { return new \Joomla\DI\Container(); }
     }
@@ -287,16 +289,16 @@ namespace Joomla\CMS\Application\Service\Provider
 }
 
 // ===========================================================================
-// Joomla\CMS\Input
+// Joomla\Input + Joomla\CMS\Input
 // ===========================================================================
 
-namespace Joomla\CMS\Input
+namespace Joomla\Input
 {
     class Input
     {
         public Input $get;
         public Input $post;
-        public FilesInput $files;
+        public Files $files;
 
         public function get(string $name, $default = null, string $filter = 'cmd') { return $default; }
         public function set(string $name, $value): void {}
@@ -304,7 +306,15 @@ namespace Joomla\CMS\Input
         public function __get(string $name) { return null; }
     }
 
-    class FilesInput extends Input {}
+    class Files extends Input {}
+}
+
+namespace Joomla\CMS\Input
+{
+    // J5 concrete class; on J6 the app returns the framework \Joomla\Input\Input.
+    class Input extends \Joomla\Input\Input {}
+
+    class FilesInput extends \Joomla\Input\Files {}
 }
 
 // ===========================================================================
@@ -452,7 +462,7 @@ namespace Joomla\CMS\MVC\Controller
 
         public function __construct(array $config = []) {}
         public function display($cachable = false, $urlparams = false) {}
-        public function getModel(string $name = '', string $prefix = '', array $config = []) { return new BaseModel(); }
+        public function getModel(string $name = '', string $prefix = '', array $config = []): \Joomla\CMS\MVC\Model\BaseDatabaseModel|false { return false; }
         public function setRedirect(string $url, ?string $msg = null, ?string $type = null): self { return $this; }
         public static function getInstance(string $prefix, string $view, array $config = []): ?BaseController { return null; }
         public function getView(string $name = '', string $type = '', string $prefix = '', array $config = []) { return null; }
@@ -488,14 +498,14 @@ namespace Joomla\CMS\MVC\Model
         public function setState($property, $value = null): self { return $this; }
         public function getTable(string $name = '', string $prefix = '', array $options = []) { return null; }
         public function getItem($pk = null) { return null; }
-        public function getForm(array $data = [], bool $loadData = true) { return null; }
+        public function getForm(array $data = [], bool $loadData = true): \Joomla\CMS\Form\Form|false { return false; }
         public function save(array $data): bool { return true; }
         public function delete(array $cid): bool { return true; }
         public function getItems(): array { return []; }
         public function getTotal(): int { return 0; }
         public function getPagination() { return null; }
         public function getListQuery() { return null; }
-        public function loadForm(string $name, ?string $source = null, array $options = [], bool $clear = false, ?string $xpath = null) { return null; }
+        public function loadForm(string $name, ?string $source = null, array $options = [], bool $clear = false, ?string $xpath = null): \Joomla\CMS\Form\Form|false { return false; }
         public function preprocessForm(\Joomla\CMS\Form\Form $form, $data, string $group = 'content'): void {}
         public function preprocessData(string $group, &$data, ?string $elementType = null): void {}
         public function setError(string $error): void {}
@@ -504,7 +514,9 @@ namespace Joomla\CMS\MVC\Model
         public function getDatabase(): \Joomla\Database\DatabaseInterface { return new class implements \Joomla\Database\DatabaseInterface { public function getQuery(bool $new = false): \Joomla\Database\QueryInterface { return new class implements \Joomla\Database\QueryInterface {}; } public function setQuery($query): self { return $this; } public function execute(): bool { return true; } public function loadResult(): mixed { return null; } public function loadColumn(): array { return []; } public function loadAssoc(): ?array { return null; } public function loadObject(): ?object { return null; } public function loadAssocList(): array { return []; } public function loadObjectList(): array { return []; } public function quote($text, bool $escape = true): string { return ''; } public function quoteName(string $name): string { return ''; } public function q($text, bool $escape = true): string { return ''; } public function qn(string $name): string { return ''; } public function getNullDate(): string { return ''; } public function getServerType(): string { return 'mysql'; } public function insertObject(string $table, object $object, ?string $key = null): bool { return true; } public function updateObject(string $table, object $object, array $key, bool $nulls = false): bool { return true; } public function truncateTable(string $table): void {} }; }
     }
 
-    class FormModel extends BaseModel
+    class BaseDatabaseModel extends BaseModel {}
+
+    class FormModel extends BaseDatabaseModel
     {
         public function __construct(array $config = []) {}
         protected function populateState() {}
@@ -574,6 +586,7 @@ namespace Joomla\CMS\Table
         protected string $_tbl_key = 'id';
 
         public function __construct($db = null) {}
+        public function getDatabase(): \Joomla\Database\DatabaseInterface { return new class implements \Joomla\Database\DatabaseInterface {}; }
         public function bind($src, array $ignore = []) { return true; }
         public function check(): bool { return true; }
         public function store(bool $updateNulls = false): bool { return true; }
@@ -777,6 +790,17 @@ namespace Joomla\CMS\Helper
 
 namespace Joomla\CMS\Installer
 {
+    class InstallerAdapter {}
+
+    interface InstallerScriptInterface
+    {
+        public function install(InstallerAdapter $adapter): bool;
+        public function update(InstallerAdapter $adapter): bool;
+        public function uninstall(InstallerAdapter $adapter): bool;
+        public function preflight(string $type, InstallerAdapter $adapter): bool;
+        public function postflight(string $type, InstallerAdapter $adapter): bool;
+    }
+
     class InstallerHelper
     {
         public static function cleanupInstall(string $package, string $resultdir): void {}
@@ -947,6 +971,19 @@ namespace Joomla\Registry
 
 namespace Joomla\Database
 {
+    interface DatabaseAwareInterface
+    {
+        public function setDatabase(DatabaseInterface $db): void;
+        public function getDatabase(): DatabaseInterface;
+    }
+
+    trait DatabaseAwareTrait
+    {
+        private ?DatabaseInterface $database = null;
+        public function setDatabase(DatabaseInterface $db): void {}
+        public function getDatabase(): DatabaseInterface { return new class implements DatabaseInterface {}; }
+    }
+
     interface DatabaseInterface
     {
         public function getQuery(bool $new = false): \Joomla\Database\QueryInterface;
@@ -1000,16 +1037,36 @@ namespace Joomla\Event
         public function dispatch(string $eventName, ?Event $event = null): Event;
     }
 
+    class Dispatcher implements DispatcherInterface
+    {
+        public function dispatch(string $eventName, ?Event $event = null): Event { return $event ?? new Event($eventName); }
+    }
+
     interface SubscriberInterface
     {
         public static function getSubscribedEvents(): array;
     }
 
-    class Event
+    class Event implements \ArrayAccess
     {
+        public function __construct(string $name = '', array $arguments = []) {}
         public function getArgument(string $name, $default = null) { return $default; }
         public function getArguments(): array { return []; }
+        public function offsetExists($offset): bool { return false; }
+        #[\ReturnTypeWillChange]
+        public function offsetGet($offset) { return null; }
+        public function offsetSet($offset, $value): void {}
+        public function offsetUnset($offset): void {}
     }
+}
+
+// ===========================================================================
+// Joomla\CMS\Event\Model  (concrete event classes used instead of triggerEvent)
+// ===========================================================================
+
+namespace Joomla\CMS\Event\Model
+{
+    class PrepareDataEvent extends \Joomla\Event\Event {}
 }
 
 // ===========================================================================
@@ -1149,7 +1206,7 @@ namespace
     {
         public function getItem($pk = null) { return null; }
         public function getTable(string $type = 'User', string $prefix = 'UsersTable', array $config = []) { return null; }
-        public function getForm(array $data = [], bool $loadData = true) { return null; }
+        public function getForm(array $data = [], bool $loadData = true): \Joomla\CMS\Form\Form|false { return false; }
         public function save(array $data): bool { return true; }
         public function delete(array $cid): bool { return true; }
     }

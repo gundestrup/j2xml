@@ -19,7 +19,6 @@ namespace Joomla\Component\J2xml\Api\Controller;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Log\LogEntry;
@@ -56,8 +55,8 @@ class ImportController extends BaseController
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
-        $app   = Factory::getApplication();
-        $user  = Factory::getApplication()->getIdentity();
+        $app  = $this->app;
+        $user = $app->getIdentity();
 
         // Check authorisation — the API token plugin already authenticated
         // the user, but we still need the core.admin ACL on com_j2xml.
@@ -107,7 +106,8 @@ class ImportController extends BaseController
 
         // Fire onContentBeforeImport event.
         PluginHelper::importPlugin('j2xml');
-        $app->triggerEvent('onContentBeforeImport', ['com_j2xml.api', &$xml, $params]);
+        $app->getDispatcher()->dispatch('onContentBeforeImport',
+            new \Joomla\Event\Event('onContentBeforeImport', ['com_j2xml.api', &$xml, $params]));
 
         // Run the import.
         $importer = class_exists('eshiol\\J2xmlpro\\Importer')
@@ -274,7 +274,7 @@ class ImportController extends BaseController
      *
      * @since   __DEPLOY_VERSION__
      */
-    private function gzdecode(string $data)
+    private function gzdecode(string $data): string|false
     {
         if (strlen($data) < 18 || substr($data, 0, 2) !== "\x1f\x8b")
         {

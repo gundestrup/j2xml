@@ -56,32 +56,32 @@ class Category extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        // $this->_aliases['tag'] = 'SELECT t.path FROM #__tags t,
+        // $this->aliases['tag'] = 'SELECT t.path FROM #__tags t,
         // #__contentitem_tag_map m WHERE type_alias = "' . $this->extension
         // . '.category' . '" AND t.id = m.tag_id AND m.content_item_id = '.
         // $this->id;
-        $this->_aliases['tag'] = (string) $this->_db->getQuery()->clear()
-                ->select($this->_db->quoteName('t.path'))
-                ->from($this->_db->quoteName('#__tags', 't'))
-                ->from($this->_db->quoteName('#__contentitem_tag_map', 'm'))
-                ->where($this->_db->quoteName('type_alias') . ' = ' . $this->_db->quote($this->extension . '.category'))
-                ->where($this->_db->quoteName('t.id') . ' = ' . $this->_db->quoteName('m.tag_id'))
-                ->where($this->_db->quoteName('m.content_item_id') . ' = ' . $this->_db->quote((string) $this->id));
+        $this->aliases['tag'] = (string) $this->getDatabase()->getQuery()->clear()
+                ->select($this->getDatabase()->quoteName('t.path'))
+                ->from($this->getDatabase()->quoteName('#__tags', 't'))
+                ->from($this->getDatabase()->quoteName('#__contentitem_tag_map', 'm'))
+                ->where($this->getDatabase()->quoteName('type_alias') . ' = ' . $this->getDatabase()->quote($this->extension . '.category'))
+                ->where($this->getDatabase()->quoteName('t.id') . ' = ' . $this->getDatabase()->quoteName('m.tag_id'))
+                ->where($this->getDatabase()->quoteName('m.content_item_id') . ' = ' . $this->getDatabase()->quote((string) $this->id));
 
-        $query = $this->_db->getQuery()->clear();
-        $this->_aliases['association'] = (string) $query
-            ->select('CASE WHEN ' .  $this->_db->quoteName('cc1.level') . ' = 1'
-                . ' THEN ' . $this->_db->quoteName('cc1.alias')
-                . ' ELSE ' . $query->concatenate([$this->_db->quoteName('cc2.path'), $this->_db->quoteName('cc1.alias')], '/')
+        $query = $this->getDatabase()->getQuery()->clear();
+        $this->aliases['association'] = (string) $query
+            ->select('CASE WHEN ' .  $this->getDatabase()->quoteName('cc1.level') . ' = 1'
+                . ' THEN ' . $this->getDatabase()->quoteName('cc1.alias')
+                . ' ELSE ' . $query->concatenate([$this->getDatabase()->quoteName('cc2.path'), $this->getDatabase()->quoteName('cc1.alias')], '/')
                 . ' END')
-            ->from($this->_db->quoteName('#__associations', 'asso1'))
-            ->join('INNER', $this->_db->quoteName('#__associations', 'asso2') . ' ON ' . $this->_db->quoteName('asso1.key') . ' = ' . $this->_db->quoteName('asso2.key'))
-            ->join('INNER', $this->_db->quoteName('#__categories', 'cc1') . ' ON ' . $this->_db->quoteName('asso2.id') . ' = ' . $this->_db->quoteName('cc1.id'))
-            ->join('INNER', $this->_db->quoteName('#__categories', 'cc2') . ' ON ' . $this->_db->quoteName('cc1.parent_id') . ' = ' . $this->_db->quoteName('cc2.id'))
+            ->from($this->getDatabase()->quoteName('#__associations', 'asso1'))
+            ->join('INNER', $this->getDatabase()->quoteName('#__associations', 'asso2') . ' ON ' . $this->getDatabase()->quoteName('asso1.key') . ' = ' . $this->getDatabase()->quoteName('asso2.key'))
+            ->join('INNER', $this->getDatabase()->quoteName('#__categories', 'cc1') . ' ON ' . $this->getDatabase()->quoteName('asso2.id') . ' = ' . $this->getDatabase()->quoteName('cc1.id'))
+            ->join('INNER', $this->getDatabase()->quoteName('#__categories', 'cc2') . ' ON ' . $this->getDatabase()->quoteName('cc1.parent_id') . ' = ' . $this->getDatabase()->quoteName('cc2.id'))
             ->where([
-                $this->_db->quoteName('asso1.id') . ' = ' . (int) $this->id,
-                $this->_db->quoteName('asso1.context') . ' = ' . $this->_db->quote('com_categories.item'),
-                $this->_db->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
+                $this->getDatabase()->quoteName('asso1.id') . ' = ' . (int) $this->id,
+                $this->getDatabase()->quoteName('asso1.context') . ' = ' . $this->getDatabase()->quote('com_categories.item'),
+                $this->getDatabase()->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
 
         return parent::toXML($mapKeysToText);
     }
@@ -180,29 +180,6 @@ class Category extends Table
                     {
                         $data['id'] = $category->id;
                         $table->load($data['id']);
-                        /*
-                         * if ($keep_access > 0) $data['access'] = null;
-                         * if ($keep_state != 0) $data['published'] = null;
-                         * if (!$keep_attribs) $data['params'] = null;
-                         * if (!$keep_author)
-                         * {
-                         * $data['created'] = null;
-                         * $data['created_user_id'] = null;
-                         * $data['created_by_alias'] = null;
-                         * $data['modified'] = $now;
-                         * $data['modified_user_id'] = $this->_user_id;
-                         * $data['version'] = $table->version + 1;
-                         * }
-                         * else // save default values
-                         * {
-                         * $data['created'] = $now;
-                         * $data['created_user_id'] = $this->_user_id;
-                         * $data['created_by_alias'] = null;
-                         * $data['modified'] = $this->_nullDate;
-                         * $data['modified_user_id'] = null;
-                         * $data['version'] = 1;
-                         * }
-                         */
                     }
 
                     $table->bind($data);
@@ -211,11 +188,6 @@ class Category extends Table
                     {
                         $table->newTags = Tag::convertPathsToIds($data['tags']);
                     }
-
-                    // Trigger the onContentBeforeSave event.
-                    // $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentBeforeSave',
-                    // [$this->_option.'.category', &$table, $isNew]);
-                    // if (!in_array(false, $results, true))
 
                     if ($table->store())
                     {

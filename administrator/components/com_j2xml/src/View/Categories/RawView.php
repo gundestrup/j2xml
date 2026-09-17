@@ -23,5 +23,5 @@ use Joomla\Component\J2xml\Administrator\View\AbstractRawView;
  */
 class RawView extends AbstractRawView
 {
-    protected $exportMethod = 'categories';
+    protected string $exportMethod = 'categories';
 }

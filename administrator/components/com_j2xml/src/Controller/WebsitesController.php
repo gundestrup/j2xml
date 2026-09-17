@@ -29,7 +29,7 @@ class WebsitesController extends AdminController
      * Return the singular Website model (not the plural Websites model
      * that AdminController would derive from the controller name).
      */
-    public function getModel($name = 'Website', $prefix = '', $config = ['ignore_request' => true])
+    public function getModel($name = 'Website', $prefix = '', $config = ['ignore_request' => true]): \Joomla\CMS\MVC\Model\BaseDatabaseModel|false
     {
         return parent::getModel($name, $prefix, $config);
     }

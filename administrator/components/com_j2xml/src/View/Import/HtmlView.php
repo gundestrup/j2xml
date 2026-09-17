@@ -44,7 +44,7 @@ class HtmlView extends \Joomla\Component\J2xml\Administrator\View\DefaultHtmlVie
      *
      * @since   3.9
      */
-    public function display($tpl = null)
+    public function display($tpl = null): void
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
@@ -67,7 +67,7 @@ class HtmlView extends \Joomla\Component\J2xml\Administrator\View\DefaultHtmlVie
      *
      * @since 1.6
      */
-    protected function addToolbar()
+    protected function addToolbar(): void
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 

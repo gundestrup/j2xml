@@ -56,38 +56,38 @@ class Field extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        $this->_excluded = array_merge($this->_excluded, [
+        $this->excluded = array_merge($this->excluded, [
                 'group_id'
         ]);
 
         if ($this->group_id)
         {
-            // $this->_aliases['group'] = 'SELECT title FROM #__fields_groups
+            // $this->aliases['group'] = 'SELECT title FROM #__fields_groups
             // WHERE id = '. (int)$this->group_id;
-            $this->_aliases['group'] = (string) $this->_db->getQuery()->clear()
-                ->select($this->_db->quoteName('title'))
-                ->from($this->_db->quoteName('#__fields_groups'))
-                ->where($this->_db->quoteName('id') . ' = ' . (int) $this->group_id);
+            $this->aliases['group'] = (string) $this->getDatabase()->getQuery()->clear()
+                ->select($this->getDatabase()->quoteName('title'))
+                ->from($this->getDatabase()->quoteName('#__fields_groups'))
+                ->where($this->getDatabase()->quoteName('id') . ' = ' . (int) $this->group_id);
         }
 
-        // $this->_aliases['category'] = 'SELECT c.path FROM #__categories c,
+        // $this->aliases['category'] = 'SELECT c.path FROM #__categories c,
         // #__fields_categories fc WHERE c.id = fc.category_id AND fc.field_id
         // ='.(int)$this->id;
-        $this->_aliases['category'] = (string) $this->_db->getQuery()->clear()
-            ->select($this->_db->quoteName('c.path'))
-            ->from($this->_db->quoteName('#__categories', 'c'))
-            ->from($this->_db->quoteName('#__fields_categories', 'fc'))
-            ->where($this->_db->quoteName('c.id') . ' = ' . $this->_db->quoteName('fc.category_id'))
-            ->where($this->_db->quoteName('fc.field_id') . ' = ' . (int) $this->id);
+        $this->aliases['category'] = (string) $this->getDatabase()->getQuery()->clear()
+            ->select($this->getDatabase()->quoteName('c.path'))
+            ->from($this->getDatabase()->quoteName('#__categories', 'c'))
+            ->from($this->getDatabase()->quoteName('#__fields_categories', 'fc'))
+            ->where($this->getDatabase()->quoteName('c.id') . ' = ' . $this->getDatabase()->quoteName('fc.category_id'))
+            ->where($this->getDatabase()->quoteName('fc.field_id') . ' = ' . (int) $this->id);
 
         if ($this->type == 'subform')
         {
-            $query = $this->_db->getQuery()->clear()
-                ->select($this->_db->quoteName('id'))
-                ->select($this->_db->quoteName('name'))
-                ->from($this->_db->quoteName('#__fields'));
+            $query = $this->getDatabase()->getQuery()->clear()
+                ->select($this->getDatabase()->quoteName('id'))
+                ->select($this->getDatabase()->quoteName('name'))
+                ->from($this->getDatabase()->quoteName('#__fields'));
             $fields = [];
-            foreach ($this->_db->setQuery($query)->loadObjectList() as $field)
+            foreach ($this->getDatabase()->setQuery($query)->loadObjectList() as $field)
             {
                 $fields[$field->id] = $field->name;
             }

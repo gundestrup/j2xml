@@ -60,35 +60,35 @@ class Contact extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        // $this->_aliases['user_id']='SELECT username FROM #__users WHERE id =
+        // $this->aliases['user_id']='SELECT username FROM #__users WHERE id =
         // '.(int)$this->user_id;
-        $this->_aliases['user_id'] = (string) $this->_db->getQuery()->clear()
-            ->select($this->_db->quoteName('username'))
-            ->from($this->_db->quoteName('#__users'))
-            ->where($this->_db->quoteName('id') . ' = ' . (int) $this->user_id);
+        $this->aliases['user_id'] = (string) $this->getDatabase()->getQuery()->clear()
+            ->select($this->getDatabase()->quoteName('username'))
+            ->from($this->getDatabase()->quoteName('#__users'))
+            ->where($this->getDatabase()->quoteName('id') . ' = ' . (int) $this->user_id);
 
-        // $this->_aliases['tag']='SELECT t.path FROM #__tags t,
+        // $this->aliases['tag']='SELECT t.path FROM #__tags t,
         // #__contentitem_tag_map m WHERE type_alias = "com_contact.contact"
         // AND t.id = m.tag_id AND m.content_item_id = '. (int)$this->id;
-        $this->_aliases['tag'] = (string) $this->_db->getQuery()->clear()
-            ->select($this->_db->quoteName('t.path'))
-            ->from($this->_db->quoteName('#__tags', 't'))
-            ->from($this->_db->quoteName('#__contentitem_tag_map', 'm'))
-            ->where($this->_db->quoteName('type_alias') . ' = ' . $this->_db->quote($this->type_alias))
-            ->where($this->_db->quoteName('t.id') . ' = ' . $this->_db->quoteName('m.tag_id'))
-            ->where($this->_db->quoteName('m.content_item_id') . ' = ' . $this->_db->quote((string) $this->id));
+        $this->aliases['tag'] = (string) $this->getDatabase()->getQuery()->clear()
+            ->select($this->getDatabase()->quoteName('t.path'))
+            ->from($this->getDatabase()->quoteName('#__tags', 't'))
+            ->from($this->getDatabase()->quoteName('#__contentitem_tag_map', 'm'))
+            ->where($this->getDatabase()->quoteName('type_alias') . ' = ' . $this->getDatabase()->quote($this->type_alias))
+            ->where($this->getDatabase()->quoteName('t.id') . ' = ' . $this->getDatabase()->quoteName('m.tag_id'))
+            ->where($this->getDatabase()->quoteName('m.content_item_id') . ' = ' . $this->getDatabase()->quote((string) $this->id));
 
-        $query = $this->_db->getQuery()->clear();
-        $this->_aliases['association'] = (string) $query
-            ->select($query->concatenate([$this->_db->quoteName('cc.path'), $this->_db->quoteName('c.alias')], '/'))
-            ->from($this->_db->quoteName('#__associations', 'asso1'))
-            ->join('INNER', $this->_db->quoteName('#__associations', 'asso2') . ' ON ' . $this->_db->quoteName('asso1.key') . ' = ' . $this->_db->quoteName('asso2.key'))
-            ->join('INNER', $this->_db->quoteName('#__contact_details', 'c') . ' ON ' . $this->_db->quoteName('asso2.id') . ' = ' . $this->_db->quoteName('c.id'))
-            ->join('INNER', $this->_db->quoteName('#__categories', 'cc') . ' ON ' . $this->_db->quoteName('c.catid') . ' = ' . $this->_db->quoteName('cc.id'))
+        $query = $this->getDatabase()->getQuery()->clear();
+        $this->aliases['association'] = (string) $query
+            ->select($query->concatenate([$this->getDatabase()->quoteName('cc.path'), $this->getDatabase()->quoteName('c.alias')], '/'))
+            ->from($this->getDatabase()->quoteName('#__associations', 'asso1'))
+            ->join('INNER', $this->getDatabase()->quoteName('#__associations', 'asso2') . ' ON ' . $this->getDatabase()->quoteName('asso1.key') . ' = ' . $this->getDatabase()->quoteName('asso2.key'))
+            ->join('INNER', $this->getDatabase()->quoteName('#__contact_details', 'c') . ' ON ' . $this->getDatabase()->quoteName('asso2.id') . ' = ' . $this->getDatabase()->quoteName('c.id'))
+            ->join('INNER', $this->getDatabase()->quoteName('#__categories', 'cc') . ' ON ' . $this->getDatabase()->quoteName('c.catid') . ' = ' . $this->getDatabase()->quoteName('cc.id'))
             ->where([
-                $this->_db->quoteName('asso1.id') . ' = ' . (int) $this->id,
-                $this->_db->quoteName('asso1.context') . ' = ' . $this->_db->quote('com_contact.item'),
-                $this->_db->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
+                $this->getDatabase()->quoteName('asso1.id') . ' = ' . (int) $this->id,
+                $this->getDatabase()->quoteName('asso1.context') . ' = ' . $this->getDatabase()->quote('com_contact.item'),
+                $this->getDatabase()->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
 
         return parent::toXML($mapKeysToText);
     }

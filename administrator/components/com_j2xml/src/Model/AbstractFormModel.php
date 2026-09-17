@@ -83,7 +83,7 @@ abstract class AbstractFormModel extends FormModel
      *
      * @since 4.5.0
      */
-    public function getForm($data = [], $loadData = true)
+    public function getForm($data = [], $loadData = true): \Joomla\CMS\Form\Form|false
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
@@ -138,7 +138,7 @@ abstract class AbstractFormModel extends FormModel
      *
      * @since 4.5.0
      */
-    protected function loadFormData()
+    protected function loadFormData(): mixed
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 

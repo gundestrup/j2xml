@@ -38,16 +38,6 @@ use Joomla\CMS\Plugin\PluginHelper;
 class ImportModel extends FormModel
 {
     /**
-     * @var object JTable object
-     */
-    protected $_table = null;
-
-    /**
-     * @var object JTable object
-     */
-    protected $_url = null;
-
-    /**
      * Model context string.
      *
      * @var     string
@@ -63,7 +53,7 @@ class ImportModel extends FormModel
      *
      * @since   3.9
      */
-    protected function populateState ()
+    protected function populateState(): void
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
@@ -82,7 +72,7 @@ class ImportModel extends FormModel
      *
      * @since   3.9
      */
-    public function import()
+    public function import(): bool
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
@@ -145,7 +135,9 @@ class ImportModel extends FormModel
         // This event allows a custom import of the data or a customization of the data:
         PluginHelper::importPlugin('j2xml');
 
-        $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentPrepareData', ['com_j2xml.import', &$data, $params]);
+        $event = new \Joomla\CMS\Event\Model\PrepareDataEvent('onContentPrepareData', ['com_j2xml.import', &$data, $params]);
+        \Joomla\CMS\Factory::getApplication()->getDispatcher()->dispatch('onContentPrepareData', $event);
+        $results = $event['result'] ?? [];
 
         if (in_array(false, $results, true))
         {
@@ -161,7 +153,7 @@ class ImportModel extends FormModel
         $xml = simplexml_load_string($data->content, 'SimpleXMLElement', LIBXML_PARSEHUGE | LIBXML_NONET);
         if (!$xml)
         {
-            return;
+            return false;
         }
 
         if ((strtoupper($xml->getName()) != 'J2XML') || !isset($xml['version']))
@@ -177,7 +169,9 @@ class ImportModel extends FormModel
         $version = explode(".", $xmlVersion);
         $xmlVersionNumber = $version[0] . substr('0' . $version[1], strlen($version[1]) - 1) . substr('0' . $version[2], strlen($version[2]) - 1);
 
-        $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onValidateData', [&$xml, $params]);
+        $event = new \Joomla\Event\Event('onValidateData', [&$xml, $params]);
+        \Joomla\CMS\Factory::getApplication()->getDispatcher()->dispatch('onValidateData', $event);
+        $results = $event['result'] ?? [];
 
         $db = $this->getDatabase();
         $importer = class_exists('\eshiol\J2xmlpro\Importer') ? new \eshiol\J2xmlpro\Importer($db, \Joomla\CMS\Factory::getApplication()) : new \eshiol\J2xml\Importer($db, \Joomla\CMS\Factory::getApplication());
@@ -190,7 +184,9 @@ class ImportModel extends FormModel
 
         $params->set('version', (string) $xml['version']);
 
-        $results = \Joomla\CMS\Factory::getApplication()->triggerEvent('onContentBeforeImport', ['com_j2xml.import', &$xml, $params]);
+        $event = new \Joomla\Event\Event('onContentBeforeImport', ['com_j2xml.import', &$xml, $params]);
+        \Joomla\CMS\Factory::getApplication()->getDispatcher()->dispatch('onContentBeforeImport', $event);
+        $results = $event['result'] ?? [];
 
         try
         {
@@ -224,7 +220,7 @@ class ImportModel extends FormModel
      *
      * @since   __DEPLOY_VERSION__
      */
-    private function readPackageFile($file)
+    private function readPackageFile(string $file): string|false
     {
         $rawData = file_get_contents($file);
 
@@ -249,7 +245,7 @@ class ImportModel extends FormModel
      *
      * @since   __DEPLOY_VERSION__
      */
-    private function buildImportParams()
+    private function buildImportParams(): \Joomla\Registry\Registry
     {
         $jform = \Joomla\CMS\Factory::getApplication()->getInput()->post->get('jform', [], 'array');
 
@@ -299,7 +295,7 @@ class ImportModel extends FormModel
      *
      * @since   __DEPLOY_VERSION__
      */
-    private function cleanupPackage($installType, $package)
+    private function cleanupPackage(?string $installType, array $package): void
     {
         if (!in_array($installType, ['upload', 'url'], true))
         {
@@ -320,7 +316,7 @@ class ImportModel extends FormModel
      *
      * @return Package definition or false on failure.
      */
-    protected function _getDataFromUpload()
+    protected function _getDataFromUpload(): array|false
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
@@ -400,7 +396,7 @@ class ImportModel extends FormModel
      *
      * @since   3.9
      */
-    protected function _getDataFromFolder()
+    protected function _getDataFromFolder(): array|false
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
@@ -441,7 +437,7 @@ class ImportModel extends FormModel
      *
      * @since   3.9
      */
-    protected function _getDataFromUrl()
+    protected function _getDataFromUrl(): array|false
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
@@ -491,7 +487,7 @@ class ImportModel extends FormModel
      *
      * @since 3.9.0
      */
-    public function getForm($data = [], $loadData = true)
+    public function getForm($data = [], $loadData = true): \Joomla\CMS\Form\Form|false
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
@@ -536,7 +532,7 @@ class ImportModel extends FormModel
      *
      * @since 3.9.0
      */
-    protected function loadFormData()
+    protected function loadFormData(): mixed
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 

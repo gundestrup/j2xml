@@ -7,6 +7,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -89,11 +90,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 dataField.value = btoa(unescape(encodeURIComponent(data)));
             }
 
-            // Show the import options modal
-            const modalEl = document.getElementById('j2xmlImportModal');
-            if (modalEl) {
-                const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-                modal.show();
+            // Show the import options modal (joomla-dialog web component, J5.1+/J6)
+            if (typeof eshiol.j2xml.showImportDialog === 'function') {
+                eshiol.j2xml.showImportDialog();
             }
 
             fileInput.value = '';

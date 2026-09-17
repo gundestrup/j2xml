@@ -20,7 +20,9 @@
 // no direct access
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Event\Application\AfterDispatchEvent;
+use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Event\SubscriberInterface;
 
 /**
@@ -105,16 +107,8 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin implements SubscriberI
             return;
         }
 
-        // Only render if J2XML is installed and enabled
-        $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $query = $db->getQuery()->clear()
-            ->select($db->quoteName('enabled'))
-            ->from('#__extensions')
-            ->where($db->quoteName('name') . ' = ' . $db->quote('com_j2xml'));
-        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
-
-        $is_enabled = $db->setQuery($query)->loadResult();
-        if (!$is_enabled)
+        // Only render if J2XML is installed and enabled.
+        if (!ComponentHelper::isEnabled('com_j2xml'))
         {
             return;
         }
@@ -134,12 +128,9 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin implements SubscriberI
         if (file_exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/' . $contentType . '.php')
             || file_exists(JPATH_ADMINISTRATOR . '/components/com_j2xml/views/export/tmpl/default.php'))
         {
-            $this->addToolbarButtons($db, $contentType);
+            $this->addToolbarButtons($contentType);
         }
 
-        // Trigger the onAfterDispatch event.
-        // \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
-        // \Joomla\CMS\Factory::getApplication()->triggerEvent('onLoadJS');
     }
 
     /**
@@ -151,9 +142,9 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin implements SubscriberI
      *
      * @return string|null
      */
-    private function resolveContentType ($input)
+    private function resolveContentType (\Joomla\Input\Input $input): ?string
     {
-        $option = $input->get('option');
+        $option = $input->get('option', '');
         $contentType = substr($option, 4);
 
         $allowedView = $contentType;
@@ -192,14 +183,12 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin implements SubscriberI
     /**
      * Add the J2XML export and send modal buttons to the toolbar.
      *
-     * @param \Joomla\Database\DatabaseInterface $db
-     *          the database connector
      * @param string $contentType
      *          the resolved J2XML content type
      *
      * @return void
      */
-    private function addToolbarButtons ($db, $contentType)
+    private function addToolbarButtons (string $contentType): void
     {
         $bar = \Joomla\CMS\Toolbar\Toolbar::getInstance('toolbar');
 
@@ -226,15 +215,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin implements SubscriberI
         $bar->appendButton('Custom', $dHtml, 'download');
 
         // Check if the J2XML webservices plugin is enabled (REST API).
-        $query = $db->getQuery()->clear()
-            ->select($db->quoteName('extension_id'))
-            ->from($db->quoteName('#__extensions'))
-            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
-            ->where($db->quoteName('folder') . ' = ' . $db->quote('webservices'))
-            ->where($db->quoteName('element') . ' = ' . $db->quote('j2xml'));
-        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'plg_system_j2xml'));
-
-        if (!$db->setQuery($query)->loadResult())
+        if (!PluginHelper::isEnabled('webservices', 'j2xml'))
         {
             return;
         }
@@ -268,7 +249,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin implements SubscriberI
      *
      * @return array the layout display data
      */
-    private function modalButtonData ($selector, $icon, $textKey, $titlePrefix, $view, $contentType, $buttonClass, $formValidation = false)
+    private function modalButtonData (string $selector, string $icon, string $textKey, string $titlePrefix, string $view, string $contentType, string $buttonClass, bool $formValidation = false): array
     {
         $data = [
             'selector' => $selector,
@@ -278,7 +259,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin implements SubscriberI
             'class'    => $buttonClass,
             'doTask'   => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=' . $view . '&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
             'ok'       => \Joomla\CMS\Language\Text::_($textKey),
-            'onclick'  => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name=&quot;cid[]&quot;]:checked\').forEach(function(cb){cids.push(cb.value);});document.querySelector(\'#' . $selector . 'Modal iframe\').contentWindow.document.getElementById(\'jform_cid\').value=cids;'
+            'onclick'  => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name=&quot;cid[]&quot;]:checked\').forEach(function(cb){cids.push(cb.value);});var dlgIframe=dialog.getBody()?dialog.getBody().querySelector(\'iframe\'):null;if(dlgIframe&&dlgIframe.contentWindow){dlgIframe.contentWindow.document.getElementById(\'jform_cid\').value=cids;}'
         ];
 
         if ($formValidation)

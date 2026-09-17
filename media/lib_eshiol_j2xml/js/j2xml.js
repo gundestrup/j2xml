@@ -8,6 +8,7 @@
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2010 - 2026 Helios Ciancio. All Rights Reserved
+ * @copyright   Copyright (C) 2026 Svend Gundestrup. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * J2XML is free software. This version may have been modified pursuant
  * to the GNU General Public License, and as distributed it includes or
@@ -213,24 +214,12 @@ eshiol.j2xml.codes = [
 ];
 
 /**
- * Helper: hide a Bootstrap modal in the parent window.
+ * Close a Joomla dialog in the parent window.
  */
 function hideParentModal(id) {
     const modalEl = window.parent.document.getElementById(id);
-    if (modalEl) {
-        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-        modal.hide();
-    }
-}
-
-/**
- * Helper: show a Bootstrap modal in the parent window.
- */
-function showParentModal(id) {
-    const modalEl = window.parent.document.getElementById(id);
-    if (modalEl) {
-        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-        modal.show();
+    if (modalEl && typeof modalEl.close === 'function') {
+        modalEl.close();
     }
 }
 
@@ -426,7 +415,8 @@ eshiol.download = function (filename, text) {
  */
 eshiol.j2xml.importerModal = function () {
     // Copy form fields from the modal iframe into the main form
-    const iframe = document.getElementById('j2xmlImportModal');
+    const modalEl = document.getElementById('j2xmlImportModal');
+    const iframe = modalEl ? modalEl.querySelector('iframe') : null;
     if (iframe && iframe.contentDocument) {
         const iframeFields = iframe.contentDocument.querySelectorAll('#adminForm input[name^=jform], #adminForm select[name^=jform]');
         iframeFields.forEach(function (input) {
@@ -566,7 +556,8 @@ eshiol.j2xml.importer = function (nodes, options) {
     formData.append(token, '1');
 
     // Copy form fields from the modal iframe
-    const iframe = document.getElementById('j2xmlImportModal');
+    const modalEl = document.getElementById('j2xmlImportModal');
+    const iframe = modalEl ? modalEl.querySelector('iframe') : null;
     if (iframe && iframe.contentDocument) {
         const iframeFields = iframe.contentDocument.querySelectorAll('#adminForm input[name^=jform], #adminForm select[name^=jform]');
         iframeFields.forEach(function (el) {

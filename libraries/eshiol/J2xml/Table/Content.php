@@ -74,56 +74,56 @@ class Content extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
-        $this->_excluded = array_merge($this->_excluded, [
+        $this->excluded = array_merge($this->excluded, [
                 'sectionid',
                 'mask',
                 'title_alias',
                 'ordering'
         ]);
 
-        // $this->_aliases['featured'] = 'SELECT IFNULL(f.ordering,0) FROM
+        // $this->aliases['featured'] = 'SELECT IFNULL(f.ordering,0) FROM
         // #__content_frontpage f RIGHT JOIN #__content a ON f.content_id = a.id
         // WHERE a.id = ' . (int)$this->id;
-        $this->_aliases['featured'] = (string) $this->_db->getQuery()->clear()
-            ->select('COALESCE(' . $this->_db->quoteName('f.ordering') . ', 0)')
-            ->from($this->_db->quoteName('#__content_frontpage', 'f'))
+        $this->aliases['featured'] = (string) $this->getDatabase()->getQuery()->clear()
+            ->select('COALESCE(' . $this->getDatabase()->quoteName('f.ordering') . ', 0)')
+            ->from($this->getDatabase()->quoteName('#__content_frontpage', 'f'))
             ->join('RIGHT',
-                $this->_db->quoteName('#__content', 'a') . ' ON ' . $this->_db->quoteName('f.content_id') . ' = ' . $this->_db->quoteName('a.id'))
-            ->where($this->_db->quoteName('a.id') . ' = ' . (int) $this->id);
+                $this->getDatabase()->quoteName('#__content', 'a') . ' ON ' . $this->getDatabase()->quoteName('f.content_id') . ' = ' . $this->getDatabase()->quoteName('a.id'))
+            ->where($this->getDatabase()->quoteName('a.id') . ' = ' . (int) $this->id);
 
-        $this->_aliases['featured_up'] = (string) $this->_db->getQuery()->clear()
-            ->select($this->_db->quoteName('f.featured_up'))
-            ->from($this->_db->quoteName('#__content_frontpage', 'f'))
+        $this->aliases['featured_up'] = (string) $this->getDatabase()->getQuery()->clear()
+            ->select($this->getDatabase()->quoteName('f.featured_up'))
+            ->from($this->getDatabase()->quoteName('#__content_frontpage', 'f'))
             ->join('RIGHT',
-                $this->_db->quoteName('#__content', 'a') . ' ON ' . $this->_db->quoteName('f.content_id') . ' = ' . $this->_db->quoteName('a.id'))
-            ->where($this->_db->quoteName('a.id') . ' = ' . (int) $this->id);
+                $this->getDatabase()->quoteName('#__content', 'a') . ' ON ' . $this->getDatabase()->quoteName('f.content_id') . ' = ' . $this->getDatabase()->quoteName('a.id'))
+            ->where($this->getDatabase()->quoteName('a.id') . ' = ' . (int) $this->id);
 
-        $this->_aliases['featured_down'] = (string) $this->_db->getQuery()->clear()
-            ->select($this->_db->quoteName('f.featured_down'))
-            ->from($this->_db->quoteName('#__content_frontpage', 'f'))
+        $this->aliases['featured_down'] = (string) $this->getDatabase()->getQuery()->clear()
+            ->select($this->getDatabase()->quoteName('f.featured_down'))
+            ->from($this->getDatabase()->quoteName('#__content_frontpage', 'f'))
             ->join('RIGHT',
-                $this->_db->quoteName('#__content', 'a') . ' ON ' . $this->_db->quoteName('f.content_id') . ' = ' . $this->_db->quoteName('a.id'))
-            ->where($this->_db->quoteName('a.id') . ' = ' . (int) $this->id);
+                $this->getDatabase()->quoteName('#__content', 'a') . ' ON ' . $this->getDatabase()->quoteName('f.content_id') . ' = ' . $this->getDatabase()->quoteName('a.id'))
+            ->where($this->getDatabase()->quoteName('a.id') . ' = ' . (int) $this->id);
 
-        // $this->_aliases['rating_sum'] = 'SELECT IFNULL(rating_sum,0) FROM
+        // $this->aliases['rating_sum'] = 'SELECT IFNULL(rating_sum,0) FROM
         // #__content_rating f RIGHT JOIN #__content a ON f.content_id = a.id
         // WHERE a.id = ' . (int)$this->id;
-        $this->_aliases['rating_sum'] = (string) $this->_db->getQuery()->clear()
-            ->select('COALESCE(' . $this->_db->quoteName('rating_sum') . ', 0)')
-            ->from($this->_db->quoteName('#__content_rating', 'f'))
+        $this->aliases['rating_sum'] = (string) $this->getDatabase()->getQuery()->clear()
+            ->select('COALESCE(' . $this->getDatabase()->quoteName('rating_sum') . ', 0)')
+            ->from($this->getDatabase()->quoteName('#__content_rating', 'f'))
             ->join('RIGHT',
-                $this->_db->quoteName('#__content', 'a') . ' ON ' . $this->_db->quoteName('f.content_id') . ' = ' . $this->_db->quoteName('a.id'))
-            ->where($this->_db->quoteName('a.id') . ' = ' . (int) $this->id);
+                $this->getDatabase()->quoteName('#__content', 'a') . ' ON ' . $this->getDatabase()->quoteName('f.content_id') . ' = ' . $this->getDatabase()->quoteName('a.id'))
+            ->where($this->getDatabase()->quoteName('a.id') . ' = ' . (int) $this->id);
 
-        // $this->_aliases['rating_count'] = 'SELECT IFNULL(rating_count,0) FROM
+        // $this->aliases['rating_count'] = 'SELECT IFNULL(rating_count,0) FROM
         // #__content_rating f RIGHT JOIN #__content a ON f.content_id = a.id
         // WHERE a.id = ' . (int)$this->id;
-        $this->_aliases['rating_count'] = (string) $this->_db->getQuery()->clear()
-            ->select('COALESCE(' . $this->_db->quoteName('rating_count') . ', 0)')
-            ->from($this->_db->quoteName('#__content_rating', 'f'))
+        $this->aliases['rating_count'] = (string) $this->getDatabase()->getQuery()->clear()
+            ->select('COALESCE(' . $this->getDatabase()->quoteName('rating_count') . ', 0)')
+            ->from($this->getDatabase()->quoteName('#__content_rating', 'f'))
             ->join('RIGHT',
-                $this->_db->quoteName('#__content', 'a') . ' ON ' . $this->_db->quoteName('f.content_id') . ' = ' . $this->_db->quoteName('a.id'))
-            ->where($this->_db->quoteName('a.id') . ' = ' . (int) $this->id);
+                $this->getDatabase()->quoteName('#__content', 'a') . ' ON ' . $this->getDatabase()->quoteName('f.content_id') . ' = ' . $this->getDatabase()->quoteName('a.id'))
+            ->where($this->getDatabase()->quoteName('a.id') . ' = ' . (int) $this->id);
 
         $slug = $this->alias ? ($this->id . ':' . $this->alias) : $this->id;
 
@@ -132,45 +132,45 @@ class Content extends Table
         $url = $router->build(RouteHelper::getArticleRoute($slug, $this->catid, $this->language));
 
         $canonical = str_replace(\Joomla\CMS\Uri\Uri::base(true) . '/', \Joomla\CMS\Uri\Uri::root(), $url);
-        // $this->_aliases['canonical'] = 'SELECT \'' . $canonical . '\' FROM
+        // $this->aliases['canonical'] = 'SELECT \'' . $canonical . '\' FROM
         // DUAL';
-        $serverType = $this->_db->getServerType();
+        $serverType = $this->getDatabase()->getServerType();
         if ($serverType === 'sqlserver')
         {
-            $this->_aliases['canonical'] = (string) $this->_db->getQuery()->clear()
-                ->select($this->_db->quote($canonical))
-                ->from($this->_db->quoteName('DUAL'));
+            $this->aliases['canonical'] = (string) $this->getDatabase()->getQuery()->clear()
+                ->select($this->getDatabase()->quote($canonical))
+                ->from($this->getDatabase()->quoteName('DUAL'));
         }
         else
         {
-            $this->_aliases['canonical'] = (string) $this->_db->getQuery()->clear()->select($this->_db->quote($canonical));
+            $this->aliases['canonical'] = (string) $this->getDatabase()->getQuery()->clear()->select($this->getDatabase()->quote($canonical));
         }
 
-        // $this->_aliases['tag']='SELECT t.path FROM #__tags t,
+        // $this->aliases['tag']='SELECT t.path FROM #__tags t,
         // #__contentitem_tag_map m WHERE type_alias = "com_content.article"
         // AND
         // t.id = m.tag_id AND m.content_item_id = '. (int)$this->id;
-        $this->_aliases['tag'] = (string) $this->_db->getQuery()->clear()
-            ->select($this->_db->quoteName('t.path'))
-            ->from($this->_db->quoteName('#__tags', 't'))
-            ->from($this->_db->quoteName('#__contentitem_tag_map', 'm'))
-            ->where($this->_db->quoteName('type_alias') . ' = ' . $this->_db->quote('com_content.article'))
-            ->where($this->_db->quoteName('t.id') . ' = ' . $this->_db->quoteName('m.tag_id'))
-            ->where($this->_db->quoteName('m.content_item_id') . ' = ' . $this->_db->quote((string) $this->id));
+        $this->aliases['tag'] = (string) $this->getDatabase()->getQuery()->clear()
+            ->select($this->getDatabase()->quoteName('t.path'))
+            ->from($this->getDatabase()->quoteName('#__tags', 't'))
+            ->from($this->getDatabase()->quoteName('#__contentitem_tag_map', 'm'))
+            ->where($this->getDatabase()->quoteName('type_alias') . ' = ' . $this->getDatabase()->quote('com_content.article'))
+            ->where($this->getDatabase()->quoteName('t.id') . ' = ' . $this->getDatabase()->quoteName('m.tag_id'))
+            ->where($this->getDatabase()->quoteName('m.content_item_id') . ' = ' . $this->getDatabase()->quote((string) $this->id));
 
         $this->buildFieldAliases();
 
-        $query = $this->_db->getQuery()->clear();
-        $this->_aliases['association'] = (string) $query
-            ->select($query->concatenate([$this->_db->quoteName('cc.path'), $this->_db->quoteName('c.alias')], '/'))
-            ->from($this->_db->quoteName('#__associations', 'asso1'))
-            ->join('INNER', $this->_db->quoteName('#__associations', 'asso2') . ' ON ' . $this->_db->quoteName('asso1.key') . ' = ' . $this->_db->quoteName('asso2.key'))
-            ->join('INNER', $this->_db->quoteName('#__content', 'c') . ' ON ' . $this->_db->quoteName('asso2.id') . ' = ' . $this->_db->quoteName('c.id'))
-            ->join('INNER', $this->_db->quoteName('#__categories', 'cc') . ' ON ' . $this->_db->quoteName('c.catid') . ' = ' . $this->_db->quoteName('cc.id'))
+        $query = $this->getDatabase()->getQuery()->clear();
+        $this->aliases['association'] = (string) $query
+            ->select($query->concatenate([$this->getDatabase()->quoteName('cc.path'), $this->getDatabase()->quoteName('c.alias')], '/'))
+            ->from($this->getDatabase()->quoteName('#__associations', 'asso1'))
+            ->join('INNER', $this->getDatabase()->quoteName('#__associations', 'asso2') . ' ON ' . $this->getDatabase()->quoteName('asso1.key') . ' = ' . $this->getDatabase()->quoteName('asso2.key'))
+            ->join('INNER', $this->getDatabase()->quoteName('#__content', 'c') . ' ON ' . $this->getDatabase()->quoteName('asso2.id') . ' = ' . $this->getDatabase()->quoteName('c.id'))
+            ->join('INNER', $this->getDatabase()->quoteName('#__categories', 'cc') . ' ON ' . $this->getDatabase()->quoteName('c.catid') . ' = ' . $this->getDatabase()->quoteName('cc.id'))
             ->where([
-                $this->_db->quoteName('asso1.id') . ' = ' . (int) $this->id,
-                $this->_db->quoteName('asso1.context') . ' = ' . $this->_db->quote('com_content.item'),
-                $this->_db->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
+                $this->getDatabase()->quoteName('asso1.id') . ' = ' . (int) $this->id,
+                $this->getDatabase()->quoteName('asso1.context') . ' = ' . $this->getDatabase()->quote('com_content.item'),
+                $this->getDatabase()->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
 
         return parent::toXML($mapKeysToText);
     }
@@ -629,11 +629,12 @@ class Content extends Table
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 
-        \Joomla\CMS\Factory::getApplication()->triggerEvent('onJ2xmlBeforeExportContent', [
-            'lib_j2xml.article',
-            &$item,
-            $params
-        ]);
+        \Joomla\CMS\Factory::getApplication()->getDispatcher()->dispatch('onJ2xmlBeforeExportContent',
+            new \Joomla\Event\Event('onJ2xmlBeforeExportContent', [
+                'lib_j2xml.article',
+                &$item,
+                $params
+            ]));
 
         if ($item->access > 6)
         {

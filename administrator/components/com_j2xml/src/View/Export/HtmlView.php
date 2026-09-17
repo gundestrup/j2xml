@@ -48,7 +48,7 @@ class HtmlView extends BaseHtmlView
      *
      * @return mixed A string if successful, otherwise an Error object.
      */
-    public function display($tpl = null)
+    public function display($tpl = null): void
     {
         Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'com_j2xml'));
 
@@ -62,6 +62,6 @@ class HtmlView extends BaseHtmlView
             throw new \Exception(implode("\n", $errors), 500);
         }
 
-        return parent::display($tpl);
+        parent::display($tpl);
     }
 }

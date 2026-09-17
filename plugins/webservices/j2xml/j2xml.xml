@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="plugin" method="upgrade" group="webservices">
 	<name>plg_webservices_j2xml</name>
-	<author>Helios Ciancio</author>
+	<author>Helios Ciancio / Svend Gundestrup (fork maintainer)</author>
 	<creationDate>__DEPLOY_DATE__</creationDate>
 	<authorEmail>info (at) eshiol (dot) it</authorEmail>
 	<authorUrl>www.eshiol.it</authorUrl>
-	<copyright><![CDATA[(C) 2010 - 2026 Helios Ciancio. All Rights Reserved.]]></copyright>
+	<copyright><![CDATA[(C) 2010 - 2026 Helios Ciancio. All Rights Reserved.; (C) 2026 Svend Gundestrup. All Rights Reserved.]]></copyright>
 	<license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3</license>
 	<version>__DEPLOY_VERSION__</version>
 	<description>PLG_WEBSERVICES_J2XML_XML_DESCRIPTION</description>

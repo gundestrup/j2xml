@@ -41,7 +41,7 @@ $this->document->addScriptOptions('J2XML', ['HaltOnError' => (bool) $params->get
 /** @var \Joomla\CMS\WebAsset\WebAssetManager $wa */
 $wa = $this->document->getWebAssetManager();
 $wa->useScript('com_j2xml.import')
-    ->useScript('bootstrap.modal')
+    ->useScript('joomla.dialog')
     ->useStyle('com_j2xml.import');
 
 $max = strtoupper(trim((string) ini_get('upload_max_filesize')));

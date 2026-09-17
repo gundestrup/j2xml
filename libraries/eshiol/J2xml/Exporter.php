@@ -45,13 +45,7 @@ use Joomla\Database\DatabaseInterface;
 class Exporter
 {
 
-    // images/stories is path of the images of the sections and categories hard
-    // coded in the file \libraries\joomla\html\html\list.php at the line 52
-    private $_image_path = "images";
-
-    private $_admin = 'admin';
-
-    private $_option = '';
+    private ?string $option = '';
 
     /**
      * The application instance.
@@ -59,7 +53,7 @@ class Exporter
      * @var CMSApplicationInterface
      * @since __DEPLOY_VERSION__
      */
-    protected $app;
+    protected CMSApplicationInterface $app;
 
     /**
      * CONSTRUCTOR
@@ -77,7 +71,7 @@ class Exporter
         $app = $app ?? \Joomla\CMS\Factory::getApplication();
         $this->app = $app;
 
-        $this->_option = (PHP_SAPI != 'cli') ? $app->getInput()->getCmd('option') : 'cli_' .
+        $this->option = (PHP_SAPI != 'cli') ? $app->getInput()->getCmd('option') : 'cli_' .
                  strtolower(get_class($app));
 
         // Merge the default translation with the current translation
@@ -194,8 +188,8 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $this->app->triggerEvent('onJ2xmlAfterExport', [
-            $this->_option . '.' . __FUNCTION__,
+        $this->dispatchEvent('onJ2xmlAfterExport', [
+            $this->option . '.' . __FUNCTION__,
             &$xml,
             $params
         ]);
@@ -239,8 +233,8 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $this->app->triggerEvent('onJ2xmlAfterExport', [
-            $this->_option . '.' . __FUNCTION__,
+        $this->dispatchEvent('onJ2xmlAfterExport', [
+            $this->option . '.' . __FUNCTION__,
             &$xml,
             $params
         ]);
@@ -284,8 +278,8 @@ class Exporter
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 
         // Trigger the onAfterExport event.
-        $this->app->triggerEvent('onJ2xmlAfterExport', [
-            $this->_option . '.' . __FUNCTION__,
+        $this->dispatchEvent('onJ2xmlAfterExport', [
+            $this->option . '.' . __FUNCTION__,
             &$xml,
             $params
         ]);
@@ -328,8 +322,8 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $this->app->triggerEvent('onJ2xmlAfterExport', [
-                $this->_option . '.' . __FUNCTION__,
+        $this->dispatchEvent('onJ2xmlAfterExport', [
+                $this->option . '.' . __FUNCTION__,
                 &$xml,
                 $params
         ]);
@@ -372,8 +366,8 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $this->app->triggerEvent('onJ2xmlAfterExport', [
-            $this->_option . '.' . __FUNCTION__,
+        $this->dispatchEvent('onJ2xmlAfterExport', [
+            $this->option . '.' . __FUNCTION__,
             &$xml,
             $params
         ]);
@@ -416,8 +410,8 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $this->app->triggerEvent('onJ2xmlAfterExport', [
-                $this->_option . '.' . __FUNCTION__,
+        $this->dispatchEvent('onJ2xmlAfterExport', [
+                $this->option . '.' . __FUNCTION__,
                 &$xml,
                 $params
         ]);
@@ -460,8 +454,8 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $this->app->triggerEvent('onJ2xmlAfterExport', [
-                $this->_option . '.' . __FUNCTION__,
+        $this->dispatchEvent('onJ2xmlAfterExport', [
+                $this->option . '.' . __FUNCTION__,
                 &$xml,
                 $params
         ]);
@@ -506,8 +500,8 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $this->app->triggerEvent('onJ2xmlAfterExport', [
-                $this->_option . '.' . __FUNCTION__,
+        $this->dispatchEvent('onJ2xmlAfterExport', [
+                $this->option . '.' . __FUNCTION__,
                 &$xml,
                 $params
         ]);
@@ -552,8 +546,8 @@ class Exporter
         $params = new \Joomla\Registry\Registry($options);
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
         // Trigger the onAfterExport event.
-        $this->app->triggerEvent('onJ2xmlAfterExport', [
-                $this->_option . '.' . __FUNCTION__,
+        $this->dispatchEvent('onJ2xmlAfterExport', [
+                $this->option . '.' . __FUNCTION__,
                 &$xml,
                 $params
         ]);
@@ -597,12 +591,31 @@ class Exporter
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('j2xml');
 
         // Trigger the onAfterExport event.
-        $this->app->triggerEvent('onJ2xmlAfterExport', [
-            $this->_option . '.' . __FUNCTION__,
+        $this->dispatchEvent('onJ2xmlAfterExport', [
+            $this->option . '.' . __FUNCTION__,
             &$xml,
             $params
         ]);
 
         return $xml;
+    }
+
+    /**
+     * Dispatch a J2XML plugin event through the application's event
+     * dispatcher (replaces the deprecated triggerEvent() call).
+     *
+     * @param   string  $eventName  the event name
+     * @param   array   $arguments  the event arguments
+     *
+     * @return  array  results returned by the event listeners
+     *
+     * @since   __DEPLOY_VERSION__
+     */
+    private function dispatchEvent(string $eventName, array $arguments = []): array
+    {
+        $event = new \Joomla\Event\Event($eventName, $arguments);
+        $this->app->getDispatcher()->dispatch($eventName, $event);
+
+        return (array) ($event['result'] ?? []);
     }
 }

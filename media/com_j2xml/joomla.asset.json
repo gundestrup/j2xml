@@ -30,21 +30,12 @@
             ]
         },
         {
-            "name": "com_j2xml.j2xml",
-            "type": "script",
-            "uri": "com_j2xml/j2xml.js",
-            "dependencies": [
-                "com_j2xml.library",
-                "com_j2xml.pako_inflate"
-            ]
-        },
-        {
             "name": "com_j2xml.admin",
             "type": "script",
             "uri": "com_j2xml/admin.js",
             "dependencies": [
                 "core",
-                "com_j2xml.j2xml"
+                "com_j2xml.library"
             ]
         },
         {
@@ -52,7 +43,7 @@
             "type": "script",
             "uri": "com_j2xml/import.js",
             "dependencies": [
-                "com_j2xml.j2xml",
+                "com_j2xml.library",
                 "com_j2xml.pako_inflate"
             ]
         },

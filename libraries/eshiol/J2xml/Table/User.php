@@ -111,11 +111,11 @@ class User extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        $serverType = $this->_db->getServerType();
+        $serverType = $this->getDatabase()->getServerType();
 
         if ($serverType === 'postgresql')
         {
-            $this->_aliases['group'] = '
+            $this->aliases['group'] = '
                 WITH RECURSIVE usergroups(id, title, parent_id, depth, path) AS (
                   SELECT tn.id, tn.title, tn.parent_id, 1::INT AS depth, tn.title::TEXT AS path
                   FROM #__usergroups AS tn
@@ -132,23 +132,23 @@ class User extends Table
         }
         else
         {
-            $this->_aliases['group'] = (string) $this->_db->getQuery()->clear()
-                ->select($this->_db->quoteName('title'))
-                ->from($this->_db->quoteName('#__j2xml_usergroups', 'g'))
-                ->from($this->_db->quoteName('#__user_usergroup_map', 'm'))
-                ->where($this->_db->quoteName('g.id') . ' = ' . $this->_db->quoteName('m.group_id'))
-                ->where($this->_db->quoteName('m.user_id') . ' = ' . (int) $this->id);
+            $this->aliases['group'] = (string) $this->getDatabase()->getQuery()->clear()
+                ->select($this->getDatabase()->quoteName('title'))
+                ->from($this->getDatabase()->quoteName('#__j2xml_usergroups', 'g'))
+                ->from($this->getDatabase()->quoteName('#__user_usergroup_map', 'm'))
+                ->where($this->getDatabase()->quoteName('g.id') . ' = ' . $this->getDatabase()->quoteName('m.group_id'))
+                ->where($this->getDatabase()->quoteName('m.user_id') . ' = ' . (int) $this->id);
         }
 
         $this->buildFieldAliases();
 
-        // $this->_aliases['profile'] = 'SELECT profile_key name, profile_value
+        // $this->aliases['profile'] = 'SELECT profile_key name, profile_value
         // value FROM #__user_profiles WHERE user_id = '. (int)$this->id;
-        $this->_aliases['profile'] = (string) $this->_db->getQuery()->clear()
-            ->select($this->_db->quoteName('profile_key', 'name'))
-            ->select($this->_db->quoteName('profile_value', 'value'))
-            ->from($this->_db->quoteName('#__user_profiles'))
-            ->where($this->_db->quoteName('user_id') . ' = ' . $this->_db->quote($this->id));
+        $this->aliases['profile'] = (string) $this->getDatabase()->getQuery()->clear()
+            ->select($this->getDatabase()->quoteName('profile_key', 'name'))
+            ->select($this->getDatabase()->quoteName('profile_value', 'value'))
+            ->from($this->getDatabase()->quoteName('#__user_profiles'))
+            ->where($this->getDatabase()->quoteName('user_id') . ' = ' . $this->getDatabase()->quote($this->id));
 
         return parent::toXML($mapKeysToText);
     }
@@ -555,9 +555,9 @@ class User extends Table
 
         if (isset($options['password']) && ($options['password'] == 0))
         {
-            array_push($item->_excluded, 'password');
-            array_push($item->_excluded, 'otpKey');
-            array_push($item->_excluded, 'otep');
+            array_push($item->excluded, 'password');
+            array_push($item->excluded, 'otpKey');
+            array_push($item->excluded, 'otep');
         }
 
         $doc = dom_import_simplexml($xml)->ownerDocument;

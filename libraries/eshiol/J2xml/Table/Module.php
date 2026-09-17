@@ -47,22 +47,22 @@ class Module extends \eshiol\J2xml\Table\Table
     function toXML ($mapKeysToText = false)
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-        if ($this->_db->getServerType() === 'postgresql')
+        if ($this->getDatabase()->getServerType() === 'postgresql')
         {
-            $this->_aliases['menus'] = "SELECT DISTINCT CASE WHEN mm.menuid > 0 THEN 'include' ELSE 'exclude' END FROM "
-                . $this->_db->qn('#__modules_menu') . " mm INNER JOIN " . $this->_db->qn('#__menu')
+            $this->aliases['menus'] = "SELECT DISTINCT CASE WHEN mm.menuid > 0 THEN 'include' ELSE 'exclude' END FROM "
+                . $this->getDatabase()->qn('#__modules_menu') . " mm INNER JOIN " . $this->getDatabase()->qn('#__menu')
                 . " m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " . (int) $this->id
-                . " UNION SELECT 'all' FROM " . $this->_db->qn('#__modules_menu')
+                . " UNION SELECT 'all' FROM " . $this->getDatabase()->qn('#__modules_menu')
                 . " mm WHERE mm.moduleid = " . (int) $this->id . " AND mm.menuid = 0";
-            $this->_aliases['menu'] = "SELECT CONCAT(m.menutype, '/', m.path) FROM "
-                . $this->_db->qn('#__modules_menu') . " mm INNER JOIN " . $this->_db->qn('#__menu')
+            $this->aliases['menu'] = "SELECT CONCAT(m.menutype, '/', m.path) FROM "
+                . $this->getDatabase()->qn('#__modules_menu') . " mm INNER JOIN " . $this->getDatabase()->qn('#__menu')
                 . " m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " . (int) $this->id;
         }
         else
         {
-            $this->_aliases['menus'] = "SELECT DISTINCT IF(SIGN(mm.menuid) > 0, 'include', 'exclude') FROM `#__modules_menu` mm INNER JOIN `#__menu` m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " .
+            $this->aliases['menus'] = "SELECT DISTINCT IF(SIGN(mm.menuid) > 0, 'include', 'exclude') FROM `#__modules_menu` mm INNER JOIN `#__menu` m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " .
                 (int) $this->id . " UNION SELECT 'all' FROM `#__modules_menu` mm WHERE mm.moduleid = " . (int) $this->id . " AND mm.menuid = 0";
-            $this->_aliases['menu'] = "SELECT CONCAT(m.menutype, '/', m.path) FROM `#__modules_menu` mm INNER JOIN `#__menu` m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " .
+            $this->aliases['menu'] = "SELECT CONCAT(m.menutype, '/', m.path) FROM `#__modules_menu` mm INNER JOIN `#__menu` m ON ABS(mm.menuid) = m.id WHERE mm.moduleid = " .
                 (int) $this->id;
         }
 

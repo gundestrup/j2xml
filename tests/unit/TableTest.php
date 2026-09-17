@@ -374,7 +374,7 @@ final class TableTest extends TestCase
         $table = $this->tableInstance();
 
         // Set up the excluded list (normally done in constructor)
-        $excludedProp = new ReflectionProperty(Table::class, '_excluded');
+        $excludedProp = new ReflectionProperty(Table::class, 'excluded');
         $excludedProp->setValue($table, ['asset_id', 'parent_id', 'lft', 'rgt', 'level', 'checked_out', 'checked_out_time']);
 
         $table->id = 1;
@@ -402,7 +402,7 @@ final class TableTest extends TestCase
         $r = new ReflectionMethod(Table::class, '_serialize');
         $table = $this->tableInstance();
 
-        $jsonProp = new ReflectionProperty(Table::class, '_jsonEncode');
+        $jsonProp = new ReflectionProperty(Table::class, 'jsonEncode');
         $jsonProp->setValue($table, ['params']);
 
         $table->id = 1;

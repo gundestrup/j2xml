@@ -17,7 +17,7 @@ Joomla's Webservices REST API.
 - **Target platforms:** Joomla! **5 and 6** with **PHP 8.4 and 8.5**.
   (The upstream `eshiol/j2xml` targets Joomla 3.x/4.x; this fork drops
   older PHP/Joomla support to focus on modern versions.)
-- **Package name (Joomla):** `pkg_j2xml` (release version **4.5.2**).
+- **Package name (Joomla):** `pkg_j2xml` (release version **4.5.3**).
 - **Language:** PHP (no runtime JS build pipeline; Composer is used for
   development-only PHPUnit/PHPStan tooling, while runtime dependencies remain
   vendored as Joomla libraries).
@@ -201,8 +201,10 @@ commit the zips. For a release, run the release check and attach
   files are configured in the CodeFactor UI under repository
   Settings → Ignore Files (currently `media/lib_eshiol_j2xml/js/*`).
 - **SonarCloud** — static analysis via `sonar-project.properties`
-  (project key: `gundestrup_j2xml`, org: `gundestrup`).
-  Excludes `media/**`, `build/**`, `tests/**`, `vendor/**`, `node_modules/**`.
+  (project key: `gundestrup_j2xml`, org: `gundestrup`). CI-based scans exclude
+  `media/**`, `build/**`, `tests/**`, `vendor/**`, and `node_modules/**`.
+  SonarCloud AutoScan uses the root `.sonarcloud.properties` file instead;
+  it classifies `tests/` as test code and excludes it from issue analysis.
   Suppress false positives with `// NOSONAR` on the flagged line.
   Findings are accessible via the SonarCloud REST API (no auth needed for
   public projects):
@@ -226,6 +228,7 @@ For local checks, use the **pre-commit hook** (below) or the unified scripts:
 ./scripts/check-quality.sh --quick   # same but skips coverage (faster)
 ./scripts/check-tests.sh             # MySQL + PostgreSQL integration tests (starts/stops Docker)
 ./scripts/check-tests.sh --mysql     # MySQL only (faster)
+./scripts/check-tests.sh --postgresql # PostgreSQL only (faster)
 ./scripts/check-tests.sh --coverage  # also collect line coverage → coverage-integration.xml
 ./scripts/check-all.sh               # quality + tests (full pre-release validation)
 ```
