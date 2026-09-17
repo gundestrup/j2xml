@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Corrected SonarCloud AutoScan directory exclusions to use glob patterns so
+  test-only helpers are removed from production issue analysis.
+
 ---
 
 ## [4.5.3] - 2026-09-17
