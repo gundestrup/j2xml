@@ -198,14 +198,8 @@ class Tag extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        if ($xml->xpath("//j2xml/tag/id[text() = '" . $id . "']"))
-        {
-            return;
-        }
-
-        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $item = new Tag($db);
-        if (!$item->load($id))
+        $item = static::loadExportItem('tag', $id, $xml, $db);
+        if (!$item)
         {
             return;
         }
@@ -215,41 +209,13 @@ class Tag extends Table
             Tag::export($item->parent_id, $xml, $options);
         }
 
-        $doc = dom_import_simplexml($xml)->ownerDocument;
-        $fragment = $doc->createDocumentFragment();
-
-        $fragment->appendXML($item->toXML());
-        $doc->documentElement->appendChild($fragment);
-
-        if (isset($options['users']) && $options['users'])
-        {
-            if ($item->created_user_id)
-            {
-                User::export($item->created_user_id, $xml, $options);
-            }
-
-            if ($item->modified_user_id)
-            {
-                User::export($item->modified_user_id, $xml, $options);
-            }
-        }
+        self::appendItemXml($item, $xml);
+        self::exportItemUsers($item, $xml, $options, ['created_user_id', 'modified_user_id']);
 
         if (isset($options['images']) && $options['images'])
         {
             self::exportImagesFromText(html_entity_decode($item->description), $xml, $options);
-            $imgs = json_decode($item->images);
-            if ($imgs)
-            {
-                if (isset($imgs->image_fulltext))
-                {
-                    Image::export($imgs->image_fulltext, $xml, $options);
-                }
-
-                if (isset($imgs->image_intro))
-                {
-                    Image::export($imgs->image_intro, $xml, $options);
-                }
-            }
+            self::exportImagesFromJson($item->images, $xml, $options, ['image_fulltext', 'image_intro']);
         }
 
         return $xml;

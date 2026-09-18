@@ -19,6 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Consolidated repeated Table-class tag and association queries, export
+  scaffolding, related-record exports, association import normalisation and
+  keep-id update SQL into shared helpers in `Table.php`, reducing SonarCloud
+  production duplication without changing XML or database behaviour.
+
+### Added
+
+- Added unit coverage for the shared Table export/import helpers.
+
 ### Fixed
 
 - Corrected SonarCloud AutoScan directory exclusions to use glob patterns so

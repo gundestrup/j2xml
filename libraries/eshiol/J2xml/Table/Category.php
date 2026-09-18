@@ -56,17 +56,7 @@ class Category extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        // $this->aliases['tag'] = 'SELECT t.path FROM #__tags t,
-        // #__contentitem_tag_map m WHERE type_alias = "' . $this->extension
-        // . '.category' . '" AND t.id = m.tag_id AND m.content_item_id = '.
-        // $this->id;
-        $this->aliases['tag'] = (string) $this->getDatabase()->getQuery()->clear()
-                ->select($this->getDatabase()->quoteName('t.path'))
-                ->from($this->getDatabase()->quoteName('#__tags', 't'))
-                ->from($this->getDatabase()->quoteName('#__contentitem_tag_map', 'm'))
-                ->where($this->getDatabase()->quoteName('type_alias') . ' = ' . $this->getDatabase()->quote($this->extension . '.category'))
-                ->where($this->getDatabase()->quoteName('t.id') . ' = ' . $this->getDatabase()->quoteName('m.tag_id'))
-                ->where($this->getDatabase()->quoteName('m.content_item_id') . ' = ' . $this->getDatabase()->quote((string) $this->id));
+        $this->buildTagAlias($this->extension . '.category');
 
         $query = $this->getDatabase()->getQuery()->clear();
         $this->aliases['association'] = (string) $query
@@ -332,14 +322,8 @@ class Category extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        if ($xml->xpath("//j2xml/category/id[text() = '" . $id . "']"))
-        {
-            return;
-        }
-
-        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $item = new Category($db);
-        if (!$item->load($id))
+        $item = static::loadExportItem('category', $id, $xml, $db);
+        if (!$item)
         {
             return;
         }
@@ -361,44 +345,16 @@ class Category extends Table
             Category::export($item->parent_id, $xml, $options);
         }
 
-        $doc = dom_import_simplexml($xml)->ownerDocument;
-        $fragment = $doc->createDocumentFragment();
-
-        $fragment->appendXML($item->toXML());
-        $doc->documentElement->appendChild($fragment);
-
-        if (isset($options['users']) && $options['users'])
-        {
-            if ($item->created_user_id)
-            {
-                User::export($item->created_user_id, $xml, $options);
-            }
-
-            if ($item->modified_user_id)
-            {
-                User::export($item->modified_user_id, $xml, $options);
-            }
-        }
-
-        if ($item->access > 6)
-        {
-            Viewlevel::export($item->access, $xml, $options);
-        }
+        self::appendItemXml($item, $xml);
+        self::exportItemUsers($item, $xml, $options, ['created_user_id', 'modified_user_id']);
+        self::exportItemViewlevel($item->access, $xml, $options);
 
         if (isset($options['images']) && $options['images'])
         {
             self::exportCategoryImages($item, $xml, $options);
         }
 
-        if (isset($options['tags']) && $options['tags'])
-        {
-            $htags = new \Joomla\CMS\Helper\TagsHelper();
-            $itemtags = $htags->getItemTags($item->extension . '.category', $id);
-            foreach ($itemtags as $itemtag)
-            {
-                Tag::export($itemtag->tag_id, $xml, $options);
-            }
-        }
+        self::exportItemTags($item->extension . '.category', $id, $xml, $options);
     }
 
     /**
@@ -450,15 +406,7 @@ class Category extends Table
     private static function exportCategoryImages ($item, &$xml, $options)
     {
         self::exportImagesFromText(html_entity_decode($item->description), $xml, $options);
-
-        $imgs = json_decode($item->params);
-        if ($imgs)
-        {
-            if (isset($imgs->image))
-            {
-                Image::export($imgs->image, $xml, $options);
-            }
-        }
+        self::exportImagesFromJson($item->params, $xml, $options, ['image']);
     }
 
     /**
@@ -472,52 +420,8 @@ class Category extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-
-        $params->set('extension', 'com_categories');
-        parent::prepareData($record, $data, $params);
-
-        if (empty($data['associations']))
-        {
-            $data['associations'] = [];
-        }
-
-        if (isset($data['associationlist']))
-        {
-            foreach ($data['associationlist']['association'] as $association)
-            {
-                $id = self::getCategoryId($association, $data['extension']);
-                if ($id)
-                {
-                    $tag = $db->setQuery($db->getQuery()->clear()
-                        ->select($db->quoteName('language'))
-                        ->from($db->quoteName('#__categories'))
-                        ->where($db->quoteName('id') . ' = ' . $id))
-                        ->loadResult();
-                    if ($tag !== '*')
-                    {
-                        $data['associations'][$tag] = $id;
-                    }
-                }
-            }
-            unset($data['associationlist']);
-        }
-        elseif (isset($data['association']))
-        {
-            $id = self::getCategoryId($data['association'], $data['extension']);
-            if ($id)
-            {
-                $tag = $db->setQuery($db->getQuery()->clear()
-                    ->select($db->quoteName('language'))
-                    ->from($db->quoteName('#__categories'))
-                    ->where($db->quoteName('id') . ' = ' . $id))
-                    ->loadResult();
-                if ($tag !== '*')
-                {
-                    $data['associations'][$tag] = $id;
-                }
-            }
-            unset($data['association']);
-        }
+        self::prepareAssociatedData($record, $data, $params, 'com_categories', static function ($association) use (&$data) {
+            return self::getCategoryId($association, $data['extension']);
+        }, '#__categories');
     }
 }

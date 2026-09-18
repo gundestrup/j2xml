@@ -54,29 +54,8 @@ class Weblink extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        // $this->aliases['tag']='SELECT t.path FROM #__tags t,
-        // #__contentitem_tag_map m WHERE type_alias =
-        // "com_weblinks.weblink" AND t.id = m.tag_id AND m.content_item_id
-        // = '. (int)$this->id;
-        $this->aliases['tag'] = (string) $this->getDatabase()->getQuery()->clear()
-            ->select($this->getDatabase()->quoteName('t.path'))
-            ->from($this->getDatabase()->quoteName('#__tags', 't'))
-            ->from($this->getDatabase()->quoteName('#__contentitem_tag_map', 'm'))
-            ->where($this->getDatabase()->quoteName('type_alias') . ' = ' . $this->getDatabase()->quote('com_weblinks.weblink'))
-            ->where($this->getDatabase()->quoteName('t.id') . ' = ' . $this->getDatabase()->quoteName('m.tag_id'))
-            ->where($this->getDatabase()->quoteName('m.content_item_id') . ' = ' . $this->getDatabase()->quote((string) $this->id));
-
-        $query = $this->getDatabase()->getQuery()->clear();
-        $this->aliases['association'] = (string) $query
-            ->select($query->concatenate([$this->getDatabase()->quoteName('cc.path'), $this->getDatabase()->quoteName('c.alias')], '/'))
-            ->from($this->getDatabase()->quoteName('#__associations', 'asso1'))
-            ->join('INNER', $this->getDatabase()->quoteName('#__associations', 'asso2') . ' ON ' . $this->getDatabase()->quoteName('asso1.key') . ' = ' . $this->getDatabase()->quoteName('asso2.key'))
-            ->join('INNER', $this->getDatabase()->quoteName('#__weblinks', 'c') . ' ON ' . $this->getDatabase()->quoteName('asso2.id') . ' = ' . $this->getDatabase()->quoteName('c.id'))
-            ->join('INNER', $this->getDatabase()->quoteName('#__categories', 'cc') . ' ON ' . $this->getDatabase()->quoteName('c.catid') . ' = ' . $this->getDatabase()->quoteName('cc.id'))
-            ->where([
-                $this->getDatabase()->quoteName('asso1.id') . ' = ' . (int) $this->id,
-                $this->getDatabase()->quoteName('asso1.context') . ' = ' . $this->getDatabase()->quote('com_weblinks.item'),
-                $this->getDatabase()->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
+        $this->buildTagAlias('com_weblinks.weblink');
+        $this->buildAssociationAlias('#__weblinks', 'com_weblinks.item');
 
         return parent::toXML($mapKeysToText);
     }
@@ -100,45 +79,16 @@ class Weblink extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        if ($xml->xpath("//j2xml/weblink/id[text() = '" . $id . "']"))
+        $item = static::loadExportItem('weblink', $id, $xml, $db);
+        if (!$item)
         {
             return;
         }
 
-        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $item = new Weblink($db);
-        if (!$item->load($id))
-        {
-            return;
-        }
-
-        if ($item->access > 6)
-        {
-            Viewlevel::export($item->access, $xml, $options);
-        }
-
-        if (isset($options['categories']) && $options['categories'] && ($item->catid > 0))
-        {
-            Category::export($item->catid, $xml, $options);
-        }
-
-        $doc = dom_import_simplexml($xml)->ownerDocument;
-        $fragment = $doc->createDocumentFragment();
-
-        $fragment->appendXML($item->toXML());
-        $doc->documentElement->appendChild($fragment);
-
-        if (isset($options['users']) && $options['users'])
-        {
-            if ($item->created_by)
-            {
-                User::export($item->created_by, $xml, $options);
-            }
-            if ($item->modified_by)
-            {
-                User::export($item->modified_by, $xml, $options);
-            }
-        }
+        self::exportItemViewlevel($item->access, $xml, $options);
+        self::exportItemCategory($item->catid, $xml, $options);
+        self::appendItemXml($item, $xml);
+        self::exportItemUsers($item, $xml, $options);
 
         if (isset($options['images']) && $options['images'])
         {
@@ -162,20 +112,7 @@ class Weblink extends Table
     private static function exportImages ($item, &$xml, $options)
     {
         self::exportImagesFromText($item->description, $xml, $options);
-
-        $imgs = json_decode($item->images);
-        if ($imgs)
-        {
-            if (isset($imgs->image_first))
-            {
-                Image::export($imgs->image_first, $xml, $options);
-            }
-
-            if (isset($imgs->image_second))
-            {
-                Image::export($imgs->image_second, $xml, $options);
-            }
-        }
+        self::exportImagesFromJson($item->images, $xml, $options, ['image_first', 'image_second']);
     }
 
     /**
@@ -248,17 +185,12 @@ class Weblink extends Table
                 }
 
                 // Trigger the onContentBeforeSave event.
-                $table->bind($data);
-                if ($table->store())
+                if (self::bindAndStore($table, $data, 'LIB_J2XML_MSG_WEBLINK_NOT_IMPORTED'))
                 {
                     self::setAssociations($table->id, $table->language, $data['associations'], 'com_weblinks.item');
 
                     \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_WEBLINK_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
                     // Trigger the onContentAfterSave event.
-                }
-                else
-                {
-                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_WEBLINK_NOT_IMPORTED', $data['title'], $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
                 }
                 $table = null;
             }
@@ -276,52 +208,8 @@ class Weblink extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-
-        $params->set('extension', 'com_weblinks');
-        parent::prepareData($record, $data, $params);
-
-        if (empty($data['associations']))
-        {
-            $data['associations'] = [];
-        }
-
-        if (isset($data['associationlist']))
-        {
-            foreach ($data['associationlist']['association'] as $association)
-            {
-                $id = self::getWeblinkId($association);
-                if ($id)
-                {
-                    $tag = $db->setQuery($db->getQuery()->clear()
-                        ->select($db->quoteName('language'))
-                        ->from($db->quoteName('#__weblinks'))
-                        ->where($db->quoteName('id') . ' = ' . $id))
-                        ->loadResult();
-                    if ($tag !== '*')
-                    {
-                        $data['associations'][$tag] = $id;
-                    }
-                }
-            }
-            unset($data['associationlist']);
-        }
-        elseif (isset($data['association']))
-        {
-            $id = self::getWeblinkId($data['association']);
-            if ($id)
-            {
-                $tag = $db->setQuery($db->getQuery()->clear()
-                    ->select($db->quoteName('language'))
-                    ->from($db->quoteName('#__weblinks'))
-                    ->where($db->quoteName('id') . ' = ' . $id))
-                    ->loadResult();
-                if ($tag !== '*')
-                {
-                    $data['associations'][$tag] = $id;
-                }
-            }
-            unset($data['association']);
-        }
+        self::prepareAssociatedData($record, $data, $params, 'com_weblinks', static function ($association) {
+            return self::getWeblinkId($association);
+        }, '#__weblinks');
     }
 }

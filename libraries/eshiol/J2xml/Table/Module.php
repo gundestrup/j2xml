@@ -82,20 +82,12 @@ class Module extends \eshiol\J2xml\Table\Table
 
         $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
         $item = new Module($db);
-        if (!$item->load($id))
+        if (!$item->load($id) || self::isExported($xml, 'module', $item->id))
         {
             return;
         }
 
-        if ($xml->xpath("//j2xml/module/id[text() = '" . $item->id . "']"))
-        {
-            return;
-        }
-
-        $doc = dom_import_simplexml($xml)->ownerDocument;
-        $fragment = $doc->createDocumentFragment();
-        $fragment->appendXML($item->toXML());
-        $doc->documentElement->appendChild($fragment);
+        self::appendItemXml($item, $xml);
     }
 
     /**

@@ -94,7 +94,7 @@ class Menu extends \eshiol\J2xml\Table\Table
             return;
         }
 
-        if ($xml->xpath("//j2xml/menu/id[text() = '" . $item->id . "']"))
+        if (self::isExported($xml, 'menu', $item->id))
         {
             return;
         }
@@ -110,22 +110,11 @@ class Menu extends \eshiol\J2xml\Table\Table
             }
         }
 
-        $doc = dom_import_simplexml($xml)->ownerDocument;
-        $fragment = $doc->createDocumentFragment();
-
-        $fragment->appendXML($item->toXML());
-        $doc->documentElement->appendChild($fragment);
+        self::appendItemXml($item, $xml);
 
         if (isset($options['images']) && $options['images'])
         {
-            $imgs = json_decode($item->params);
-            if ($imgs)
-            {
-                if (isset($imgs->menu_image))
-                {
-                    Image::export($imgs->menu_image, $xml, $options);
-                }
-            }
+            self::exportImagesFromJson($item->params, $xml, $options, ['menu_image']);
         }
 
         /* export children */

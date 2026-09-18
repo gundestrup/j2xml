@@ -268,22 +268,12 @@ class Viewlevel extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        if ($xml->xpath("//j2xml/viewlevel/id[text() = '" . $id . "']"))
+        $item = static::loadExportItem('viewlevel', $id, $xml, $db);
+        if (!$item)
         {
             return;
         }
 
-        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $item = new Viewlevel($db);
-        if (!$item->load($id))
-        {
-            return;
-        }
-
-        $doc = dom_import_simplexml($xml)->ownerDocument;
-        $fragment = $doc->createDocumentFragment();
-
-        $fragment->appendXML($item->toXML());
-        $doc->documentElement->appendChild($fragment);
+        self::appendItemXml($item, $xml);
     }
 }

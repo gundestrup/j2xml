@@ -66,6 +66,28 @@ class Content extends Table
     }
 
     /**
+     * Add an alias backed by a content-related table joined to #__content.
+     *
+     * @param string $alias
+     *          the XML alias name
+     * @param string $table
+     *          the related database table
+     * @param string $select
+     *          the select expression
+     *
+     * @return void
+     */
+    private function addContentJoinAlias(string $alias, string $table, string $select): void
+    {
+        $db = $this->getDatabase();
+        $this->aliases[$alias] = (string) $db->getQuery()->clear()
+            ->select($select)
+            ->from($db->quoteName($table, 'f'))
+            ->join('RIGHT', $db->quoteName('#__content', 'a') . ' ON ' . $db->quoteName('f.content_id') . ' = ' . $db->quoteName('a.id'))
+            ->where($db->quoteName('a.id') . ' = ' . (int) $this->id);
+    }
+
+    /**
      * Export item list to xml
      *
      * @access public
@@ -81,49 +103,12 @@ class Content extends Table
                 'ordering'
         ]);
 
-        // $this->aliases['featured'] = 'SELECT IFNULL(f.ordering,0) FROM
-        // #__content_frontpage f RIGHT JOIN #__content a ON f.content_id = a.id
-        // WHERE a.id = ' . (int)$this->id;
-        $this->aliases['featured'] = (string) $this->getDatabase()->getQuery()->clear()
-            ->select('COALESCE(' . $this->getDatabase()->quoteName('f.ordering') . ', 0)')
-            ->from($this->getDatabase()->quoteName('#__content_frontpage', 'f'))
-            ->join('RIGHT',
-                $this->getDatabase()->quoteName('#__content', 'a') . ' ON ' . $this->getDatabase()->quoteName('f.content_id') . ' = ' . $this->getDatabase()->quoteName('a.id'))
-            ->where($this->getDatabase()->quoteName('a.id') . ' = ' . (int) $this->id);
-
-        $this->aliases['featured_up'] = (string) $this->getDatabase()->getQuery()->clear()
-            ->select($this->getDatabase()->quoteName('f.featured_up'))
-            ->from($this->getDatabase()->quoteName('#__content_frontpage', 'f'))
-            ->join('RIGHT',
-                $this->getDatabase()->quoteName('#__content', 'a') . ' ON ' . $this->getDatabase()->quoteName('f.content_id') . ' = ' . $this->getDatabase()->quoteName('a.id'))
-            ->where($this->getDatabase()->quoteName('a.id') . ' = ' . (int) $this->id);
-
-        $this->aliases['featured_down'] = (string) $this->getDatabase()->getQuery()->clear()
-            ->select($this->getDatabase()->quoteName('f.featured_down'))
-            ->from($this->getDatabase()->quoteName('#__content_frontpage', 'f'))
-            ->join('RIGHT',
-                $this->getDatabase()->quoteName('#__content', 'a') . ' ON ' . $this->getDatabase()->quoteName('f.content_id') . ' = ' . $this->getDatabase()->quoteName('a.id'))
-            ->where($this->getDatabase()->quoteName('a.id') . ' = ' . (int) $this->id);
-
-        // $this->aliases['rating_sum'] = 'SELECT IFNULL(rating_sum,0) FROM
-        // #__content_rating f RIGHT JOIN #__content a ON f.content_id = a.id
-        // WHERE a.id = ' . (int)$this->id;
-        $this->aliases['rating_sum'] = (string) $this->getDatabase()->getQuery()->clear()
-            ->select('COALESCE(' . $this->getDatabase()->quoteName('rating_sum') . ', 0)')
-            ->from($this->getDatabase()->quoteName('#__content_rating', 'f'))
-            ->join('RIGHT',
-                $this->getDatabase()->quoteName('#__content', 'a') . ' ON ' . $this->getDatabase()->quoteName('f.content_id') . ' = ' . $this->getDatabase()->quoteName('a.id'))
-            ->where($this->getDatabase()->quoteName('a.id') . ' = ' . (int) $this->id);
-
-        // $this->aliases['rating_count'] = 'SELECT IFNULL(rating_count,0) FROM
-        // #__content_rating f RIGHT JOIN #__content a ON f.content_id = a.id
-        // WHERE a.id = ' . (int)$this->id;
-        $this->aliases['rating_count'] = (string) $this->getDatabase()->getQuery()->clear()
-            ->select('COALESCE(' . $this->getDatabase()->quoteName('rating_count') . ', 0)')
-            ->from($this->getDatabase()->quoteName('#__content_rating', 'f'))
-            ->join('RIGHT',
-                $this->getDatabase()->quoteName('#__content', 'a') . ' ON ' . $this->getDatabase()->quoteName('f.content_id') . ' = ' . $this->getDatabase()->quoteName('a.id'))
-            ->where($this->getDatabase()->quoteName('a.id') . ' = ' . (int) $this->id);
+        $db = $this->getDatabase();
+        $this->addContentJoinAlias('featured', '#__content_frontpage', 'COALESCE(' . $db->quoteName('f.ordering') . ', 0)');
+        $this->addContentJoinAlias('featured_up', '#__content_frontpage', $db->quoteName('f.featured_up'));
+        $this->addContentJoinAlias('featured_down', '#__content_frontpage', $db->quoteName('f.featured_down'));
+        $this->addContentJoinAlias('rating_sum', '#__content_rating', 'COALESCE(' . $db->quoteName('rating_sum') . ', 0)');
+        $this->addContentJoinAlias('rating_count', '#__content_rating', 'COALESCE(' . $db->quoteName('rating_count') . ', 0)');
 
         $slug = $this->alias ? ($this->id . ':' . $this->alias) : $this->id;
 
@@ -134,43 +119,20 @@ class Content extends Table
         $canonical = str_replace(\Joomla\CMS\Uri\Uri::base(true) . '/', \Joomla\CMS\Uri\Uri::root(), $url);
         // $this->aliases['canonical'] = 'SELECT \'' . $canonical . '\' FROM
         // DUAL';
-        $serverType = $this->getDatabase()->getServerType();
-        if ($serverType === 'sqlserver')
+        if ($db->getServerType() === 'sqlserver')
         {
-            $this->aliases['canonical'] = (string) $this->getDatabase()->getQuery()->clear()
-                ->select($this->getDatabase()->quote($canonical))
-                ->from($this->getDatabase()->quoteName('DUAL'));
+            $this->aliases['canonical'] = (string) $db->getQuery()->clear()
+                ->select($db->quote($canonical))
+                ->from($db->quoteName('DUAL'));
         }
         else
         {
-            $this->aliases['canonical'] = (string) $this->getDatabase()->getQuery()->clear()->select($this->getDatabase()->quote($canonical));
+            $this->aliases['canonical'] = (string) $db->getQuery()->clear()->select($db->quote($canonical));
         }
 
-        // $this->aliases['tag']='SELECT t.path FROM #__tags t,
-        // #__contentitem_tag_map m WHERE type_alias = "com_content.article"
-        // AND
-        // t.id = m.tag_id AND m.content_item_id = '. (int)$this->id;
-        $this->aliases['tag'] = (string) $this->getDatabase()->getQuery()->clear()
-            ->select($this->getDatabase()->quoteName('t.path'))
-            ->from($this->getDatabase()->quoteName('#__tags', 't'))
-            ->from($this->getDatabase()->quoteName('#__contentitem_tag_map', 'm'))
-            ->where($this->getDatabase()->quoteName('type_alias') . ' = ' . $this->getDatabase()->quote('com_content.article'))
-            ->where($this->getDatabase()->quoteName('t.id') . ' = ' . $this->getDatabase()->quoteName('m.tag_id'))
-            ->where($this->getDatabase()->quoteName('m.content_item_id') . ' = ' . $this->getDatabase()->quote((string) $this->id));
-
+        $this->buildTagAlias('com_content.article');
         $this->buildFieldAliases();
-
-        $query = $this->getDatabase()->getQuery()->clear();
-        $this->aliases['association'] = (string) $query
-            ->select($query->concatenate([$this->getDatabase()->quoteName('cc.path'), $this->getDatabase()->quoteName('c.alias')], '/'))
-            ->from($this->getDatabase()->quoteName('#__associations', 'asso1'))
-            ->join('INNER', $this->getDatabase()->quoteName('#__associations', 'asso2') . ' ON ' . $this->getDatabase()->quoteName('asso1.key') . ' = ' . $this->getDatabase()->quoteName('asso2.key'))
-            ->join('INNER', $this->getDatabase()->quoteName('#__content', 'c') . ' ON ' . $this->getDatabase()->quoteName('asso2.id') . ' = ' . $this->getDatabase()->quoteName('c.id'))
-            ->join('INNER', $this->getDatabase()->quoteName('#__categories', 'cc') . ' ON ' . $this->getDatabase()->quoteName('c.catid') . ' = ' . $this->getDatabase()->quoteName('cc.id'))
-            ->where([
-                $this->getDatabase()->quoteName('asso1.id') . ' = ' . (int) $this->id,
-                $this->getDatabase()->quoteName('asso1.context') . ' = ' . $this->getDatabase()->quote('com_content.item'),
-                $this->getDatabase()->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
+        $this->buildAssociationAlias('#__content', 'com_content.item');
 
         return parent::toXML($mapKeysToText);
     }
@@ -539,60 +501,9 @@ class Content extends Table
             $data['catid'] = $params->get('com_content_category_default');
         }
 
-        if (empty($data['associations']))
-        {
-            $data['associations'] = [];
-        }
-
-        self::resolveAssociations($data, $db);
-    }
-
-    /**
-     * Resolve the exported article associations to local article ids keyed
-     * by language.
-     *
-     * @param array $data
-     *          the article data being imported
-     * @param \Joomla\Database\DatabaseInterface $db
-     *          the database connector
-     *
-     * @return void
-     */
-    private static function resolveAssociations (&$data, $db)
-    {
-        if (isset($data['associationlist']))
-        {
-            $associations = $data['associationlist']['association'] ?? [];
-            unset($data['associationlist']);
-        }
-        elseif (isset($data['association']))
-        {
-            $associations = [$data['association']];
-            unset($data['association']);
-        }
-        else
-        {
-            return;
-        }
-
-        foreach ($associations as $association)
-        {
-            $id = self::getArticleId($association);
-            if (!$id)
-            {
-                continue;
-            }
-
-            $tag = $db->setQuery($db->getQuery()->clear()
-                ->select($db->quoteName('language'))
-                ->from($db->quoteName('#__content'))
-                ->where($db->quoteName('id') . ' = ' . $id))
-                ->loadResult();
-            if ($tag !== '*')
-            {
-                $data['associations'][$tag] = $id;
-            }
-        }
+        self::resolveAssociationData($data, static function ($association) {
+            return self::getArticleId($association);
+        }, '#__content', $db);
     }
 
     /**
@@ -614,14 +525,8 @@ class Content extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
-        if ($xml->xpath("//j2xml/content/id[text() = '" . $id . "']"))
-        {
-            return;
-        }
-
-        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $item = new Content($db);
-        if (!$item->load($id))
+        $item = static::loadExportItem('content', $id, $xml, $db);
+        if (!$item)
         {
             return;
         }
@@ -636,48 +541,17 @@ class Content extends Table
                 $params
             ]));
 
-        if ($item->access > 6)
-        {
-            Viewlevel::export($item->access, $xml, $options);
-        }
-
-        if (isset($options['categories']) && $options['categories'] && ($item->catid > 0))
-        {
-            Category::export($item->catid, $xml, $options);
-        }
-
-        if (isset($options['tags']) && $options['tags'])
-        {
-            $htags = new \Joomla\CMS\Helper\TagsHelper();
-            $itemtags = $htags->getItemTags('com_content.article', $id);
-            foreach ($itemtags as $itemtag)
-            {
-                Tag::export($itemtag->tag_id, $xml, $options);
-            }
-        }
+        self::exportItemViewlevel($item->access, $xml, $options);
+        self::exportItemCategory($item->catid, $xml, $options);
+        self::exportItemTags('com_content.article', $id, $xml, $options);
 
         if (isset($options['fields']) && $options['fields'])
         {
             self::exportFields($id, $xml, $options, $db);
         }
 
-        $doc = dom_import_simplexml($xml)->ownerDocument;
-        $fragment = $doc->createDocumentFragment();
-
-        $fragment->appendXML($item->toXML());
-        $doc->documentElement->appendChild($fragment);
-
-        if (isset($options['users']) && $options['users'])
-        {
-            if ($item->created_by)
-            {
-                User::export($item->created_by, $xml, $options);
-            }
-            if ($item->modified_by)
-            {
-                User::export($item->modified_by, $xml, $options);
-            }
-        }
+        self::appendItemXml($item, $xml);
+        self::exportItemUsers($item, $xml, $options);
 
         if (isset($options['images']) && $options['images'])
         {
@@ -707,20 +581,7 @@ class Content extends Table
     private static function exportImages ($item, $id, &$xml, $options, $db)
     {
         self::exportImagesFromText($item->introtext . $item->fulltext, $xml, $options);
-
-        $imgs = json_decode($item->images);
-        if ($imgs)
-        {
-            if (isset($imgs->image_fulltext))
-            {
-                Image::export($imgs->image_fulltext, $xml, $options);
-            }
-
-            if (isset($imgs->image_intro))
-            {
-                Image::export($imgs->image_intro, $xml, $options);
-            }
-        }
+        self::exportImagesFromJson($item->images, $xml, $options, ['image_fulltext', 'image_intro']);
 
         foreach($db->setQuery($db->getQuery()->clear()
             ->select($db->quoteName('v.value'))
@@ -837,37 +698,16 @@ class Content extends Table
             self::resetAutoIncrement($db, $newid + 1, '#__content', '#__content_id_seq');
         }
 
-        $query = $db->getQuery()->clear()
-            ->update($db->quoteName('#__content'))
-            ->set($db->quoteName('id') . ' = ' . $newid)
-            ->where($db->quoteName('id') . ' = ' . $id);
-        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-        $db->setQuery($query)->execute();
+        self::updateColumn($db, '#__content', 'id', $newid, $id);
 
         // Asset
-        $query = $db->getQuery()->clear()
-            ->update($db->quoteName('#__assets'))
-            ->set($db->quoteName('name') . ' = ' . $db->quote($context . '.' . $newid))
-            ->where($db->quoteName('name') . ' = ' . $db->quote($context . '.' . $id));
-        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-        $db->setQuery($query)->execute();
+        self::updateColumn($db, '#__assets', 'name', $db->quote($context . '.' . $newid), $db->quote($context . '.' . $id));
 
         // Workflow
-        $query = $db->getQuery()->clear()
-            ->update($db->quoteName('#__workflow_associations'))
-            ->set($db->quoteName('item_id') . ' = ' . $newid)
-            ->where($db->quoteName('item_id') . ' = ' . $id)
-            ->where($db->quoteName('extension') . ' = ' . $db->quote($context));
-        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-        $db->setQuery($query)->execute();
+        self::updateColumn($db, '#__workflow_associations', 'item_id', $newid, $id, [$db->quoteName('extension') . ' = ' . $db->quote($context)]);
 
         // Field
-        $query = $db->getQuery()->clear()
-            ->update($db->quoteName('#__fields_values'))
-            ->set($db->quoteName('item_id') . ' = ' . $newid)
-            ->where($db->quoteName('item_id') . ' = ' . $id);
-        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-        $db->setQuery($query)->execute();
+        self::updateColumn($db, '#__fields_values', 'item_id', $newid, $id);
 
         // History
         $query = $db->getQuery()->clear()
@@ -890,13 +730,13 @@ class Content extends Table
             ->where($db->quoteName('element') . ' = ' . $db->quote($option));
         $componentId = $db->setQuery($query)->loadResult();
 
-        $query = $db->getQuery()->clear()
-            ->update($db->quoteName('#__menu'))
-            ->set($db->quoteName('link') . ' = ' . $db->quote('index.php?option=' . $option . '&view=' . $view . '&id=' . $newid))
-            ->where($db->quoteName('link') . ' = ' . $db->quote('index.php?option=' . $option . '&view=' . $view . '&id=' . $id))
-            ->where($db->quoteName('component_id') . ' = ' . $componentId);
-        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-        $db->setQuery($query)->execute();
+        self::updateColumn(
+            $db,
+            '#__menu',
+            'link',
+            $db->quote('index.php?option=' . $option . '&view=' . $view . '&id=' . $newid),
+            $db->quote('index.php?option=' . $option . '&view=' . $view . '&id=' . $id),
+            [$db->quoteName('component_id') . ' = ' . $componentId]);
 
         // Language association
         if (\Joomla\CMS\Language\Associations::isEnabled())
@@ -916,14 +756,10 @@ class Content extends Table
             if ($key)
             {
                 // update id
-                $query = $db->getQuery()->clear()
-                    ->update($db->quoteName('#__associations'))
-                    ->set($db->quoteName('id') . ' = ' . $newid)
-                    ->where($db->quoteName('id') . ' = ' . $id)
-                    ->where($db->quoteName('key') . ' = ' . $db->quote($key))
-                    ->where($db->quoteName('context') . ' = ' . $db->quote($contextLanguage));
-                \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-                $db->setQuery($query)->execute();
+                self::updateColumn($db, '#__associations', 'id', $newid, $id, [
+                    $db->quoteName('key') . ' = ' . $db->quote($key),
+                    $db->quoteName('context') . ' = ' . $db->quote($contextLanguage)
+                ]);
 
                 // update key
                 $query = $db->getQuery()->clear()
@@ -943,39 +779,21 @@ class Content extends Table
                 \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(json_encode($associations), \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
                 $newkey   = md5(json_encode($associations)); // nosemgrep: weak-crypto — non-cryptographic lookup key for #__associations, matches Joomla core // NOSONAR
 
-                $query = $db->getQuery()->clear()
-                    ->update($db->quoteName('#__associations'))
-                    ->set($db->quoteName('key') . ' = ' . $db->quote($newkey))
-                    ->where($db->quoteName('key') . ' = ' . $db->quote($key))
-                    ->where($db->quoteName('context') . ' = ' . $db->quote($contextLanguage));
-                \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-                $db->setQuery($query)->execute();
+                self::updateColumn($db, '#__associations', 'key', $db->quote($newkey), $db->quote($key), [
+                    $db->quoteName('context') . ' = ' . $db->quote($contextLanguage)
+                ]);
             }
         }
 
         // Tags
-        $query = $db->getQuery()->clear()
-            ->update($db->quoteName('#__contentitem_tag_map'))
-            ->set($db->quoteName('content_item_id') . ' = ' . $newid)
-            ->where($db->quoteName('content_item_id') . ' = ' . $id)
-            ->where($db->quoteName('type_alias') . ' = ' . $db->quote($context));
-        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-        $db->setQuery($query)->execute();
+        self::updateColumn($db, '#__contentitem_tag_map', 'content_item_id', $newid, $id, [
+            $db->quoteName('type_alias') . ' = ' . $db->quote($context)
+        ]);
 
         // Frontpage
-        $query = $db->getQuery()->clear()
-            ->update($db->quoteName('#__content_frontpage'))
-            ->set($db->quoteName('content_id') . ' = ' . $newid)
-            ->where($db->quoteName('content_id') . ' = ' . $id);
-        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-        $db->setQuery($query)->execute();
+        self::updateColumn($db, '#__content_frontpage', 'content_id', $newid, $id);
 
         // Rating
-        $query = $db->getQuery()->clear()
-            ->update($db->quoteName('#__content_rating'))
-            ->set($db->quoteName('content_id') . ' = ' . $newid)
-            ->where($db->quoteName('content_id') . ' = ' . $id);
-        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
-        $db->setQuery($query)->execute();
+        self::updateColumn($db, '#__content_rating', 'content_id', $newid, $id);
     }
 }

@@ -62,7 +62,7 @@ class Menutype extends \eshiol\J2xml\Table\Table
             return;
         }
 
-        if ($xml->xpath("//j2xml/menutype/id[text() = '" . $item->id . "']"))
+        if (self::isExported($xml, 'menutype', $item->id))
         {
             return;
         }
@@ -85,11 +85,7 @@ class Menutype extends \eshiol\J2xml\Table\Table
             }
         }
 
-        $doc = dom_import_simplexml($xml)->ownerDocument;
-        $fragment = $doc->createDocumentFragment();
-
-        $fragment->appendXML($item->toXML());
-        $doc->documentElement->appendChild($fragment);
+        self::appendItemXml($item, $xml);
 
         /* export menus */
         $query = $db->getQuery()->clear()

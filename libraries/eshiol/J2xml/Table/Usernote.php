@@ -56,48 +56,21 @@ class Usernote extends \eshiol\J2xml\Table\Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        if ($xml->xpath("//j2xml/usernote/id[text() = '" . $id . "']"))
+        $item = static::loadExportItem('usernote', $id, $xml, $db);
+        if (!$item)
         {
             return;
         }
 
-        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $item = new Usernote($db);
-        if (!$item->load($id))
-        {
-            return;
-        }
-
-        $doc = dom_import_simplexml($xml)->ownerDocument;
-        $fragment = $doc->createDocumentFragment();
-
-        $fragment->appendXML($item->toXML());
-        $doc->documentElement->appendChild($fragment);
-
-        if (isset($options['users']) && $options['users'])
-        {
-            if ($item->created_user_id)
-            {
-                User::export($item->created_user_id, $xml, $options);
-            }
-            if ($item->modified_user_id)
-            {
-                User::export($item->modified_user_id, $xml, $options);
-            }
-        }
+        self::appendItemXml($item, $xml);
+        self::exportItemUsers($item, $xml, $options, ['created_user_id', 'modified_user_id']);
 
         if (isset($options['images']) && $options['images'])
         {
             self::exportImagesFromText(html_entity_decode($item->body), $xml, $options);
         }
 
-        if (isset($options['categories']) && $options['categories'])
-        {
-            if ($item->catid > 0)
-            {
-                Category::export($item->catid, $xml, $options);
-            }
-        }
+        self::exportItemCategory($item->catid, $xml, $options);
     }
 
     /**
@@ -149,14 +122,7 @@ class Usernote extends \eshiol\J2xml\Table\Table
 //              }
 
                 $table->bind($data);
-                if ($table->store())
-                {
-                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERNOTE_IMPORTED', $data['subject']), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
-                }
-                else
-                {
-                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_USERNOTE_NOT_IMPORTED', $data['subject'], $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
-                }
+                self::storeImportedTable($table, 'LIB_J2XML_MSG_USERNOTE_IMPORTED', 'LIB_J2XML_MSG_USERNOTE_NOT_IMPORTED', $data['subject']);
             }
 /*
         }

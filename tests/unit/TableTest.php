@@ -477,4 +477,148 @@ final class TableTest extends TestCase
 
         self::assertFalse(Tag::convertPathsToIds(['news'], $db));
     }
+
+    // ------------------------------------------------------------------
+    // Shared export/import helpers
+    // ------------------------------------------------------------------
+
+    private function querySpy(): \Joomla\Database\QueryInterface
+    {
+        return new class implements \Joomla\Database\QueryInterface {
+            public array $parts = [];
+
+            public function clear(?string $clause = null): self { return $this; }
+            public function select($value): self { $this->parts[] = 'SELECT ' . $value; return $this; }
+            public function from($value): self { $this->parts[] = 'FROM ' . $value; return $this; }
+            public function join($type, $value): self { $this->parts[] = $type . ' JOIN ' . $value; return $this; }
+            public function where($value): self { $this->parts[] = 'WHERE ' . (is_array($value) ? implode(' AND ', $value) : $value); return $this; }
+            public function concatenate(array $columns, string $separator): string { return 'CONCAT(' . implode(',', $columns) . ')'; }
+            public function __toString(): string { return implode(' ', $this->parts); }
+        };
+    }
+
+    private function tableWithDatabase(DatabaseInterface $db): Table
+    {
+        return new class($db) extends Table {
+            private DatabaseInterface $database;
+
+            public function __construct(DatabaseInterface $db)
+            {
+                $this->database = $db;
+            }
+
+            public function getDatabase(): DatabaseInterface
+            {
+                return $this->database;
+            }
+        };
+    }
+
+    public function testBuildTagAliasUsesSharedTagQuery(): void
+    {
+        $query = $this->querySpy();
+        $db = $this->createMock(DatabaseInterface::class);
+        $db->method('getQuery')->willReturn($query);
+        $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
+        $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
+
+        $table = $this->tableWithDatabase($db);
+        $table->id = 12;
+        $method = new ReflectionMethod(Table::class, 'buildTagAlias');
+        $method->invoke($table, 'com_content.article');
+
+        $aliases = new ReflectionProperty(Table::class, 'aliases');
+        $sql = $aliases->getValue($table)['tag'];
+        self::assertStringContainsString('SELECT t.path', $sql);
+        self::assertStringContainsString('#__contentitem_tag_map', $sql);
+        self::assertStringContainsString("type_alias = 'com_content.article'", $sql);
+        self::assertStringContainsString("m.content_item_id = '12'", $sql);
+    }
+
+    public function testBuildAssociationAliasUsesSharedAssociationQuery(): void
+    {
+        $query = $this->querySpy();
+        $db = $this->createMock(DatabaseInterface::class);
+        $db->method('getQuery')->willReturn($query);
+        $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
+        $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
+
+        $table = $this->tableWithDatabase($db);
+        $table->id = 12;
+        $method = new ReflectionMethod(Table::class, 'buildAssociationAlias');
+        $method->invoke($table, '#__content', 'com_content.item');
+
+        $aliases = new ReflectionProperty(Table::class, 'aliases');
+        $sql = $aliases->getValue($table)['association'];
+        self::assertStringContainsString('#__associations', $sql);
+        self::assertStringContainsString('#__content', $sql);
+        self::assertStringContainsString('#__categories', $sql);
+        self::assertStringContainsString("asso1.context = 'com_content.item'", $sql);
+        self::assertStringContainsString('asso1.id = 12', $sql);
+    }
+
+    public function testIsExportedDetectsExistingItem(): void
+    {
+        $xml = new SimpleXMLElement('<j2xml><content><id>12</id></content></j2xml>');
+        self::assertTrue(self::invokeStatic('isExported', [&$xml, 'content', 12]));
+        self::assertFalse(self::invokeStatic('isExported', [&$xml, 'content', 13]));
+    }
+
+    public function testAppendItemXmlAddsSerializedItem(): void
+    {
+        $xml = new SimpleXMLElement('<j2xml />');
+        $item = $this->tableInstance();
+        $item->id = 7;
+        $item->title = 'Shared helper';
+
+        self::invokeStatic('appendItemXml', [$item, &$xml]);
+
+        self::assertSame('7', (string) $xml->table->id);
+        self::assertStringContainsString('Shared helper', $xml->asXML());
+    }
+
+    public function testResolveAssociationDataNormalizesAssociationList(): void
+    {
+        $query = $this->querySpy();
+        $db = $this->createMock(DatabaseInterface::class);
+        $db->method('getQuery')->willReturn($query);
+        $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
+        $db->method('setQuery')->willReturnSelf();
+        $db->method('loadResult')->willReturn('en-GB');
+
+        $data = ['associationlist' => ['association' => ['news/article']]];
+        self::invokeStatic('resolveAssociationData', [&$data, static fn (): int => 25, '#__content', $db]);
+
+        self::assertSame(['en-GB' => 25], $data['associations']);
+        self::assertArrayNotHasKey('associationlist', $data);
+    }
+
+    public function testResolveAssociationDataIgnoresStarLanguage(): void
+    {
+        $query = $this->querySpy();
+        $db = $this->createMock(DatabaseInterface::class);
+        $db->method('getQuery')->willReturn($query);
+        $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
+        $db->method('setQuery')->willReturnSelf();
+        $db->method('loadResult')->willReturn('*');
+
+        $data = ['association' => 'news/article'];
+        self::invokeStatic('resolveAssociationData', [&$data, static fn (): int => 25, '#__content', $db]);
+
+        self::assertSame([], $data['associations']);
+        self::assertArrayNotHasKey('association', $data);
+    }
+
+    public function testGetCategorisedItemIdResolvesPath(): void
+    {
+        $query = $this->querySpy();
+        $db = $this->createMock(DatabaseInterface::class);
+        $db->method('getQuery')->willReturn($query);
+        $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
+        $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
+        $db->method('setQuery')->willReturnSelf();
+        $db->method('loadResult')->willReturn(17);
+
+        self::assertSame(17, Table::getArticleId('news/article', 0, $db));
+    }
 }

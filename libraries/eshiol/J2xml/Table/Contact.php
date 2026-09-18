@@ -67,28 +67,8 @@ class Contact extends Table
             ->from($this->getDatabase()->quoteName('#__users'))
             ->where($this->getDatabase()->quoteName('id') . ' = ' . (int) $this->user_id);
 
-        // $this->aliases['tag']='SELECT t.path FROM #__tags t,
-        // #__contentitem_tag_map m WHERE type_alias = "com_contact.contact"
-        // AND t.id = m.tag_id AND m.content_item_id = '. (int)$this->id;
-        $this->aliases['tag'] = (string) $this->getDatabase()->getQuery()->clear()
-            ->select($this->getDatabase()->quoteName('t.path'))
-            ->from($this->getDatabase()->quoteName('#__tags', 't'))
-            ->from($this->getDatabase()->quoteName('#__contentitem_tag_map', 'm'))
-            ->where($this->getDatabase()->quoteName('type_alias') . ' = ' . $this->getDatabase()->quote($this->type_alias))
-            ->where($this->getDatabase()->quoteName('t.id') . ' = ' . $this->getDatabase()->quoteName('m.tag_id'))
-            ->where($this->getDatabase()->quoteName('m.content_item_id') . ' = ' . $this->getDatabase()->quote((string) $this->id));
-
-        $query = $this->getDatabase()->getQuery()->clear();
-        $this->aliases['association'] = (string) $query
-            ->select($query->concatenate([$this->getDatabase()->quoteName('cc.path'), $this->getDatabase()->quoteName('c.alias')], '/'))
-            ->from($this->getDatabase()->quoteName('#__associations', 'asso1'))
-            ->join('INNER', $this->getDatabase()->quoteName('#__associations', 'asso2') . ' ON ' . $this->getDatabase()->quoteName('asso1.key') . ' = ' . $this->getDatabase()->quoteName('asso2.key'))
-            ->join('INNER', $this->getDatabase()->quoteName('#__contact_details', 'c') . ' ON ' . $this->getDatabase()->quoteName('asso2.id') . ' = ' . $this->getDatabase()->quoteName('c.id'))
-            ->join('INNER', $this->getDatabase()->quoteName('#__categories', 'cc') . ' ON ' . $this->getDatabase()->quoteName('c.catid') . ' = ' . $this->getDatabase()->quoteName('cc.id'))
-            ->where([
-                $this->getDatabase()->quoteName('asso1.id') . ' = ' . (int) $this->id,
-                $this->getDatabase()->quoteName('asso1.context') . ' = ' . $this->getDatabase()->quote('com_contact.item'),
-                $this->getDatabase()->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
+        $this->buildTagAlias($this->type_alias);
+        $this->buildAssociationAlias('#__contact_details', 'com_contact.item');
 
         return parent::toXML($mapKeysToText);
     }
@@ -112,35 +92,14 @@ class Contact extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        if ($xml->xpath("//j2xml/contact/id[text() = '" . $id . "']"))
+        $item = static::loadExportItem('contact', $id, $xml, $db);
+        if (!$item)
         {
             return;
         }
 
-        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $item = new Contact($db);
-        if (!$item->load($id))
-        {
-            return;
-        }
-
-        $doc = dom_import_simplexml($xml)->ownerDocument;
-        $fragment = $doc->createDocumentFragment();
-
-        $fragment->appendXML($item->toXML());
-        $doc->documentElement->appendChild($fragment);
-
-        if (isset($options['users']) && $options['users'])
-        {
-            if ($item->created_by)
-            {
-                User::export($item->created_by, $xml, $options);
-            }
-            if ($item->modified_by)
-            {
-                User::export($item->modified_by, $xml, $options);
-            }
-        }
+        self::appendItemXml($item, $xml);
+        self::exportItemUsers($item, $xml, $options);
 
         if (isset($options['images']) && $options['images'])
         {
@@ -150,32 +109,11 @@ class Contact extends Table
             }
         }
 
-        if (isset($options['tags']) && $options['tags'])
-        {
-            $htags = new \Joomla\CMS\Helper\TagsHelper();
-            $itemtags = $htags->getItemTags('com_contact.contact', $id);
-            foreach ($itemtags as $itemtag)
-            {
-                Tag::export($itemtag->tag_id, $xml, $options);
-            }
-        }
-
-        if (isset($options['categories']) && $options['categories'] && ($item->catid > 0))
-        {
-            Category::export($item->catid, $xml, $options);
-        }
+        self::exportItemTags('com_contact.contact', $id, $xml, $options);
+        self::exportItemCategory($item->catid, $xml, $options);
 
         // associated contacts
-        $query = $db->getQuery()->clear()
-            ->select($db->quoteName('c.id'))
-            ->from($db->quoteName('#__associations', 'asso1'))
-            ->join('INNER', $db->quoteName('#__associations', 'asso2') . ' ON ' . $db->quoteName('asso1.key') . ' = ' . $db->quoteName('asso2.key'))
-            ->join('INNER', $db->quoteName('#__contact_details', 'c') . ' ON ' . $db->quoteName('asso2.id') . ' = ' . $db->quoteName('c.id'))
-            ->join('INNER', $db->quoteName('#__categories', 'cc') . ' ON ' . $db->quoteName('c.catid') . ' = ' . $db->quoteName('cc.id'))
-            ->where([
-                $db->quoteName('asso1.id') . ' = ' . (int) $id,
-                $db->quoteName('asso1.context') . ' = ' . $db->quote('com_contact.item'),
-                $db->quoteName('asso2.id') . ' <> ' . (int) $id]);
+        $query = $item->buildAssociationQuery('#__contact_details', 'com_contact.item', $db->quoteName('c.id'));
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
 
         $ids_contact = $db->setQuery($query)->loadColumn();
@@ -265,16 +203,11 @@ class Contact extends Table
                     $data['params'] = '';
                 }
 
-                $table->bind($data);
-                if ($table->store())
+                if (self::bindAndStore($table, $data, 'LIB_J2XML_MSG_CONTACT_NOT_IMPORTED', 'name'))
                 {
                     self::setAssociations($table->id, $table->language, $data['associations'], 'com_contact.item');
 
                     \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_CONTACT_IMPORTED', $table->name), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
-                }
-                else
-                {
-                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_CONTACT_NOT_IMPORTED', $data['name'], $table->getError()), \Joomla\CMS\Log\Log::ERROR, 'lib_j2xml'));
                 }
 
                 $table = null;
@@ -293,53 +226,9 @@ class Contact extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-
-        $params->set('extension', 'com_contact');
-        parent::prepareData($record, $data, $params);
-
-        if (empty($data['associations']))
-        {
-            $data['associations'] = [];
-        }
-
-        if (isset($data['associationlist']))
-        {
-            foreach ($data['associationlist']['association'] as $association)
-            {
-                $id = self::getContactId($association);
-                if ($id)
-                {
-                    $tag = $db->setQuery($db->getQuery()->clear()
-                        ->select($db->quoteName('language'))
-                        ->from($db->quoteName('#__contact_details'))
-                        ->where($db->quoteName('id') . ' = ' . $id))
-                        ->loadResult();
-                    if ($tag !== '*')
-                    {
-                        $data['associations'][$tag] = $id;
-                    }
-                }
-            }
-            unset($data['associationlist']);
-        }
-        elseif (isset($data['association']))
-        {
-            $id = self::getContactId($data['association']);
-            if ($id)
-            {
-                $tag = $db->setQuery($db->getQuery()->clear()
-                    ->select($db->quoteName('language'))
-                    ->from($db->quoteName('#__contact_details'))
-                    ->where($db->quoteName('id') . ' = ' . $id))
-                    ->loadResult();
-                if ($tag !== '*')
-                {
-                    $data['associations'][$tag] = $id;
-                }
-            }
-            unset($data['association']);
-        }
+        self::prepareAssociatedData($record, $data, $params, 'com_contact', static function ($association) {
+            return self::getContactId($association);
+        }, '#__contact_details');
 
         // if user doesn't exist remove the link
         if (isset($data['user_id']))

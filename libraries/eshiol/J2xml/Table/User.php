@@ -540,15 +540,8 @@ class User extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        if ($xml->xpath("//j2xml/user/id[text() = '" . $id . "']"))
-        {
-            return;
-        }
-
-        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-
-        $item = new User($db);
-        if (!$item->load($id))
+        $item = static::loadExportItem('user', $id, $xml, $db);
+        if (!$item)
         {
             return;
         }
@@ -560,11 +553,7 @@ class User extends Table
             array_push($item->excluded, 'otep');
         }
 
-        $doc = dom_import_simplexml($xml)->ownerDocument;
-        $fragment = $doc->createDocumentFragment();
-
-        $fragment->appendXML($item->toXML());
-        $doc->documentElement->appendChild($fragment);
+        self::appendItemXml($item, $xml);
 
         /*$query = $db->getQuery()->clear()
             ->select($db->quoteName('l.id'))

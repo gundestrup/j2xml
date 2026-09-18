@@ -211,6 +211,502 @@ class Table extends \Joomla\CMS\Table\Table
     }
 
     /**
+     * Build the SQL alias query for tags assigned to an item.
+     *
+     * @param string $typeAlias
+     *          the Joomla tag type alias
+     *
+     * @return void
+     * @since 4.5.4
+     */
+    protected function buildTagAlias(string $typeAlias): void
+    {
+        $db = $this->getDatabase();
+        $this->aliases['tag'] = (string) $db->getQuery()->clear()
+            ->select($db->quoteName('t.path'))
+            ->from($db->quoteName('#__tags', 't'))
+            ->from($db->quoteName('#__contentitem_tag_map', 'm'))
+            ->where($db->quoteName('type_alias') . ' = ' . $db->quote($typeAlias))
+            ->where($db->quoteName('t.id') . ' = ' . $db->quoteName('m.tag_id'))
+            ->where($db->quoteName('m.content_item_id') . ' = ' . $db->quote((string) $this->id));
+    }
+
+    /**
+     * Build a standard association query for a category-backed item.
+     *
+     * @param string $table
+     *          the item database table
+     * @param string $context
+     *          the Joomla associations context
+     * @param string|null $select
+     *          the select expression; defaults to the item path
+     *
+     * @return mixed the association query
+     * @since 4.5.4
+     */
+    protected function buildAssociationQuery(string $table, string $context, ?string $select = null)
+    {
+        $db = $this->getDatabase();
+        $query = $db->getQuery()->clear();
+        $select = $select ?? $query->concatenate([$db->quoteName('cc.path'), $db->quoteName('c.alias')], '/');
+
+        return $query
+            ->select($select)
+            ->from($db->quoteName('#__associations', 'asso1'))
+            ->join('INNER', $db->quoteName('#__associations', 'asso2') . ' ON ' . $db->quoteName('asso1.key') . ' = ' . $db->quoteName('asso2.key'))
+            ->join('INNER', $db->quoteName($table, 'c') . ' ON ' . $db->quoteName('asso2.id') . ' = ' . $db->quoteName('c.id'))
+            ->join('INNER', $db->quoteName('#__categories', 'cc') . ' ON ' . $db->quoteName('c.catid') . ' = ' . $db->quoteName('cc.id'))
+            ->where([
+                $db->quoteName('asso1.id') . ' = ' . (int) $this->id,
+                $db->quoteName('asso1.context') . ' = ' . $db->quote($context),
+                $db->quoteName('asso2.id') . ' <> ' . (int) $this->id]);
+    }
+
+    /**
+     * Build the standard association XML alias for a category-backed item.
+     *
+     * @param string $table
+     *          the item database table
+     * @param string $context
+     *          the Joomla associations context
+     *
+     * @return void
+     * @since 4.5.4
+     */
+    protected function buildAssociationAlias(string $table, string $context): void
+    {
+        $this->aliases['association'] = (string) $this->buildAssociationQuery($table, $context);
+    }
+
+    /**
+     * Check whether an item has already been exported.
+     *
+     * @param \SimpleXMLElement $xml
+     *          the export document
+     * @param string $element
+     *          the item XML element name
+     * @param mixed $id
+     *          the item id
+     *
+     * @return boolean true when the item is already present
+     * @since 4.5.4
+     */
+    protected static function isExported(&$xml, string $element, $id): bool
+    {
+        return (bool) $xml->xpath("//j2xml/{$element}/id[text() = '" . $id . "']");
+    }
+
+    /**
+     * Load an item for export unless it is already present in the XML.
+     *
+     * @param string $element
+     *          the item XML element name
+     * @param mixed $id
+     *          the item id
+     * @param \SimpleXMLElement $xml
+     *          the export document
+     * @param \Joomla\Database\DatabaseInterface|null $db
+     *          the database connector, populated when null
+     *
+     * @return static|null the loaded item, or null when unavailable/exported
+     * @since 4.5.4
+     */
+    protected static function loadExportItem(string $element, $id, &$xml, &$db)
+    {
+        if (self::isExported($xml, $element, $id))
+        {
+            return null;
+        }
+
+        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $item = new static($db); // @phpstan-ignore new.static
+        if (!$item->load($id))
+        {
+            return null;
+        }
+
+        return $item;
+    }
+
+    /**
+     * Append an item's serialized XML to the export document.
+     *
+     * @param Table $item
+     *          the item being exported
+     * @param \SimpleXMLElement $xml
+     *          the export document
+     *
+     * @return void
+     * @since 4.5.4
+     */
+    protected static function appendItemXml($item, &$xml): void
+    {
+        $doc = dom_import_simplexml($xml)->ownerDocument;
+        $fragment = $doc->createDocumentFragment();
+
+        $fragment->appendXML($item->toXML());
+        $doc->documentElement->appendChild($fragment);
+    }
+
+    /**
+     * Export the users referenced by an item.
+     *
+     * @param Table $item
+     *          the item being exported
+     * @param \SimpleXMLElement $xml
+     *          the export document
+     * @param array $options
+     *          export options
+     * @param array $fields
+     *          user id property names to export
+     *
+     * @return void
+     * @since 4.5.4
+     */
+    protected static function exportItemUsers($item, &$xml, $options, array $fields = ['created_by', 'modified_by']): void
+    {
+        if (empty($options['users']))
+        {
+            return;
+        }
+
+        foreach ($fields as $field)
+        {
+            if (!empty($item->$field))
+            {
+                User::export($item->$field, $xml, $options);
+            }
+        }
+    }
+
+    /**
+     * Export an item's category when category export is enabled.
+     *
+     * @param mixed $catid
+     *          the category id
+     * @param \SimpleXMLElement $xml
+     *          the export document
+     * @param array $options
+     *          export options
+     *
+     * @return void
+     * @since 4.5.4
+     */
+    protected static function exportItemCategory($catid, &$xml, $options): void
+    {
+        if (!empty($options['categories']) && ($catid > 0))
+        {
+            Category::export($catid, $xml, $options);
+        }
+    }
+
+    /**
+     * Export a non-core view level.
+     *
+     * @param mixed $access
+     *          the access level id
+     * @param \SimpleXMLElement $xml
+     *          the export document
+     * @param array $options
+     *          export options
+     *
+     * @return void
+     * @since 4.5.4
+     */
+    protected static function exportItemViewlevel($access, &$xml, $options): void
+    {
+        if ($access > 6)
+        {
+            Viewlevel::export($access, $xml, $options);
+        }
+    }
+
+    /**
+     * Export all tags assigned to an item when tag export is enabled.
+     *
+     * @param string $typeAlias
+     *          the Joomla tag type alias
+     * @param int $id
+     *          the item id
+     * @param \SimpleXMLElement $xml
+     *          the export document
+     * @param array $options
+     *          export options
+     *
+     * @return void
+     * @since 4.5.4
+     */
+    protected static function exportItemTags(string $typeAlias, $id, &$xml, $options): void
+    {
+        if (empty($options['tags']))
+        {
+            return;
+        }
+
+        $htags = new \Joomla\CMS\Helper\TagsHelper();
+        foreach ($htags->getItemTags($typeAlias, $id) as $itemtag)
+        {
+            Tag::export($itemtag->tag_id, $xml, $options);
+        }
+    }
+
+    /**
+     * Export selected image fields from a JSON object.
+     *
+     * @param string $json
+     *          the JSON value containing image properties
+     * @param \SimpleXMLElement $xml
+     *          the export document
+     * @param array $options
+     *          export options
+     * @param array $fields
+     *          JSON property names to export
+     *
+     * @return void
+     * @since 4.5.4
+     */
+    protected static function exportImagesFromJson($json, &$xml, $options, array $fields): void
+    {
+        $images = json_decode($json);
+        if (!$images)
+        {
+            return;
+        }
+
+        foreach ($fields as $field)
+        {
+            if (isset($images->$field))
+            {
+                Image::export($images->$field, $xml, $options);
+            }
+        }
+    }
+
+    /**
+     * Prepare item data and resolve exported association paths.
+     *
+     * @param \SimpleXMLElement $record
+     *          the XML record being imported
+     * @param array $data
+     *          the item data being imported
+     * @param \Joomla\Registry\Registry $params
+     *          the import parameters
+     * @param string $extension
+     *          the item extension
+     * @param callable $resolver
+     *          resolves an exported association path to a local item id
+     * @param string $table
+     *          the item database table
+     *
+     * @return void
+     * @since 4.5.4
+     */
+    protected static function prepareAssociatedData($record, &$data, $params, string $extension, callable $resolver, string $table): void
+    {
+        $params->set('extension', $extension);
+        self::prepareData($record, $data, $params);
+
+        $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        self::resolveAssociationData($data, $resolver, $table, $db);
+    }
+
+    /**
+     * Resolve exported association paths to local item ids keyed by language.
+     *
+     * @param array $data
+     *          the item data being imported
+     * @param callable $resolver
+     *          resolves an exported association path to a local item id
+     * @param string $table
+     *          the item database table
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     *
+     * @return void
+     * @since 4.5.4
+     */
+    protected static function resolveAssociationData(&$data, callable $resolver, string $table, $db): void
+    {
+        if (empty($data['associations']))
+        {
+            $data['associations'] = [];
+        }
+
+        if (isset($data['associationlist']))
+        {
+            $associations = $data['associationlist']['association'] ?? [];
+            unset($data['associationlist']);
+        }
+        elseif (isset($data['association']))
+        {
+            $associations = [$data['association']];
+            unset($data['association']);
+        }
+        else
+        {
+            return;
+        }
+
+        foreach ($associations as $association)
+        {
+            $id = $resolver($association);
+            if (!$id)
+            {
+                continue;
+            }
+
+            $language = $db->setQuery($db->getQuery()->clear()
+                ->select($db->quoteName('language'))
+                ->from($db->quoteName($table))
+                ->where($db->quoteName('id') . ' = ' . (int) $id))
+                ->loadResult();
+            if ($language !== '*')
+            {
+                $data['associations'][$language] = (int) $id;
+            }
+        }
+    }
+
+    /**
+     * Store an imported table and log the result.
+     *
+     * @param \Joomla\CMS\Table\Table $table
+     *          the table being saved
+     * @param string $successKey
+     *          the language key for success messages
+     * @param string $failureKey
+     *          the language key for failure messages
+     * @param string $label
+     *          the item label used in messages
+     * @param string|null $successLabel
+     *          the item label used in success messages; defaults to $label
+     *
+     * @return boolean true when the table was stored
+     * @since 4.5.4
+     */
+    protected static function storeImportedTable($table, string $successKey, string $failureKey, string $label, ?string $successLabel = null): bool
+    {
+        if ($table->store())
+        {
+            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(
+                \Joomla\CMS\Language\Text::sprintf($successKey, $successLabel ?? $label),
+                \Joomla\CMS\Log\Log::INFO,
+                'lib_j2xml'));
+            return true;
+        }
+
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(
+            \Joomla\CMS\Language\Text::sprintf($failureKey, $label, $table->getError()),
+            \Joomla\CMS\Log\Log::ERROR,
+            'lib_j2xml'));
+
+        return false;
+    }
+
+    /**
+     * Bind imported data, store the table and log a failure.
+     *
+     * @param \Joomla\CMS\Table\Table $table
+     *          the table being saved
+     * @param array $data
+     *          the imported item data
+     * @param string $failureKey
+     *          the language key for failure messages
+     * @param string $failureField
+     *          the data field used as the item label in failures
+     *
+     * @return boolean true when the table was stored
+     * @since 4.5.4
+     */
+    protected static function bindAndStore($table, array $data, string $failureKey, string $failureField = 'title'): bool
+    {
+        $table->bind($data);
+        if ($table->store())
+        {
+            return true;
+        }
+
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(
+            \Joomla\CMS\Language\Text::sprintf($failureKey, $data[$failureField] ?? '', $table->getError()),
+            \Joomla\CMS\Log\Log::ERROR,
+            'lib_j2xml'));
+
+        return false;
+    }
+
+    /**
+     * Update a column to a new value, optionally with extra conditions.
+     *
+     * @param \Joomla\Database\DatabaseInterface $db
+     *          the database connector
+     * @param string $table
+     *          the table to update
+     * @param string $column
+     *          the column to update and match
+     * @param mixed $newValue
+     *          the SQL expression for the new value
+     * @param mixed $oldValue
+     *          the SQL expression for the old value
+     * @param array $conditions
+     *          additional WHERE conditions
+     *
+     * @return void
+     * @since 4.5.4
+     */
+    protected static function updateColumn($db, string $table, string $column, $newValue, $oldValue, array $conditions = []): void
+    {
+        $query = $db->getQuery()->clear()
+            ->update($db->quoteName($table))
+            ->set($db->quoteName($column) . ' = ' . $newValue)
+            ->where($db->quoteName($column) . ' = ' . $oldValue);
+        foreach ($conditions as $condition)
+        {
+            $query->where($condition);
+        }
+
+        \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'lib_j2xml'));
+        $db->setQuery($query)->execute();
+    }
+
+    /**
+     * Resolve a category-backed item path to a local item id.
+     *
+     * @param mixed $path
+     *          the exported item path or numeric id
+     * @param string $table
+     *          the item database table
+     * @param string $extension
+     *          the category extension
+     * @param int $defaultId
+     *          the id to return when no item exists
+     * @param \Joomla\Database\DatabaseInterface|null $db
+     *          the database connector
+     *
+     * @return mixed the local item id or the default
+     * @since 4.5.4
+     */
+    protected static function getCategorisedItemId($path, string $table, string $extension, $defaultId = 0, $db = null)
+    {
+        if (is_numeric($path))
+        {
+            return $path;
+        }
+
+        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $i = strrpos($path, '/');
+        $query = $db->getQuery()->clear()
+            ->select($db->quoteName('c.id'))
+            ->from($db->quoteName($table, 'c'))
+            ->join('INNER', $db->quoteName('#__categories', 'cc') . ' ON ' . $db->quoteName('c.catid') . ' = ' . $db->quoteName('cc.id'))
+            ->where($db->quoteName('cc.extension') . ' = ' . $db->quote($extension))
+            ->where($db->quoteName('c.alias') . ' = ' . $db->quote(substr($path, $i + 1)))
+            ->where($db->quoteName('cc.path') . ' = ' . $db->quote(substr($path, 0, $i)));
+        $id = $db->setQuery($query)->loadResult();
+
+        return $id ?: $defaultId;
+    }
+
+    /**
      * Method to load a row from the database by primary key and bind the fields
      * to the JTable instance properties.
      *
@@ -658,29 +1154,7 @@ class Table extends \Joomla\CMS\Table\Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        if (is_numeric($article))
-        {
-            $articleId = $article;
-        }
-        else
-        {
-            $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-            $i = strrpos($article, '/');
-            $query = $db->getQuery()->clear()
-                ->select($db->quoteName('c.id'))
-                ->from($db->quoteName('#__content', 'c'))
-                ->join('INNER', $db->quoteName('#__categories', 'cc') . ' ON ' . $db->quoteName('c.catid') . ' = ' . $db->quoteName('cc.id'))
-                ->where($db->quoteName('cc.extension') . ' = ' . $db->quote('com_content'))
-                ->where($db->quoteName('c.alias') . ' = ' . $db->quote(substr($article, $i + 1)))
-                ->where($db->quoteName('cc.path') . ' = ' . $db->quote(substr($article, 0, $i)));
-            $articleId = $db->setQuery($query)->loadResult();
-            if (!$articleId)
-            {
-                $articleId = $defaultArticleId;
-            }
-        }
-
-        return $articleId;
+        return self::getCategorisedItemId($article, '#__content', 'com_content', $defaultArticleId, $db);
     }
 
     /**
@@ -1337,30 +1811,7 @@ class Table extends \Joomla\CMS\Table\Table
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($contact, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        if (is_numeric($contact))
-        {
-            $contactId = $contact;
-        }
-        else
-        {
-            $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-            $i = strrpos($contact, '/');
-            $query = $db->getQuery()->clear()
-                ->select($db->quoteName('c.id'))
-                ->from($db->quoteName('#__contact_details', 'c'))
-                ->join('INNER', $db->quoteName('#__categories', 'cc') . ' ON ' . $db->quoteName('c.catid') . ' = ' . $db->quoteName('cc.id'))
-                ->where($db->quoteName('cc.extension') . ' = ' . $db->quote('com_contact'))
-                ->where($db->quoteName('c.alias') . ' = ' . $db->quote(substr($contact, $i + 1)))
-                ->where($db->quoteName('cc.path') . ' = ' . $db->quote(substr($contact, 0, $i)));
-            \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry($query, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
-            $contactId = $db->setQuery($query)->loadResult();
-            if (!$contactId)
-            {
-                $contactId = $defaultContactId;
-            }
-        }
-
-        return $contactId;
+        return self::getCategorisedItemId($contact, '#__contact_details', 'com_contact', $defaultContactId, $db);
     }
 
     /**
@@ -1379,28 +1830,6 @@ class Table extends \Joomla\CMS\Table\Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        if (is_numeric($weblink))
-        {
-            $weblinkId = $weblink;
-        }
-        else
-        {
-            $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-            $i = strrpos($weblink, '/');
-            $query = $db->getQuery()->clear()
-                ->select($db->quoteName('c.id'))
-                ->from($db->quoteName('#__weblinks', 'c'))
-                ->join('INNER', $db->quoteName('#__categories', 'cc') . ' ON ' . $db->quoteName('c.catid') . ' = ' . $db->quoteName('cc.id'))
-                ->where($db->quoteName('cc.extension') . ' = ' . $db->quote('com_weblinks'))
-                ->where($db->quoteName('c.alias') . ' = ' . $db->quote(substr($weblink, $i + 1)))
-                ->where($db->quoteName('cc.path') . ' = ' . $db->quote(substr($weblink, 0, $i)));
-            $weblinkId = $db->setQuery($query)->loadResult();
-            if (!$weblinkId)
-            {
-                $weblinkId = $defaultWeblinkId;
-            }
-        }
-
-        return $weblinkId;
+        return self::getCategorisedItemId($weblink, '#__weblinks', 'com_weblinks', $defaultWeblinkId, $db);
     }
 }

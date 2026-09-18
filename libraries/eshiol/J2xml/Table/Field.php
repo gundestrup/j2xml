@@ -164,17 +164,8 @@ class Field extends Table
 
                 // Note: could trigger onContentBeforeSave event here.
                 $table->bind($data);
-                if ($table->store())
-                {
-                    \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FIELD_IMPORTED', $table->title), \Joomla\CMS\Log\Log::INFO, 'lib_j2xml'));
-                    // Note: could trigger onContentAfterSave event here.
-                }
-                else
-                {
-                    \Joomla\CMS\Log\Log::add(
-                            new \Joomla\CMS\Log\LogEntry(\Joomla\CMS\Language\Text::sprintf('LIB_J2XML_MSG_FIELD_NOT_IMPORTED', $data['title'], $table->getError()), \Joomla\CMS\Log\Log::ERROR,
-                                    'lib_j2xml'));
-                }
+                self::storeImportedTable($table, 'LIB_J2XML_MSG_FIELD_IMPORTED', 'LIB_J2XML_MSG_FIELD_NOT_IMPORTED', $data['title'], $table->title);
+                // Note: could trigger onContentAfterSave event here.
                 $table = null;
             }
         }
@@ -252,40 +243,20 @@ class Field extends Table
     {
         \Joomla\CMS\Log\Log::add(new \Joomla\CMS\Log\LogEntry(__METHOD__, \Joomla\CMS\Log\Log::DEBUG, 'com_j2xml'));
 
-        if ($xml->xpath("//j2xml/field/id[text() = '" . $id . "']"))
+        $item = static::loadExportItem('field', $id, $xml, $db);
+        if (!$item)
         {
             return;
         }
 
-        $db = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $item = new Field($db);
-        if (!$item->load($id))
-        {
-            return;
-        }
-
-        $doc = dom_import_simplexml($xml)->ownerDocument;
-        $fragment = $doc->createDocumentFragment();
-
-        $fragment->appendXML($item->toXML());
-        $doc->documentElement->appendChild($fragment);
+        self::appendItemXml($item, $xml);
 
         if ($item->group_id)
         {
             Fieldgroup::export($item->group_id, $xml, $options);
         }
 
-        if (isset($options['users']) && $options['users'])
-        {
-            if ($item->created_user_id)
-            {
-                User::export($item->created_user_id, $xml, $options);
-            }
-            if ($item->modified_by)
-            {
-                User::export($item->modified_by, $xml, $options);
-            }
-        }
+        self::exportItemUsers($item, $xml, $options, ['created_user_id', 'modified_by']);
 
         if (isset($options['categories']) && $options['categories'])
         {
