@@ -2,8 +2,13 @@
     "json.schemaDownload.enabled": true,
     "json.validate.enable": true,
     "sonarlint.connectedMode.project": {
-        "connectionId": "default",
+        "connectionId": "gundestrup",
         "projectKey": "gundestrup_j2xml"
     },
-    "sonarlint.testFilePattern": "{stubs,tests}/**"
+    "sonarlint.testFilePattern": "{stubs,tests}/**",
+    "semgrep.path": "/opt/homebrew/bin/semgrep",
+    "semgrep.scan.pro_intrafile": false,
+    "semgrep.scan.configuration": [
+        ".semgrep.yml"
+    ]
 }
