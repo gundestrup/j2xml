@@ -18,7 +18,7 @@
 > Export, import, and share Joomla! content as XML between sites.
 
 Fork of [eshiol/j2xml](https://github.com/eshiol/j2xml), modernised for
-**Joomla! 5 and 6** with **PHP 8.4**.
+**Joomla! 5 and 6** with **PHP 8.4 and 8.5**.
 
 ---
 
@@ -35,7 +35,7 @@ Joomla! instances using a portable XML format. It can:
   Webservices REST API using token authentication.
 
 The original project by [Helios Ciancio](https://www.eshiol.it) targets
-Joomla! 3.x and 4.x. This fork updates it for Joomla! 5 and 6 and PHP 8.4,
+Joomla! 3.x and 4.x. This fork updates it for Joomla! 5 and 6 and PHP 8.4/8.5,
 fixing deprecations and the import failures reported on Joomla 5.x
 ([eshiol/j2xml#72](https://github.com/eshiol/j2xml/issues/72),
 [#71](https://github.com/eshiol/j2xml/issues/71),
@@ -99,7 +99,10 @@ package archives.
 # PHP 8.4 and 8.5 (macOS / Homebrew)
 brew install php@8.4 php@8.5 phpstan
 
-# Install the pre-commit hook (lint + PHPStan on every commit)
+# Development tools (PHPUnit + PHPStan)
+composer install
+
+# Install the pre-commit hook (lint + PHPStan + PHPUnit + Semgrep on every commit)
 ./scripts/install-hooks.sh
 
 # Lint a file with both PHP versions
@@ -118,9 +121,10 @@ of truth for project conventions, layout, and constraints.
 
 ## Testing
 
-Integration tests run in Docker against live Joomla 5 and 6 instances with
-PHP 8.4 and MySQL 8.0. The test suite verifies the three import bugs fixed
-in this fork:
+Integration tests run in Docker against live Joomla 5 and 6 instances on both
+MySQL 8.0 and PostgreSQL 16. The current images exercise Joomla 5 on PHP 8.3
+and Joomla 6 on PHP 8.4; PHP 8.5 is covered by the quality/lint matrix. The
+suite verifies the import regressions fixed in this fork:
 
 - **Issue #72** — Import no longer returns HTTP 500 on Joomla 5.2+
 - **Issue #71** — Articles import correctly from J3 XML format to J5
@@ -131,6 +135,7 @@ in this fork:
 
 - Docker Desktop (or Docker Engine + Docker Compose)
 - `curl` (pre-installed on macOS / most Linux distros)
+- Composer for PHPUnit/PHPStan development tools
 
 ### Running the tests
 
@@ -161,9 +166,10 @@ bash tests/scripts/run-all-tests.sh
 The script will:
 
 1. Wait for both Joomla instances to come up
-2. Install the J2XML plugin into each via symlinks + DB registration
+2. Build `pkg_j2xml.zip` and install it through Joomla's web installer
 3. Log in to each admin panel and import the test XML fixtures
-4. Verify the expected number of articles/users in the database
+4. Exercise export, round-trip re-export, REST send, warning/deprecation
+   checks, and clean uninstall
 5. Print a summary of pass/fail results
 
 ### Test output
@@ -178,7 +184,7 @@ Joomla 6 with 97 assertions, including PHP warning/deprecation checks:
   Total:  97
 ```
 
-The PHPUnit suite contains **69 tests and 128 assertions**. Run it without
+The PHPUnit suite contains **76 tests and 146 assertions**. Run it without
 coverage locally when no PCOV/Xdebug driver is installed:
 
 ```bash
@@ -232,8 +238,9 @@ XML fixtures live in `tests/fixtures/` and use the J3-era format
 
 ## License
 
-Copyright (C) 2010–2026 Helios Ciancio. Licensed under
-[GNU/GPL v3](./LICENSE) — see the [full license text](./LICENSE).
+Copyright (C) 2010–2026 Helios Ciancio; Copyright (C) 2026 Svend Gundestrup
+for fork modifications. Licensed under [GNU/GPL v3](./LICENSE) — see the
+[full license text](./LICENSE) and [NOTICE](./NOTICE).
 
 ## Changelog
 

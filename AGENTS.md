@@ -81,13 +81,12 @@ The package is composed of Joomla extensions bundled together by
 - `api/components/com_j2xml/src/Controller/ImportController.php` — token-authenticated
   Joomla Webservices REST import endpoint.
 - `plugins/system/j2xml/j2xml.php` — system plugin entry; hooks Joomla events
-  (`onContentPrepareData`, `onAfterRender`, etc.) and applies the compatibility
-  shims under `plugins/system/j2xml/src/`.
-- `plugins/system/j2xml/src/J2xml/Helper/Joomla.php` — `makeAlias()` helper that
-  evals an aliased copy of a Joomla class so J2XML can override behaviour
-  without forking core.
-- `plugins/system/j2xml/layouts/{joomla,joomla4}/` — layout overrides split by
-  Joomla major version.
+  (`onContentPrepareData`, `onAfterRender`, etc.) and handles admin UI
+  integration.
+- `plugins/system/j2xml/services/provider.php` — Joomla DI registration for
+  the system plugin.
+- `plugins/system/j2xml/layouts/joomla/` — layout overrides used by the
+  plugin's admin integration.
 - `administrator/components/com_j2xml/script.php` — package/component
   install/uninstall/update script.
 - `administrator/components/com_j2xml/sql/` — install + update SQL for MySQL
@@ -126,10 +125,10 @@ The package is composed of Joomla extensions bundled together by
   `__DEPLOY_VERSION__` and `__DEPLOY_DATE__` — these are replaced at release
   time. Do not hard-code version numbers in manifests.
 - **Compatibility:** this fork targets **Joomla 5 and 6** with **PHP 8.4
-  and 8.5**. Joomla 3.x/4.x and PHP < 8.4 are no longer supported. When a
-  Joomla API differs between J5 and J6, prefer the shim pattern in
-  `plugins/system/j2xml/src/` (e.g. `Joomla::makeAlias()`) or branch on
-  `JVERSION`.
+  and 8.5**. Joomla 3.x/4.x and PHP < 8.4 are no longer supported, and the
+  old J3/J4 compatibility layer has been removed. When a Joomla API differs
+  between J5 and J6, prefer supported Joomla APIs and branch on `JVERSION`
+  only where necessary.
 - **PHP 8.4/8.5 readiness:** avoid dynamic properties on classes (recent
   commits fixed this in `Importer`); avoid `utf8_encode()` (removed, no
   longer referenced); avoid deprecated `each()`, `create_function()`,
@@ -164,7 +163,7 @@ The package is composed of Joomla extensions bundled together by
 ## 4. Build & Release
 
 `VERSION` is the single source of truth for the release version. It contains
-one semantic version, such as `4.5.2`. `scripts/build-package.sh [output_dir]`
+one semantic version, such as `4.5.3`. `scripts/build-package.sh [output_dir]`
 reads that file, substitutes `__DEPLOY_VERSION__` and `__DEPLOY_DATE__`, then
 zips each extension into `com_j2xml.zip`, `lib_eshiol_J2xml.zip`,
 `plg_system_j2xml.zip`, `plg_webservices_j2xml.zip`, and bundles them into
@@ -181,16 +180,19 @@ commit the zips. For a release, run the release check and attach
 `pkg_j2xml.zip` (plus sub-zips if desired) to the GitHub release as assets.
 
 **CI** runs on every push and pull request via GitHub Actions
-(`.github/workflows/ci.yml`) with three jobs:
+(`.github/workflows/ci.yml`) with separate quality, security, integration,
+and coverage jobs:
 
 - **php-quality** (PHP 8.4 + 8.5 matrix): Composer validate, PHP lint,
   PHPStan, PHPUnit, ShellCheck (warning+), XML validation with `xmllint`.
+- **semgrep**: Semgrep security scan using the local `.semgrep.yml` config.
 - **mysql-integration**: Docker Compose Joomla 5 + 6 with MySQL 8.0;
   runs `tests/scripts/run-all-tests.sh`.
 - **postgresql-integration**: Docker Compose Joomla 5 + 6 with PostgreSQL 16;
   runs the same full `tests/scripts/run-all-tests.sh` feature suite as MySQL,
   with the PostgreSQL database adapter, and fails on import/export errors.
-- **semgrep**: Semgrep security scan using the local `.semgrep.yml` config.
+- **coverage**: merges PHPUnit and integration Clover artifacts, then uploads
+  one report to Codecov.
 
 ### External code-quality services
 
@@ -244,7 +246,7 @@ installed via `scripts/install-hooks.sh`. It runs on every `git commit`:
    config's `paths` (not just staged files) so that the baseline and
    `scanFiles` are applied correctly. PHPStan's result cache keeps
    re-runs fast.
-3. **PHPUnit** if a `phpunit.xml` exists (placeholder — no test suite yet).
+3. **PHPUnit** using `phpunit.xml.dist` when a PHPUnit binary is available.
 4. **Semgrep** security scan using `.semgrep.yml` (local Pro engine).
 
 **Install (once after cloning):**
@@ -298,8 +300,8 @@ The same full feature suite runs against both MySQL and PostgreSQL through the
 database adapter in `tests/scripts/db-query.php`. The legacy
 `tests/scripts/run-postgresql-smoke.sh` remains available as a small standalone
 preflight, but is not the CI parity suite. The test suite
-(`tests/scripts/run-all-tests.sh`) verifies the three import bugs fixed in this
-fork:
+(`tests/scripts/run-all-tests.sh`) verifies the import regressions fixed in
+this fork:
 
 - **Issue #72** — Import no longer returns HTTP 500 on Joomla 5.2+
 - **Issue #71** — Articles import correctly from J3 XML format to J5
@@ -341,9 +343,10 @@ vendor/bin/phpstan analyse --no-progress --memory-limit=1G
 The script will:
 
 1. Wait for both Joomla instances to come up
-2. Install the J2XML plugin into each via symlinks + DB registration
+2. Build `pkg_j2xml.zip` and install it through Joomla's web installer
 3. Log in to each admin panel and import the test XML fixtures
-4. Verify the expected number of articles/users in the database
+4. Exercise export, round-trip re-export, REST send, warning/deprecation
+   checks, and clean uninstall
 5. Print a summary of pass/fail results
 
 ### Test output
@@ -358,7 +361,7 @@ Joomla 6 with 97 assertions, including PHP warning/deprecation checks:
   Total:  97
 ```
 
-The PHPUnit suite currently contains **69 tests and 128 assertions**. Use
+The PHPUnit suite currently contains **76 tests and 146 assertions**. Use
 `vendor/bin/phpunit --configuration phpunit.xml.dist --no-coverage` locally when
 no PCOV/Xdebug driver is installed.
 
@@ -481,12 +484,12 @@ If you add a feature, consider whether it needs a new SQL update file under
 
 ### Fix a Joomla-version compatibility bug
 
-1. Reproduce on the affected Joomla major (3 / 4 / 5).
-2. Prefer fixing it inside `plugins/system/j2xml/src/` (shim) or by branching
-   on `JVERSION` rather than forking Joomla core.
-3. If `makeAlias()` is used, log the original/alias class names at DEBUG
-   level as the existing code does.
-4. Test on **Joomla 5 and 6** (PHP 8.4+) before opening the PR.
+1. Reproduce on the affected Joomla major (5 / 6 — earlier versions are
+   unsupported in this fork).
+2. Prefer supported Joomla 5/6 APIs (dispatcher events, `joomla-dialog`,
+   `WebAssetManager`, injected application objects); branch on `JVERSION`
+   only where an API genuinely differs.
+3. Test on **Joomla 5 and 6** (PHP 8.4+) before opening the PR.
 
 ### Change the XML schema
 
