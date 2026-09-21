@@ -1,0 +1,12 @@
+# Scope parity with the former `semgrep scan ... libraries/ plugins/
+# administrator/ api/ cli/` — semgrep ci has no path args, so the
+# non-source dirs are excluded here.
+build/
+components/
+language/
+media/
+scripts/
+stubs/
+tests/
+vendor/
+node_modules/
