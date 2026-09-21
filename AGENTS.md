@@ -196,7 +196,9 @@ and coverage jobs:
 
 ### External code-quality services
 
-- **Semgrep Pro** — security scanning via `.semgrep.yml` (local + CI).
+- **Semgrep Pro** — CI runs `semgrep ci` (rules from the AppSec Platform
+  Policies page, `SEMGREP_APP_TOKEN` secret); the committed `.semgrep.yml`
+  is the local mirror for `semgrep scan --config` — keep them in sync.
   Suppress false positives with `// nosemgrep: <rule-id>` on the flagged line.
 - **CodeFactor** — automated code review via the GitHub integration.
   CodeFactor does not read a repo config file for path exclusions; ignored

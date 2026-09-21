@@ -73,7 +73,9 @@ jobs:
         run: |
           pip3 install --only-binary :all: "semgrep==1.176.0"
       - name: Run Semgrep security scan
-        run: semgrep scan --config .semgrep.yml --error libraries/ plugins/ administrator/ api/ cli/
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        run: semgrep ci libraries/ plugins/ administrator/ api/ cli/
 
   mysql-integration:
     name: Joomla 5/6 MySQL integration
