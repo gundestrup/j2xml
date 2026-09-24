@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Run all static quality checks: PHP lint, PHPStan, Semgrep, ShellCheck,
-# XML validation, PHPUnit (with coverage).
+# Markdownlint, XML validation, PHPUnit (with coverage).
 #
 # Usage:
 #   ./scripts/check-quality.sh          # run all checks
@@ -118,7 +118,21 @@ else
 fi
 
 # -------------------------------------------------------------------
-# 5. XML validation
+# 5. Markdownlint
+# -------------------------------------------------------------------
+echo "=== Markdownlint ==="
+if command -v npx &>/dev/null; then
+    if npx --yes markdownlint-cli2@0.23.2; then
+        ok "Markdownlint"
+    else
+        fail "Markdownlint"
+    fi
+else
+    info "npx not found — skipping (CI runs markdownlint-cli2)"
+fi
+
+# -------------------------------------------------------------------
+# 6. XML validation
 # -------------------------------------------------------------------
 echo "=== XML validation ==="
 xml_errors=0
@@ -137,7 +151,7 @@ else
 fi
 
 # -------------------------------------------------------------------
-# 6. PHPUnit
+# 7. PHPUnit
 # -------------------------------------------------------------------
 echo "=== PHPUnit ==="
 if [[ -x vendor/bin/phpunit ]]; then
