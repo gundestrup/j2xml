@@ -1,0 +1,35 @@
+# Docker build context exclusions.
+#
+# The PHP 8.5 test image (tests/docker/Dockerfile.php85) copies only from the
+# Joomla source-image stage, so nothing here is required by the current build.
+# Keeping generated/vendor content out of the context avoids streaming ~200 MB
+# into the Docker VM on every build (noticeable on Docker Desktop / macOS).
+
+# VCS and agent/tooling metadata
+.git/
+.github/
+.devin/
+.claude/
+.idea/
+.vscode/
+
+# Generated build output and Composer dev tools
+build/
+vendor/
+composer.phar
+
+# Node / Playwright artifacts
+node_modules/
+tests/ui/node_modules/
+tests/ui/playwright-report/
+tests/ui/test-results/
+
+# Coverage and local test output
+coverage*.xml
+coverage-*.xml
+build/coverage-raw/
+
+# OS noise
+.DS_Store
+Thumbs.db
+Desktop.ini

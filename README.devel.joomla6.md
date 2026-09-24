@@ -116,7 +116,9 @@ The modern Joomla 5/6 architecture:
 - `tests/` — Docker-based integration test suite, test fixtures,
   install/uninstall scripts
 - `stubs/joomla.php` — PHPStan stub file declaring Joomla CMS symbols
-- `.devin/` — Devin CLI configuration (`config.json` project permissions, `mcp_config.json` DeepWiki MCP server, `global_rules.md` pointer to AGENTS.md)
+- `.devin/` — Devin CLI configuration (`config.json` project permissions,
+  `mcp_config.json` DeepWiki MCP server, `global_rules.md` pointer to
+  AGENTS.md)
 
 ### Line-level analysis of the 60 surviving files
 

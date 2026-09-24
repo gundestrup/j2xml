@@ -25,13 +25,13 @@ Joomla's Webservices REST API.
 The package is composed of Joomla extensions bundled together by
 `administrator/manifests/packages/pkg_j2xml.xml`:
 
-| Type     | Id                    | Path                                      | Purpose                                      |
-|----------|-----------------------|-------------------------------------------|----------------------------------------------|
-| Component| `com_j2xml`           | `administrator/components/com_j2xml/`     | Administrator export/import/send UI and API |
-| Library  | `j2xml`               | `libraries/eshiol/J2xml/`                 | Core `Exporter`, `Importer`, `Version`, `Table\*` |
-| Plugin   | `j2xml` (system)      | `plugins/system/j2xml/`                   | Content preparation and admin UI integration |
-| Plugin   | `j2xml` (webservices) | `plugins/webservices/j2xml/`              | Joomla REST import endpoint                  |
-| CLI      | `j2xml`               | `cli/j2xml.php`                            | Command-line importer                        |
+| Type      | Id                    | Path                                  | Purpose                                           |
+|-----------|-----------------------|---------------------------------------|---------------------------------------------------|
+| Component | `com_j2xml`           | `administrator/components/com_j2xml/` | Administrator export/import/send UI and API       |
+| Library   | `j2xml`               | `libraries/eshiol/J2xml/`             | Core `Exporter`, `Importer`, `Version`, `Table\*` |
+| Plugin    | `j2xml` (system)      | `plugins/system/j2xml/`               | Content preparation and admin UI integration      |
+| Plugin    | `j2xml` (webservices) | `plugins/webservices/j2xml/`          | Joomla REST import endpoint                       |
+| CLI       | `j2xml`               | `cli/j2xml.php`                       | Command-line importer                             |
 
 > **Note:** `libraries/eshiol/J2xmlpro/` and the related Pro manifests / language
 > files are intentionally gitignored — this repository is the open-source
@@ -41,7 +41,7 @@ The package is composed of Joomla extensions bundled together by
 
 ## 2. Repository Layout
 
-```
+```text
 .
 ├── administrator/
 │   ├── components/com_j2xml/   # Admin backend: controllers, models, views, API, SQL, forms
@@ -334,6 +334,35 @@ preflight, but is not the CI parity suite.
 - `curl` (pre-installed on macOS / most Linux distros)
 - Composer for PHPUnit/PHPStan unit and static checks
 
+### Docker platform notes (ARM64 / AMD64)
+
+All test images are multi-architecture, so the suite runs natively — no
+QEMU/Rosetta emulation — on Apple Silicon (ARM64) and on AMD64 machines
+(Linux, Intel Macs, CI):
+
+- `mysql:8.0`, `postgres:16`, `joomla:*-apache` all ship `linux/arm64` +
+  `linux/amd64` manifests.
+- `tests/docker/Dockerfile.php85` pins `php:8.5-apache` by **manifest-list
+  digest**, so the pin resolves to the matching arch on each host. PHP
+  extensions are compiled from source per-arch via `docker-php-ext-install`.
+- No `platform:` keys are set anywhere in the compose files — do not add them;
+  they would force emulation on one side. For the same reason, do not export
+  `DOCKER_DEFAULT_PLATFORM=linux/amd64` when running these tests — it silently
+  pulls amd64 images and runs the whole stack under emulation.
+- In CI, the MySQL and PHP 8.5 integration jobs each run on both
+  `ubuntu-latest` (amd64) and `ubuntu-24.04-arm` (arm64), so both arches are
+  verified on every push. The PostgreSQL and Playwright jobs run on amd64.
+
+Recommended **Docker Desktop** settings on Apple Silicon (host settings, not
+repo config): Apple Virtualization framework + VirtioFS file sharing, Rosetta
+enabled as a safety net for any future amd64-only image, and at least 4 CPUs /
+8 GB for the VM (the `--php85` build compiles ~11 PHP extensions).
+
+The php85 compose file builds with `tests/docker/` as its (tiny) build context
+because the Dockerfile copies only `--from` the Joomla source-image stage; the
+root `.dockerignore` additionally keeps `build/`, `vendor/`, `.git/` and other
+generated content out of any repo-root context.
+
 ### Running the tests
 
 ```bash
@@ -375,7 +404,7 @@ The current MySQL and PostgreSQL integration suites each cover Joomla 5 and
 Joomla 6 with 104 checks, including current/legacy and gzip imports, option
 effects (including password handling), and PHP warning/deprecation checks:
 
-```
+```text
   Passed: 104
   Failed: 0
   Skipped: 0
@@ -621,17 +650,17 @@ The original project at <https://github.com/eshiol/j2xml/issues> has **9 open
 issues** (as of Aug 2026). The most relevant ones for the Joomla 5/6 + PHP 8.4
 modernisation effort:
 
-| #   | Title                                                        | Relevance |
-|-----|--------------------------------------------------------------|-----------|
-| 72  | Unable to use on Joomla! 5.2                                 | **High** — import fails with HTTP 500 on J5.2+; partially addressed by PHP 8.4 fixes (E_STRICT, utf8_encode) |
-| 71  | Unable to import Articles on Joomla 5.1.0 (from J3.10.11)   | **High** — cross-version import broken; likely schema/API drift in J5 |
-| 70  | Unable to import users                                       | **High** — user import broken on J5; likely the same root cause as #71 |
-| 68  | Please create a CLI for import and export                    | Medium — feature request; `cli/j2xml.php` exists for import but not export |
-| 56  | Error while importing articles from J3 into J4               | Medium — older J3→J4 import failure, may already be fixed but worth verifying |
-| 53  | Registration on website not responding — where is latest version? | Low — meta/maintenance question |
-| 40  | Import/export user groups                                    | Medium — feature gap; user groups not handled by current Table\User |
-| 6   | HTTP Error 500 when exporting large amounts of data          | Medium — memory/timeout on bulk export; relevant for J5/6 robustness |
-| 5   | Useless menu item                                            | Low — UX complaint |
+| #  | Title                                                             | Relevance                                                                                                    |
+|----|-------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| 72 | Unable to use on Joomla! 5.2                                      | **High** — import fails with HTTP 500 on J5.2+; partially addressed by PHP 8.4 fixes (E_STRICT, utf8_encode) |
+| 71 | Unable to import Articles on Joomla 5.1.0 (from J3.10.11)         | **High** — cross-version import broken; likely schema/API drift in J5                                        |
+| 70 | Unable to import users                                            | **High** — user import broken on J5; likely the same root cause as #71                                       |
+| 68 | Please create a CLI for import and export                         | Medium — feature request; `cli/j2xml.php` exists for import but not export                                   |
+| 56 | Error while importing articles from J3 into J4                    | Medium — older J3→J4 import failure, may already be fixed but worth verifying                                |
+| 53 | Registration on website not responding — where is latest version? | Low — meta/maintenance question                                                                              |
+| 40 | Import/export user groups                                         | Medium — feature gap; user groups not handled by current Table\User                                          |
+| 6  | HTTP Error 500 when exporting large amounts of data               | Medium — memory/timeout on bulk export; relevant for J5/6 robustness                                         |
+| 5  | Useless menu item                                                 | Low — UX complaint                                                                                           |
 
 **PHP 8.4/8.5 fixes applied (2026-07):**
 
@@ -734,11 +763,11 @@ and `read_wiki_contents`. No auth is required for public repos.
 
 ### 11.3 Badge vs MCP — why both
 
-| | README badge | `.devin/mcp_config.json` |
-| --- | --- | --- |
-| **Purpose** | Index + auto-refresh the wiki | Let agents query the wiki |
-| **Read by** | DeepWiki's crawler | Devin CLI / Claude Code / Cursor |
-| **Without it** | Wiki goes stale or unindexed | Agents can't query the wiki |
+|                | README badge                  | `.devin/mcp_config.json`         |
+|----------------|-------------------------------|----------------------------------|
+| **Purpose**    | Index + auto-refresh the wiki | Let agents query the wiki        |
+| **Read by**    | DeepWiki's crawler            | Devin CLI / Claude Code / Cursor |
+| **Without it** | Wiki goes stale or unindexed  | Agents can't query the wiki      |
 
 They are complementary — keep both. If you fork to a new repo, update the
 badge URL in `README.md` to point to the new `owner/repo`.
@@ -757,11 +786,11 @@ devin mcp get deepwiki
 The following files in the repo root are intentionally tiny and only redirect
 here. **Keep them as pointers**; edit `AGENTS.md` for any content change.
 
-| File               | Read by                                      | Contents                          |
-|--------------------|----------------------------------------------|-----------------------------------|
-| `CLAUDE.md`        | Claude Code                                  | `See AGENTS.md.`                  |
-| `.windsurfrules`   | Windsurf                                     | `See AGENTS.md.`                  |
-| `.devin/global_rules.md` | Devin CLI (`.devin/` rules)            | `See AGENTS.md.`                  |
+| File                     | Read by                     | Contents         |
+|--------------------------|-----------------------------|------------------|
+| `CLAUDE.md`              | Claude Code                 | `See AGENTS.md.` |
+| `.windsurfrules`         | Windsurf                    | `See AGENTS.md.` |
+| `.devin/global_rules.md` | Devin CLI (`.devin/` rules) | `See AGENTS.md.` |
 
 If you add support for another AI tool, add a one-line pointer file here and
 keep the actual guidance in `AGENTS.md`.

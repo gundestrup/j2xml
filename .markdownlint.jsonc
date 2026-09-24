@@ -1,0 +1,22 @@
+// markdownlint configuration — https://github.com/DavidAnson/markdownlint
+{
+	// Prose is wrapped by hand, not at a fixed width; tables and code
+	// blocks legitimately exceed any column limit.
+	"MD013": {
+		"line_length": 120,
+		"tables": false,
+		"code_blocks": false,
+		"headings": false
+	},
+	// Keep a Changelog repeats "### Added/Fixed/Changed/Removed" under
+	// each "## [version]" — duplicates only matter between siblings.
+	"MD024": {
+		"siblings_only": true
+	},
+	// GitHub issue/PR templates use blank lines as fill-in space.
+	"MD012": {
+		"maximum": 3
+	},
+	// GitHub issue/PR templates intentionally start with ### or text.
+	"MD041": false
+}

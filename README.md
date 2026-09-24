@@ -151,6 +151,12 @@ regressions and runtime warnings:
 - `curl` (pre-installed on macOS / most Linux distros)
 - Composer for PHPUnit/PHPStan development tools
 
+All test images are multi-architecture (ARM64 + AMD64), so the suite runs
+natively on Apple Silicon Macs and AMD64 Linux/CI hosts — see
+`AGENTS.md` §5 "Docker platform notes" for details and recommended Docker
+Desktop settings. Do not export `DOCKER_DEFAULT_PLATFORM=linux/amd64` for
+these tests; it forces the whole stack to run under emulation.
+
 ### Running the tests
 
 For Playwright UI tests, use Node 22 as pinned in `.nvmrc` (the same Node major

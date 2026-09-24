@@ -78,9 +78,17 @@ jobs:
         run: semgrep ci
 
   mysql-integration:
-    name: Joomla 5/6 MySQL integration
-    runs-on: ubuntu-latest
+    name: Joomla 5/6 MySQL integration (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
     needs: php-quality
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install zip for build script
@@ -95,13 +103,13 @@ jobs:
       - name: Collect integration coverage
         if: always()
         continue-on-error: true
-        run: bash tests/scripts/coverage-collect.sh coverage-integration-mysql.xml j2xml-joomla5 j2xml-joomla6
+        run: bash tests/scripts/coverage-collect.sh coverage-integration-mysql-${{ matrix.arch }}.xml j2xml-joomla5 j2xml-joomla6
       - name: Upload integration coverage artifact
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: coverage-integration-mysql
-          path: coverage-integration-mysql.xml
+          name: coverage-integration-mysql-${{ matrix.arch }}
+          path: coverage-integration-mysql-${{ matrix.arch }}.xml
           if-no-files-found: warn
       - name: Collect container logs
         if: failure()
@@ -111,9 +119,17 @@ jobs:
         run: docker compose -f tests/docker/docker-compose.yml down -v
 
   php85-runtime-integration:
-    name: Joomla 5/6 PHP 8.5 runtime integration
-    runs-on: ubuntu-latest
+    name: Joomla 5/6 PHP 8.5 runtime integration (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
     needs: php-quality
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install zip for build script
@@ -132,13 +148,13 @@ jobs:
       - name: Collect integration coverage
         if: always()
         continue-on-error: true
-        run: bash tests/scripts/coverage-collect.sh coverage-integration-php85.xml j2xml-joomla5 j2xml-joomla6
+        run: bash tests/scripts/coverage-collect.sh coverage-integration-php85-${{ matrix.arch }}.xml j2xml-joomla5 j2xml-joomla6
       - name: Upload integration coverage artifact
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: coverage-integration-php85
-          path: coverage-integration-php85.xml
+          name: coverage-integration-php85-${{ matrix.arch }}
+          path: coverage-integration-php85-${{ matrix.arch }}.xml
           if-no-files-found: warn
       - name: Collect container logs
         if: failure()

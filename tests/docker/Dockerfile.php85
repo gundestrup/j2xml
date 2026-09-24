@@ -1,6 +1,9 @@
 ARG JOOMLA_SOURCE_IMAGE=joomla:6.1.3-php8.4-apache
 FROM ${JOOMLA_SOURCE_IMAGE} AS joomla-source
 
+# Pinned to the multi-platform manifest-list digest (linux/amd64 + linux/arm64),
+# so the same pin resolves natively on Apple Silicon and AMD64/CI hosts.
+# To update: docker buildx imagetools inspect php:8.5-apache
 FROM php:8.5-apache@sha256:e7c4a78bc342384903c942f50329636cf9c9d0b1b51860065f443c048f260c43
 
 RUN apt-get update \

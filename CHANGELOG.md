@@ -1,5 +1,7 @@
 # Changelog
 
+<!-- markdownlint-disable MD013 -- legacy entries are not line-wrapped -->
+
 All notable changes to J2XML will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
@@ -35,6 +37,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHP 8.5 Joomla 5/6 runtime integration using a digest-pinned official
   multi-platform PHP Apache image combined with Joomla's official CMS source,
   verifying the full import/export/send suite under the supported runtime.
+- ARM64 CI coverage: the MySQL and PHP 8.5 integration jobs now run on both
+  `ubuntu-latest` (amd64) and `ubuntu-24.04-arm` (arm64) GitHub-hosted runners,
+  matching the native ARM64 local-dev path on Apple Silicon.
+- Markdownlint configuration (`.markdownlint.jsonc` + `.markdownlintignore`)
+  tuned to project conventions: Keep a Changelog sibling headings, GitHub
+  issue/PR template fill-in spacing, and no fixed line-length for tables.
 - Unit coverage for the shared Table export/import helpers.
 
 ### Changed
@@ -46,6 +54,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scaffolding, related-record exports, association import normalisation and
   keep-id update SQL into shared helpers in `Table.php`, reducing SonarCloud
   production duplication without changing XML or database behaviour.
+- Docker test environment: narrowed the PHP 8.5 build context to
+  `tests/docker/` and added a root `.dockerignore` (the Dockerfile copies only
+  from the Joomla source-image stage, so ~200 MB of repo content no longer
+  streams into the Docker VM per build), and removed the unused `/j2xml-src`
+  bind mounts from the compose services.
 
 ### Fixed
 
@@ -91,6 +104,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on every administrator request.
 - Corrected SonarCloud AutoScan directory exclusions to use glob patterns so
   test-only helpers are removed from production issue analysis.
+- Restored the `## [4.5.1] - 2026-09-13` changelog heading that was dropped
+  during the 4.5.2 release, which had merged 4.5.1's entries into the 4.5.2
+  section; realigned the `AGENTS.md` tables, tagged bare code fences, wrapped
+  bare URLs in the Security issue template, and removed trailing heading
+  punctuation.
 
 ---
 
@@ -203,6 +221,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration coverage: **2,723/3,714 executable lines (73.32%)** across
   64 active J2XML files. The remaining gap is concentrated in optional,
   defensive, installer, CLI, workflow, and database-specific branches.
+
+---
+
+## [4.5.1] - 2026-09-13
 
 ### Added
 
