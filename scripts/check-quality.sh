@@ -121,14 +121,16 @@ fi
 # 5. Markdownlint
 # -------------------------------------------------------------------
 echo "=== Markdownlint ==="
-if command -v npx &>/dev/null; then
-    if npx --yes markdownlint-cli2@0.23.2; then
+if [ -x node_modules/.bin/markdownlint-cli2 ]; then
+    if node_modules/.bin/markdownlint-cli2; then
         ok "Markdownlint"
     else
         fail "Markdownlint"
     fi
+elif command -v npm &>/dev/null; then
+    info "markdownlint-cli2 not installed — run 'npm ci' first (CI runs markdownlint-cli2)"
 else
-    info "npx not found — skipping (CI runs markdownlint-cli2)"
+    info "npm not found — skipping (CI runs markdownlint-cli2)"
 fi
 
 # -------------------------------------------------------------------

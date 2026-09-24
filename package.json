@@ -1,0 +1,8 @@
+{
+  "name": "j2xml-dev-tools",
+  "private": true,
+  "description": "Development-only tooling for scripts/check-quality.sh (markdownlint-cli2). Not shipped in the extension package.",
+  "devDependencies": {
+    "markdownlint-cli2": "0.23.2"
+  }
+}

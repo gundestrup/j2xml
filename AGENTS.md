@@ -242,7 +242,8 @@ For local checks, use the **pre-commit hook** (below) or the unified scripts:
 ### Unified check scripts
 
 ```bash
-./scripts/check-quality.sh          # PHP lint, PHPStan, Semgrep, ShellCheck, XML, PHPUnit+coverage
+./scripts/check-quality.sh          # PHP lint, PHPStan, Semgrep, ShellCheck, XML, Markdownlint, PHPUnit+coverage
+                                    # (Markdownlint needs `npm ci` once — dev tools in root package.json)
 ./scripts/check-quality.sh --quick   # same but skips coverage (faster)
 ./scripts/check-tests.sh             # MySQL + PostgreSQL integration tests (starts/stops Docker)
 ./scripts/check-tests.sh --mysql     # MySQL only (faster)

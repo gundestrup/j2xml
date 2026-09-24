@@ -59,6 +59,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from the Joomla source-image stage, so ~200 MB of repo content no longer
   streams into the Docker VM per build), and removed the unused `/j2xml-src`
   bind mounts from the compose services.
+- `scripts/check-quality.sh` runs markdownlint-cli2 from the locked root
+  `package.json`/`package-lock.json` (`npm ci` prerequisite) instead of
+  `npx --yes` — resolves the SonarCloud S6505 supply-chain finding and
+  pins the lint tool by lockfile integrity hash.
 
 ### Fixed
 
