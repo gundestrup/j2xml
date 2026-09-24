@@ -14,6 +14,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUTPUT_DIR="${1:-$ROOT_DIR/build}"
+mkdir -p "$OUTPUT_DIR"
+# Resolve to an absolute path — make_zip cds into a staging dir before zip runs.
+OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 
 VERSION="$(tr -d '[:space:]' < "$ROOT_DIR/VERSION")"
 DATE="$(date +%Y-%m-%d)"
@@ -66,7 +69,6 @@ make_zip() {
 
 echo "Building J2XML package v$VERSION ($DATE)"
 echo "Output: $OUTPUT_DIR"
-mkdir -p "$OUTPUT_DIR"
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 

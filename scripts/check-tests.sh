@@ -8,8 +8,11 @@
 #   ./scripts/check-tests.sh                    # MySQL + PostgreSQL
 #   ./scripts/check-tests.sh --mysql            # MySQL only (faster)
 #   ./scripts/check-tests.sh --postgresql       # PostgreSQL only (faster)
+#   ./scripts/check-tests.sh --php85            # Joomla 5 + 6 runtime on PHP 8.5
 #   ./scripts/check-tests.sh --coverage         # also collect line coverage
 #   ./scripts/check-tests.sh --mysql --coverage
+#   ./scripts/check-tests.sh --ui              # Playwright browser UI tests only
+#   ./scripts/check-tests.sh --mysql --ui      # MySQL suite + UI tests
 #
 # With --coverage, pcov is installed into the Joomla containers and every
 # request is recorded. After the suite finishes, the raw dumps are merged
@@ -30,18 +33,37 @@ info() { printf "${yellow}  →${nc}  %s\n" "$*"; }
 MYSQL_ONLY=0
 POSTGRESQL_ONLY=0
 COVERAGE=0
+UI=0
+PHP85=0
 for arg in "$@"; do
     case "$arg" in
         --mysql) MYSQL_ONLY=1 ;;
         --postgresql) POSTGRESQL_ONLY=1 ;;
         --coverage) COVERAGE=1 ;;
+        --ui) UI=1 ;;
+        --php85) PHP85=1 ;;
         *) echo "Unknown option: $arg"; exit 1 ;;
     esac
 done
 
+if [[ $PHP85 -eq 1 && $POSTGRESQL_ONLY -eq 1 ]]; then
+    echo "--php85 selects the MySQL runtime test matrix and cannot be combined with --postgresql"
+    exit 1
+fi
+if [[ $PHP85 -eq 1 ]]; then
+    MYSQL_ONLY=1
+fi
+
 if [[ $MYSQL_ONLY -eq 1 && $POSTGRESQL_ONLY -eq 1 ]]; then
     echo "--mysql and --postgresql are mutually exclusive"
     exit 1
+fi
+
+# --ui on its own means "UI tests only"; combined with --mysql/--postgresql
+# it is additive.
+if [[ $UI -eq 1 && $MYSQL_ONLY -eq 0 && $POSTGRESQL_ONLY -eq 0 ]]; then
+    MYSQL_ONLY=1
+    POSTGRESQL_ONLY=1
 fi
 
 cd "$(dirname "$0")/.." || exit 1
@@ -50,6 +72,9 @@ cd "$(dirname "$0")/.." || exit 1
 # service names (joomla5/joomla6), and sharing a project lets Compose reuse a
 # PostgreSQL container for the MySQL run.
 MYSQL_COMPOSE=(docker compose --project-name j2xml-mysql -f tests/docker/docker-compose.yml)
+if [[ $PHP85 -eq 1 ]]; then
+    MYSQL_COMPOSE+=(-f tests/docker/docker-compose.php85.yml)
+fi
 POSTGRES_COMPOSE=(docker compose --project-name j2xml-postgresql -f tests/docker/docker-compose.postgresql.yml)
 
 remove_wrong_project_containers() {
@@ -76,11 +101,26 @@ fi
 # 1. MySQL integration tests (Joomla 5 + 6)
 # -------------------------------------------------------------------
 if [[ $POSTGRESQL_ONLY -eq 0 ]]; then
-    echo "=== MySQL integration tests (Joomla 5 + 6) ==="
+    if [[ $PHP85 -eq 1 ]]; then
+        echo "=== MySQL runtime integration tests (Joomla 5 + 6, PHP 8.5) ==="
+    else
+        echo "=== MySQL integration tests (Joomla 5 + 6) ==="
+    fi
     info "Starting Docker containers…"
     remove_wrong_project_containers "j2xml-mysql" \
         j2xml-mysql j2xml-joomla5 j2xml-joomla6
     "${MYSQL_COMPOSE[@]}" up -d mysql joomla5 joomla6
+
+    if [[ $PHP85 -eq 1 ]]; then
+        for container in j2xml-joomla5 j2xml-joomla6; do
+            runtime=$(docker exec "$container" php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;')
+            if [[ "$runtime" != "8.5" ]]; then
+                fail "$container is running PHP $runtime, expected PHP 8.5"
+                exit 1
+            fi
+            info "$container runtime verified as PHP $runtime"
+        done
+    fi
 
     if [[ $COVERAGE -eq 1 ]]; then
         info "Enabling coverage collection…"
@@ -162,6 +202,26 @@ if [[ $MYSQL_ONLY -eq 0 ]]; then
 fi
 
 # -------------------------------------------------------------------
+# 3. Browser UI tests (Playwright, Joomla 5 + 6)
+# -------------------------------------------------------------------
+if [[ $UI -eq 1 ]]; then
+    echo "=== Browser UI tests (Playwright, Joomla 5 + 6) ==="
+    info "Starting Docker containers…"
+    remove_wrong_project_containers "j2xml-mysql" \
+        j2xml-mysql j2xml-joomla5 j2xml-joomla6
+    "${MYSQL_COMPOSE[@]}" up -d mysql joomla5 joomla6
+
+    if bash tests/scripts/run-ui-tests.sh; then
+        ok "Browser UI tests"
+    else
+        fail "Browser UI tests"
+    fi
+
+    info "Stopping containers…"
+    "${MYSQL_COMPOSE[@]}" down -v
+fi
+
+# -------------------------------------------------------------------
 # Summary
 # -------------------------------------------------------------------
 echo ""
@@ -171,6 +231,6 @@ if [[ $fail -gt 0 ]]; then
     printf "${red}Failed: %d${nc}\n" "$fail"
     exit 1
 else
-    printf "${green}All tests passed.${nc}\n"
+    printf '%sAll tests passed.%s\n' "$green" "$nc"
     exit 0
 fi

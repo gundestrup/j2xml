@@ -52,7 +52,7 @@ HTTP_CODE=$(curl -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -o /tmp/upload-response.
     -F "jform[import_menus]=0" \
     -F "jform[import_modules]=0" \
     -F "jform[import_viewlevels]=0" \
-    -F "file=@/Users/svend/workspace/j2xml/tests/fixtures/articles-j3.xml" \
+    -F "file=@/Users/svend/workspace/j2xml/tests/fixtures/legacy-j2xml-12.5-articles.xml" \
     2>/dev/null)
 echo "  Upload HTTP code: $HTTP_CODE"
 echo "  Upload response: $(cat /tmp/upload-response.txt | head -c 300)"

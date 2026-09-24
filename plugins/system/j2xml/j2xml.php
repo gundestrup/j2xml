@@ -259,7 +259,7 @@ class plgSystemJ2xml extends \Joomla\CMS\Plugin\CMSPlugin implements SubscriberI
             'class'    => $buttonClass,
             'doTask'   => \Joomla\CMS\Router\Route::_('index.php?option=com_j2xml&amp;view=' . $view . '&amp;layout=' . $contentType . '&amp;format=html&amp;tmpl=component'),
             'ok'       => \Joomla\CMS\Language\Text::_($textKey),
-            'onclick'  => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name=&quot;cid[]&quot;]:checked\').forEach(function(cb){cids.push(cb.value);});var dlgIframe=dialog.getBody()?dialog.getBody().querySelector(\'iframe\'):null;if(dlgIframe&&dlgIframe.contentWindow){dlgIframe.contentWindow.document.getElementById(\'jform_cid\').value=cids;}'
+            'onclick'  => 'var cids=[];document.querySelectorAll(\'input[type=checkbox][name="cid[]"]:checked\').forEach(function(cb){cids.push(cb.value);});var dlgIframe=dialog.getBody()?dialog.getBody().querySelector(\'iframe\'):null;if(dlgIframe&&dlgIframe.contentWindow){var cidField=dlgIframe.contentWindow.document.getElementById(\'jform_cid\');if(cidField){cidField.value=cids;}}'
         ];
 
         if ($formValidation)

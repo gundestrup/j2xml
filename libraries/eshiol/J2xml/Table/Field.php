@@ -263,7 +263,7 @@ class Field extends Table
             $query = $db->getQuery()->clear()
                 ->select('category_id')
                 ->from('#__fields_categories')
-                ->where('field_id = ' . $id);
+                ->where('field_id = ' . (int) $id);
             $db->setQuery($query);
 
             $ids_category = $db->loadColumn();

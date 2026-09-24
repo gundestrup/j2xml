@@ -26,11 +26,11 @@ use Joomla\CMS\Layout\LayoutHelper;
 
 extract($displayData);
 
-$layout ??= 'content';
+$layout ??= null;
 $relevantFields = [
     'content'    => ['export_compression', 'export_categories', 'export_fields', 'export_images', 'export_tags'],
     'categories' => ['export_compression', 'export_users', 'export_images', 'export_tags'],
-    'users'      => ['export_compression', 'export_password', 'export_usernotes', 'export_contacts', 'export_fields'],
+    'users'      => ['export_compression', 'export_users', 'export_password', 'export_usernotes', 'export_contacts', 'export_fields'],
     'contact'    => ['export_compression', 'export_users', 'export_images', 'export_tags', 'export_categories'],
     'fields'     => ['export_compression', 'export_users', 'export_categories'],
     'menus'      => ['export_compression', 'export_categories', 'export_fields', 'export_images', 'export_tags'],
@@ -73,7 +73,7 @@ foreach ($fieldsets as $name => $fieldSet)
         {
             if ($field->hidden || ($allowedFields !== null && !in_array($fieldKey($field), $allowedFields, true)))
             {
-                echo $fieldKey($field) === 'cid' ? $field->input : '<input type="hidden" name="' . htmlspecialchars($fieldInputName($field), ENT_QUOTES, 'UTF-8') . '" value="0">';
+                echo $fieldKey($field) === 'cid' ? $field->input : '<input type="hidden" id="' . htmlspecialchars($field->id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($fieldInputName($field), ENT_QUOTES, 'UTF-8') . '" value="0">';
             }
         }
         continue;
@@ -94,7 +94,7 @@ foreach ($fieldsets as $name => $fieldSet)
 
         if ($field->hidden || ($allowedFields !== null && !in_array($fieldKey($field), $allowedFields, true)))
         {
-            echo $fieldKey($field) === 'cid' ? $field->input : '<input type="hidden" name="' . htmlspecialchars($fieldInputName($field), ENT_QUOTES, 'UTF-8') . '" value="0">';
+            echo $fieldKey($field) === 'cid' ? $field->input : '<input type="hidden" id="' . htmlspecialchars($field->id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($fieldInputName($field), ENT_QUOTES, 'UTF-8') . '" value="0">';
         }
         else
         {

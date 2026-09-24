@@ -17,7 +17,7 @@ Joomla's Webservices REST API.
 - **Target platforms:** Joomla! **5 and 6** with **PHP 8.4 and 8.5**.
   (The upstream `eshiol/j2xml` targets Joomla 3.x/4.x; this fork drops
   older PHP/Joomla support to focus on modern versions.)
-- **Package name (Joomla):** `pkg_j2xml` (release version **4.5.3**).
+- **Package name (Joomla):** `pkg_j2xml` (release version **4.5.4**).
 - **Language:** PHP (no runtime JS build pipeline; Composer is used for
   development-only PHPUnit/PHPStan tooling, while runtime dependencies remain
   vendored as Joomla libraries).
@@ -176,8 +176,10 @@ tag. The script never creates tags, commits, or pushes.
 
 The integration test suite rebuilds the package automatically
 (`run-all-tests.sh` Phase 2), so `build/*.zip` is **gitignored** — never
-commit the zips. For a release, run the release check and attach
-`pkg_j2xml.zip` (plus sub-zips if desired) to the GitHub release as assets.
+commit the zips. For a release, run the release check and attach all five
+archives to the GitHub release as assets: `pkg_j2xml.zip`, `com_j2xml.zip`,
+`lib_eshiol_J2xml.zip`, `plg_system_j2xml.zip`, and
+`plg_webservices_j2xml.zip`.
 
 **CI** runs on every push and pull request via GitHub Actions
 (`.github/workflows/ci.yml`) with separate quality, security, integration,
@@ -188,9 +190,21 @@ and coverage jobs:
 - **semgrep**: Semgrep security scan using the local `.semgrep.yml` config.
 - **mysql-integration**: Docker Compose Joomla 5 + 6 with MySQL 8.0;
   runs `tests/scripts/run-all-tests.sh`.
+- **php85-runtime-integration**: runs the same MySQL suite with both Joomla
+  versions on PHP 8.5, using the official multi-platform `php:8.5-apache`
+  image pinned by manifest digest and Joomla's official release images as the
+  CMS source. Since Joomla does not publish PHP 8.5 images, the test-only
+  `tests/docker/Dockerfile.php85` installs Joomla's required PHP extensions,
+  then combines that runtime with the CMS tree/entrypoint. The image supports
+  ARM64 and AMD64, avoiding local Apple Silicon emulation.
 - **postgresql-integration**: Docker Compose Joomla 5 + 6 with PostgreSQL 16;
   runs the same full `tests/scripts/run-all-tests.sh` feature suite as MySQL,
   with the PostgreSQL database adapter, and fails on import/export errors.
+- **ui-tests**: Docker Compose Joomla 5 + 6 with MySQL 8.0 plus Playwright
+  (Chromium); runs the browser-level suite in `tests/ui` which clicks the
+  real toolbar buttons, exercises every export/send/import dialog setting,
+  performs a real cross-instance REST send, and fails on any uncaught JS
+  error or console error.
 - **coverage**: merges PHPUnit and integration Clover artifacts, then uploads
   one report to Codecov.
 
@@ -233,7 +247,9 @@ For local checks, use the **pre-commit hook** (below) or the unified scripts:
 ./scripts/check-tests.sh             # MySQL + PostgreSQL integration tests (starts/stops Docker)
 ./scripts/check-tests.sh --mysql     # MySQL only (faster)
 ./scripts/check-tests.sh --postgresql # PostgreSQL only (faster)
+./scripts/check-tests.sh --php85    # MySQL suite with Joomla 5/6 on PHP 8.5
 ./scripts/check-tests.sh --coverage  # also collect line coverage → coverage-integration.xml
+./scripts/check-tests.sh --ui        # Playwright browser UI tests (needs node + npm)
 ./scripts/check-all.sh               # quality + tests (full pre-release validation)
 ```
 
@@ -297,18 +313,20 @@ The hook is version-controlled in `scripts/git-hooks/` and symlinked into
 
 ## 5. Testing
 
-Integration tests run in **Docker** against official Joomla 5 and 6 images.
-The same full feature suite runs against both MySQL and PostgreSQL through the
-database adapter in `tests/scripts/db-query.php`. The legacy
+Integration tests run in **Docker** against Joomla 5 and 6 on MySQL and
+PostgreSQL through the database adapter in `tests/scripts/db-query.php`. The
+default official Joomla images run PHP 8.3 on Joomla 5 and PHP 8.4 on Joomla 6;
+`tests/docker/docker-compose.php85.yml` adds a full PHP 8.5 runtime matrix for
+both Joomla versions. The test suite (`tests/scripts/run-all-tests.sh`)
+verifies import/export regressions, current and legacy XML, gzip uploads,
+setting effects, and runtime warnings. The legacy
 `tests/scripts/run-postgresql-smoke.sh` remains available as a small standalone
-preflight, but is not the CI parity suite. The test suite
-(`tests/scripts/run-all-tests.sh`) verifies the import regressions fixed in
-this fork:
+preflight, but is not the CI parity suite.
 
 - **Issue #72** — Import no longer returns HTTP 500 on Joomla 5.2+
 - **Issue #71** — Articles import correctly from J3 XML format to J5
 - **Issue #70** — Users import correctly on J5
-- **Joomla 6 / PHP 8.4** — Import works on Joomla 6 with PHP 8.4
+- **PHP 8.5 runtime** — the full Joomla 5/6 MySQL feature suite is exercised under PHP 8.5
 
 ### Prerequisites
 
@@ -354,18 +372,50 @@ The script will:
 ### Test output
 
 The current MySQL and PostgreSQL integration suites each cover Joomla 5 and
-Joomla 6 with 97 assertions, including PHP warning/deprecation checks:
+Joomla 6 with 104 checks, including current/legacy and gzip imports, option
+effects (including password handling), and PHP warning/deprecation checks:
 
 ```
-  Passed: 97
+  Passed: 104
   Failed: 0
   Skipped: 0
-  Total:  97
+  Total:  104
 ```
 
 The PHPUnit suite currently contains **76 tests and 146 assertions**. Use
 `vendor/bin/phpunit --configuration phpunit.xml.dist --no-coverage` locally when
 no PCOV/Xdebug driver is installed.
+
+### Browser UI tests (Playwright)
+
+`tests/ui` contains a Playwright (Chromium) suite that drives the real admin
+UI on both Joomla instances: it clicks the Export/Send toolbar buttons on
+every supported list view, exercises every dialog setting, captures the
+export download, tests current/legacy/gzip imports and both Send compression
+modes, performs a real cross-instance REST send, and fails on uncaught JS
+errors, `console.error`, and relevant HTTP failures. The test runner disables
+Joomla's core system-stats plugin in disposable containers because its optional
+asynchronous telemetry response can produce unrelated JSON parse errors.
+
+Local UI tests and CI use the Node 22 major pinned in `.nvmrc`. CI reads this
+file; the runner rejects a different local Node major so local and CI runs use
+the same runtime line.
+
+```bash
+# From the repository root, with nvm installed:
+nvm install && nvm use
+bash tests/scripts/run-ui-tests.sh            # installs + provisions + runs
+bash tests/scripts/run-ui-tests.sh --project=joomla6   # one instance only
+./scripts/check-tests.sh --ui                  # full lifecycle: up → test → down
+```
+
+The runner (`tests/scripts/run-ui-tests.sh`) waits for Joomla, configures the
+two disposable instances to accept CORS requests only from each other's exact
+origin, builds and installs the current `pkg_j2xml.zip`, enables the webservices plugin,
+generates API tokens for the send test, installs Playwright deps into
+`tests/ui`, and runs `npx playwright test`. Env overrides: `JOOMLA5_URL`/`JOOMLA6_URL`,
+`J5_CONTAINER`/`J6_CONTAINER`, `J2XML_ADMIN_USER`/`J2XML_ADMIN_PASS`,
+`J2XML_UI_SKIP_INSTALL=1`, `J2XML_UI_IGNORE_ERRORS` (pipe-separated regexes).
 
 ### Stopping the test environment
 
@@ -423,12 +473,19 @@ observed-line one.
 
 ### Test fixtures
 
-XML fixtures live in `tests/fixtures/` and use the J3-era format
-(`version="21.12.0"` in the `<j2xml>` root element):
+Fixtures in `tests/fixtures/` distinguish the current J2XML document format
+from legacy input formats. Joomla 5/6 is the importer target; the XML version
+identifies the J2XML document format, not the Joomla version.
 
-- `articles-j3.xml` — 3 articles with special characters, CDATA, unicode
-- `users-j3.xml` — 3 users with multiple group assignments
-- `categories-j3.xml` — Test categories
+- `all-content-types.xml` — current J2XML `21.12.0` format; comprehensive
+  fixture for normal import/export and settings coverage. Its `fixtureuser1`
+  password is a synthetic bcrypt hash used only to test password import/export
+  options; it is not a production credential.
+- `legacy-j2xml-12.5-articles.xml` — legacy `12.5.0` format; exercises old
+  text/entity decoding and import compatibility on Joomla 5/6.
+- `legacy-j2xml-12.5-categories.xml` — legacy category import coverage.
+- `legacy-j2xml-12.5-users.xml` — legacy user import and repeated group
+  elements, including multiple group assignments.
 
 ### Manual testing
 
@@ -629,8 +686,9 @@ incomplete (missing the CSRF token field). The test script sends the token
 via the `X-CSRF-Token` HTTP header as a fallback, which Joomla's
 `Session::checkToken()` checks before the POST field.
 
-**Remaining priority:** #72, #71, #70 are now **fixed and tested** on both
-Joomla 5 and Joomla 6 with PHP 8.4.
+**Status:** #72, #71, and #70 are fixed and tested on Joomla 5/6. Runtime
+coverage now includes the default PHP 8.3/8.4 Joomla images and a PHP 8.5
+matrix via `./scripts/check-tests.sh --php85`.
 
 ---
 

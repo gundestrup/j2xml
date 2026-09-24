@@ -128,6 +128,8 @@ $modalUrl = Route::_('index.php?' . http_build_query([
         eshiol.j2xml = {};
     }
 
+    eshiol.j2xml.supportedVersions = <?php echo json_encode(\eshiol\J2xml\Importer::SUPPORTED_XML_VERSIONS); ?>;
+
     eshiol.j2xml.showImportDialog = function () {
         var existing = document.getElementById('<?php echo $selector; ?>Modal');
         if (existing) {

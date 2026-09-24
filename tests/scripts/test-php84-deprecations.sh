@@ -13,9 +13,7 @@ echo "--- Test: PHP 8.4 deprecation check (Joomla 6) ---"
 
 # Copy fixtures into Joomla 6 container
 docker exec j2xml-joomla6 mkdir -p /tmp/j2xml-test
-docker cp /fixtures/articles-j3.xml j2xml-joomla6:/tmp/j2xml-test/articles-j3.xml
-docker cp /fixtures/categories-j3.xml j2xml-joomla6:/tmp/j2xml-test/categories-j3.xml
-docker cp /fixtures/users-j3.xml j2xml-joomla6:/tmp/j2xml-test/users-j3.xml
+docker cp /fixtures/legacy-j2xml-12.5-articles.xml j2xml-joomla6:/tmp/j2xml-test/legacy-j2xml-12.5-articles.xml
 
 # Run import with error reporting maxed out
 OUTPUT=$(docker exec j2xml-joomla6 bash -c '
@@ -28,7 +26,7 @@ OUTPUT=$(docker exec j2xml-joomla6 bash -c '
     \$app = JFactory::getApplication(\"administrator\");
     \$app->initialiseApp();
 
-    \$xml = simplexml_load_file(\"/tmp/j2xml-test/articles-j3.xml\");
+    \$xml = simplexml_load_file(\"/tmp/j2xml-test/legacy-j2xml-12.5-articles.xml\");
     \$params = new JRegistry();
     \$params->set(\"content\", 1);
     \$params->set(\"categories\", 1);

@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const tokenField = document.getElementById('jform_token');
                 const compressionField = document.getElementById('jform_compression');
 
-                const remoteUrl = (remoteUrlField ? remoteUrlField.value : '').replace(/\/?$/, '') + 'api/index.php/v1/j2xml/import';
+                const remoteUrl = (remoteUrlField ? remoteUrlField.value : '').replace(/\/*$/, '/') + 'api/index.php/v1/j2xml/import';
                 const token = tokenField ? tokenField.value : '';
                 const compression = compressionField ? compressionField.value : '';
 

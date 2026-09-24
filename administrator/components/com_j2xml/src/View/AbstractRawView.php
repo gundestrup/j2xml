@@ -66,7 +66,14 @@ class AbstractRawView extends HtmlView
         $app = Factory::getApplication();
         $jform = $app->getInput()->post->get('jform', [], 'array');
 
-        $this->ids = explode(',', $jform['cid'] ?? '');
+        $cid = $jform['cid'] ?? '';
+        if (is_scalar($cid))
+        {
+            $this->ids = array_values(array_filter(
+                array_map('trim', explode(',', (string) $cid)),
+                static fn($id) => filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) !== false
+            ));
+        }
         unset($jform['cid']);
 
         $this->params = new Registry();

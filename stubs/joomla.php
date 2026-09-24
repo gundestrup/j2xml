@@ -730,6 +730,8 @@ namespace Joomla\CMS\Form
 {
     class Form
     {
+        public static function addFormPath($path): void {}
+        public static function addFieldPath($path): void {}
         public function bind($data): bool { return true; }
         public function loadFile(string $file, bool $reset = true, bool $xpath = false): bool { return true; }
         public function setFieldAttribute(string $name, string $attribute, string $value, ?string $group = null): bool { return true; }

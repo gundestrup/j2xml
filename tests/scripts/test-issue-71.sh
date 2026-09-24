@@ -2,7 +2,7 @@
 # =============================================================================
 # Test: Issue #71 — Cannot import articles from J3.10.11 to J5
 #
-# Imports articles-j3.xml (J3 format) into Joomla 5, then verifies
+# Imports legacy-j2xml-12.5-articles.xml (J3 format) into Joomla 5, then verifies
 # the articles exist in the database.
 # =============================================================================
 
@@ -12,8 +12,8 @@ echo "--- Test: Issue #71 (Import articles J3 → J5) ---"
 
 # Copy fixture into Joomla 5 container
 docker exec j2xml-joomla5 mkdir -p /tmp/j2xml-test
-docker cp /fixtures/articles-j3.xml j2xml-joomla5:/tmp/j2xml-test/articles-j3.xml
-docker cp /fixtures/categories-j3.xml j2xml-joomla5:/tmp/j2xml-test/categories-j3.xml
+docker cp /fixtures/legacy-j2xml-12.5-articles.xml j2xml-joomla5:/tmp/j2xml-test/legacy-j2xml-12.5-articles.xml
+docker cp /fixtures/legacy-j2xml-12.5-categories.xml j2xml-joomla5:/tmp/j2xml-test/legacy-j2xml-12.5-categories.xml
 
 # Count articles before import
 BEFORE=$(mysql -h "$JOOMLA5_DB_HOST" -u"$DB_USER" -p"$DB_PASS" "$JOOMLA5_DB" -e "SELECT COUNT(*) FROM _content" -s 2>/dev/null)
@@ -31,7 +31,7 @@ OUTPUT=$(docker exec j2xml-joomla5 bash -c '
     \$app->initialiseApp();
 
     // Import categories first
-    \$xml = simplexml_load_file(\"/tmp/j2xml-test/categories-j3.xml\");
+    \$xml = simplexml_load_file(\"/tmp/j2xml-test/legacy-j2xml-12.5-categories.xml\");
     \$params = new JRegistry();
     \$params->set(\"categories\", 1);
     \$params->set(\"content\", 0);
@@ -39,7 +39,7 @@ OUTPUT=$(docker exec j2xml-joomla5 bash -c '
     \$importer->import(\$xml, \$params);
 
     // Then import articles
-    \$xml = simplexml_load_file(\"/tmp/j2xml-test/articles-j3.xml\");
+    \$xml = simplexml_load_file(\"/tmp/j2xml-test/legacy-j2xml-12.5-articles.xml\");
     \$params = new JRegistry();
     \$params->set(\"content\", 1);
     \$params->set(\"categories\", 0);

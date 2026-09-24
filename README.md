@@ -76,6 +76,15 @@ maintained separately for Joomla 5/6 and current PHP versions.
 3. Upload the package zip. Joomla installs the component, library, system
    plugin, and Webservices plugin.
 
+### Send to another site
+
+The browser Send action calls the receiving site's
+`/api/index.php/v1/j2xml/import` endpoint cross-origin. On the receiving site,
+enable Joomla's CORS support for the sending site's exact origin and allow the
+`Content-Type` and `X-Joomla-Token` headers. The sending administrator also
+needs an API token from a user allowed to use Joomla Webservices on the
+receiving site.
+
 ## CLI usage
 
 The repository also contains a command-line importer. Run it from the Joomla
@@ -123,14 +132,18 @@ of truth for project conventions, layout, and constraints.
 ## Testing
 
 Integration tests run in Docker against live Joomla 5 and 6 instances on both
-MySQL 8.0 and PostgreSQL 16. The current images exercise Joomla 5 on PHP 8.3
-and Joomla 6 on PHP 8.4; PHP 8.5 is covered by the quality/lint matrix. The
-suite verifies the import regressions fixed in this fork:
+MySQL 8.0 and PostgreSQL 16. The default images exercise Joomla 5 on PHP 8.3
+and Joomla 6 on PHP 8.4. `./scripts/check-tests.sh --php85` runs the full MySQL
+suite with both Joomla versions on PHP 8.5. The PHP 8.5 Apache runtime is the
+official multi-platform image pinned by manifest digest; Joomla's release
+images supply the CMS tree and startup entrypoint. It runs natively on both
+Apple Silicon (ARM64) and CI's AMD64 hosts. The suite verifies import/export
+regressions and runtime warnings:
 
 - **Issue #72** — Import no longer returns HTTP 500 on Joomla 5.2+
 - **Issue #71** — Articles import correctly from J3 XML format to J5
 - **Issue #70** — Users import correctly on J5
-- **Joomla 6 / PHP 8.4** — Import works on Joomla 6 with PHP 8.4
+- **PHP 8.5 runtime** — the full Joomla 5/6 MySQL suite passes on PHP 8.5
 
 ### Prerequisites
 
@@ -139,6 +152,13 @@ suite verifies the import regressions fixed in this fork:
 - Composer for PHPUnit/PHPStan development tools
 
 ### Running the tests
+
+For Playwright UI tests, use Node 22 as pinned in `.nvmrc` (the same Node major
+used by CI):
+
+```bash
+nvm install && nvm use
+```
 
 ```bash
 # Quick: quality checks only (PHP lint, PHPStan, Semgrep, ShellCheck, XML, PHPUnit)
@@ -150,6 +170,13 @@ suite verifies the import regressions fixed in this fork:
 # Single database legs, if needed
 ./scripts/check-tests.sh --mysql
 ./scripts/check-tests.sh --postgresql
+
+# Joomla 5 and 6 runtime tests on PHP 8.5
+# Builds the PHP 8.5 test image from the pinned multi-platform PHP image and official Joomla source images.
+./scripts/check-tests.sh --php85
+
+# Browser-level UI tests (Node version from .nvmrc)
+./scripts/check-tests.sh --ui
 
 # Everything: quality + tests (pre-release validation)
 ./scripts/check-all.sh
@@ -176,13 +203,16 @@ The script will:
 ### Test output
 
 The current MySQL and PostgreSQL integration suites each cover Joomla 5 and
-Joomla 6 with 97 assertions, including PHP warning/deprecation checks:
+Joomla 6 with 104 checks, including current/legacy and gzip imports, option
+effects (including password handling), and PHP warning/deprecation checks. The
+`--php85` runtime matrix runs the same suite with both Joomla versions on PHP
+8.5.
 
 ```text
-  Passed: 97
+  Passed: 104
   Failed: 0
   Skipped: 0
-  Total:  97
+  Total:  104
 ```
 
 The PHPUnit suite contains **76 tests and 146 assertions**. Run it without
@@ -230,12 +260,18 @@ docker compose down -v   # -v removes the database volumes too
 
 ### Test fixtures
 
-XML fixtures live in `tests/fixtures/` and use the J3-era format
-(`version="21.12.0"` in the `<j2xml>` root element):
+Fixtures in `tests/fixtures/` distinguish the current J2XML document format
+from legacy input formats. Joomla 5/6 is the importer target; the XML version
+identifies the J2XML document format, not the Joomla version.
 
-- `articles-j3.xml` — 3 articles with special characters, CDATA, unicode
-- `users-j3.xml` — 3 users with multiple group assignments
-- `categories-j3.xml` — Test categories
+- `all-content-types.xml` — current J2XML `21.12.0` format; comprehensive
+  fixture for normal import/export and settings coverage. The `fixtureuser1`
+  password hash is synthetic test data used to verify password option behavior.
+- `legacy-j2xml-12.5-articles.xml` — legacy `12.5.0` format; exercises old
+  text/entity decoding and import compatibility on Joomla 5/6.
+- `legacy-j2xml-12.5-categories.xml` — legacy category import coverage.
+- `legacy-j2xml-12.5-users.xml` — legacy user import and repeated group
+  elements, including multiple group assignments.
 
 ## License
 

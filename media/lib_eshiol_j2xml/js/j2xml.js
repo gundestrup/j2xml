@@ -63,7 +63,21 @@ eshiol.j2xml.validate.push(function (data) {
         const xmlDoc = new DOMParser().parseFromString(data, 'text/xml');
         const root = xmlDoc.documentElement;
 
-        return root.nodeName === 'j2xml' && versionCompare(root.getAttribute('version'), '15.9.0') >= 0;
+        // DOMParser keeps the root element even on parse errors and injects a
+        // <parsererror> node — reject those documents.
+        if (root.nodeName === 'parsererror' || xmlDoc.getElementsByTagName('parsererror').length) {
+            return false;
+        }
+
+        const version = root.getAttribute('version');
+        const parts = version ? version.split('.') : [];
+        if (root.nodeName !== 'j2xml' || parts.length !== 3 || !parts.every((part) => /^\d+$/.test(part))) {
+            return false;
+        }
+
+        const normalizedVersion = parts[0] + parts[1].padStart(2, '0') + parts[2].padStart(2, '0');
+        return Array.isArray(eshiol.j2xml.supportedVersions)
+            && eshiol.j2xml.supportedVersions.includes(normalizedVersion);
     } catch (e) {
         return false;
     }
@@ -113,10 +127,10 @@ if (typeof eshiol.renderMessages === 'undefined') {
 
         if (typeof container === 'undefined' || container === '#system-message-container') {
             el = document.getElementById('system-message-container');
-        } else if (container instanceof HTMLElement) {
-            el = container;
-        } else {
+        } else if (typeof container === 'string') {
             el = document.querySelector(container);
+        } else if (container && typeof container === 'object' && container.nodeType === 1) {
+            el = container;
         }
 
         if (!el) {
@@ -273,13 +287,18 @@ eshiol.j2xml.sendItem = function (options, params) {
         delete p.compression;
         delete p.token;
 
+        let remoteBody = JSON.stringify({data: r.data, options: p});
+        if (params.compression === '1') {
+            remoteBody = pako.gzip(remoteBody);
+        }
+
         fetch(options.remote_url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Joomla-Token': options.token || ''
             },
-            body: JSON.stringify({data: r.data, options: p})
+            body: remoteBody
         }).then(function (response) {
             if (!response.ok) {
                 return response.json().then(function (err) {
@@ -414,18 +433,18 @@ eshiol.download = function (filename, text) {
  * one by one via AJAX.
  */
 eshiol.j2xml.importerModal = function () {
-    // Copy form fields from the modal iframe into the main form
+    // Snapshot form fields before the dialog closes.
+    const formFields = [];
     const modalEl = document.getElementById('j2xmlImportModal');
     const iframe = modalEl ? modalEl.querySelector('iframe') : null;
     if (iframe && iframe.contentDocument) {
         const iframeFields = iframe.contentDocument.querySelectorAll('#adminForm input[name^=jform], #adminForm select[name^=jform]');
         iframeFields.forEach(function (input) {
-            const hidden = document.createElement('input');
-            hidden.type = 'hidden';
-            hidden.id = input.id;
-            hidden.name = input.name;
-            hidden.value = input.value;
-            document.getElementById('adminForm').appendChild(hidden);
+            if (input.disabled || (input.type === 'radio' && !input.checked) || (input.type === 'checkbox' && !input.checked)) {
+                return;
+            }
+
+            formFields.push({name: input.name, value: input.value});
         });
     }
 
@@ -499,7 +518,7 @@ eshiol.j2xml.importerModal = function () {
         msgContainer.parentNode.appendChild(progressDiv);
     }
 
-    eshiol.j2xml.importer(nodes, options);
+    eshiol.j2xml.importer(nodes, options, formFields);
 };
 
 /**
@@ -531,7 +550,9 @@ function stopProgressBars() {
  * @param {string[]}  nodes    Array of XML fragments
  * @param {object}    options  Progress counters
  */
-eshiol.j2xml.importer = function (nodes, options) {
+eshiol.j2xml.importer = function (nodes, options, formFields) {
+    formFields = formFields || [];
+
     if (nodes.length === 0) {
         stopProgressBars();
         setTimeout(function () {
@@ -555,18 +576,9 @@ eshiol.j2xml.importer = function (nodes, options) {
     formData.append('installtype', 'upload');
     formData.append(token, '1');
 
-    // Copy form fields from the modal iframe
-    const modalEl = document.getElementById('j2xmlImportModal');
-    const iframe = modalEl ? modalEl.querySelector('iframe') : null;
-    if (iframe && iframe.contentDocument) {
-        const iframeFields = iframe.contentDocument.querySelectorAll('#adminForm input[name^=jform], #adminForm select[name^=jform]');
-        iframeFields.forEach(function (el) {
-            if (el.type === 'radio' && !el.checked) {
-                return;
-            }
-            formData.append(el.name, el.value);
-        });
-    }
+    formFields.forEach(function (field) {
+        formData.append(field.name, field.value);
+    });
 
     JoomlaInstaller.showLoading();
 
@@ -637,7 +649,7 @@ eshiol.j2xml.importer = function (nodes, options) {
         }
 
         // Continue with next item
-        eshiol.j2xml.importer(nodes, options);
+        eshiol.j2xml.importer(nodes, options, formFields);
     }).catch(function (error) {
         JoomlaInstaller.hideLoading();
         eshiol.renderMessages({error: [error.message || error.toString()]});

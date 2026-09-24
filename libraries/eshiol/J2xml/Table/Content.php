@@ -185,6 +185,13 @@ class Content extends Table
         $keep_rating    = $params->get('keep_data', 0);
         $keep_data      = $params->get('keep_data', 0);
 
+        $contentFormPath = JPATH_ADMINISTRATOR . '/components/com_content';
+        \Joomla\CMS\Form\Form::addFormPath($contentFormPath . '/forms');
+        \Joomla\CMS\Form\Form::addFormPath($contentFormPath . '/models/forms');
+        \Joomla\CMS\Form\Form::addFieldPath($contentFormPath . '/models/fields');
+        \Joomla\CMS\Form\Form::addFormPath($contentFormPath . '/model/form');
+        \Joomla\CMS\Form\Form::addFieldPath($contentFormPath . '/model/field');
+
         $mvcFactory = Factory::getApplication()->bootComponent('com_content')->getMVCFactory();
 
         foreach ($xml->xpath("//j2xml/content[not(name = '')]") as $record)
@@ -341,29 +348,40 @@ class Content extends Table
      */
     private static function syncFrontpage ($db, $data, $itemId, $keepFrontpage)
     {
-        if (($keepFrontpage == 0) || ($data['featured'] == 0))
+        // Always clear any existing frontpage row first; re-inserting without
+        // deleting produces a duplicate key error when the article is already
+        // featured.
+        $db->setQuery(
+            $db->getQuery()->clear()
+                ->delete($db->quoteName('#__content_frontpage'))
+                ->where($db->quoteName('content_id') . ' = ' . (int) $itemId)
+        )->execute();
+
+        if (($keepFrontpage == 0) || ((int) ($data['featured'] ?? 0) === 0))
         {
-            $query = "DELETE FROM #__content_frontpage WHERE content_id = " . $itemId;
+            return;
         }
-        else
+
+        // Use query builder for cross-database compatibility (MySQL + PostgreSQL)
+        $columns = [$db->quoteName('content_id'), $db->quoteName('ordering')];
+        $values  = [(int) $itemId, (int) ($data['ordering'] ?? 0)];
+        if (isset($data['featured_up']))
         {
-            // Use query builder for cross-database compatibility (MySQL + PostgreSQL)
-            $query = $db->getQuery()->clear()
+            $columns[] = $db->quoteName('featured_up');
+            $values[]  = $db->quote($data['featured_up']);
+        }
+        if (isset($data['featured_down']))
+        {
+            $columns[] = $db->quoteName('featured_down');
+            $values[]  = $db->quote($data['featured_down']);
+        }
+
+        $db->setQuery(
+            $db->getQuery()->clear()
                 ->insert($db->quoteName('#__content_frontpage'))
-                ->columns([$db->quoteName('content_id'), $db->quoteName('ordering')])
-                ->values($itemId . ',' . $data['ordering']);
-            if (!is_null($data['featured_up']))
-            {
-                $query->columns($db->quoteName('featured_up'))
-                    ->values($db->quote($data['featured_up']));
-            }
-            if (!is_null($data['featured_down']))
-            {
-                $query->columns($db->quoteName('featured_down'))
-                    ->values($db->quote($data['featured_down']));
-            }
-        }
-        $db->setQuery($query)->execute();
+                ->columns($columns)
+                ->values(implode(',', $values))
+        )->execute();
     }
 
     /**

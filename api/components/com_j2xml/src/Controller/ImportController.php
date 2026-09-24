@@ -64,7 +64,7 @@ class ImportController extends BaseController
         {
             http_response_code(401);
             echo new JsonResponse(null, Text::_('JGLOBAL_AUTH_ACCESS_DENIED'), true);
-            $app->close();
+            return;
         }
 
         // Load language files.
@@ -79,7 +79,7 @@ class ImportController extends BaseController
         {
             http_response_code(400);
             echo new JsonResponse(null, Text::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), true);
-            $app->close();
+            return;
         }
 
         // Extract the XML declaration and parse.
@@ -92,14 +92,14 @@ class ImportController extends BaseController
         {
             http_response_code(400);
             echo new JsonResponse(null, $this->libxmlErrors(), true);
-            $app->close();
+            return;
         }
 
         if (strtoupper($xml->getName()) !== 'J2XML' || !isset($xml['version']))
         {
             http_response_code(400);
             echo new JsonResponse(null, Text::_('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN'), true);
-            $app->close();
+            return;
         }
 
         $params = $this->buildImportParams($app, $xml);
@@ -114,22 +114,11 @@ class ImportController extends BaseController
             ? new \eshiol\J2xmlpro\Importer()
             : new \eshiol\J2xml\Importer();
 
-        try
-        {
-            $importer->import($xml, $params);
-        }
-        catch (\Throwable $e)
-        {
-            // The import may throw during post-save workflow hooks
-            // (e.g. ArticleModel::getForm() fails in the API context).
-            // The data is typically already saved by this point, so we
-            // log the error and continue to return a response.
-            Log::add(new LogEntry('Import error: ' . $e->getMessage(), Log::WARNING, 'com_j2xml'));
-        }
+        $importer->import($xml, $params);
 
         // Collect the message queue and return as JSON.
         echo new JsonResponse($this->collectMessages($app));
-        $app->close();
+        return;
     }
 
     /**
@@ -159,7 +148,8 @@ class ImportController extends BaseController
         }
 
         // If the body is JSON, extract the XML from the "data" field.
-        $contentType = $app->getInput()->server->getString('HTTP_CONTENT_TYPE', '');
+        $server = $app->getInput()->server;
+        $contentType = $server->getString('CONTENT_TYPE', $server->getString('HTTP_CONTENT_TYPE', ''));
         if (str_contains($contentType, 'application/json'))
         {
             $json = json_decode($raw, true);

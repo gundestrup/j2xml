@@ -313,6 +313,11 @@ class Table extends \Joomla\CMS\Table\Table
      */
     protected static function loadExportItem(string $element, $id, &$xml, &$db)
     {
+        if (!is_scalar($id) || filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false)
+        {
+            return null;
+        }
+
         if (self::isExported($xml, $element, $id))
         {
             return null;

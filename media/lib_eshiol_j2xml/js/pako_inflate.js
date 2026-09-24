@@ -1,5 +1,4 @@
-/* NOSONAR */
-/* pako 3.x inflate-only bundle (built from npm pako 3.0.1) */
+/* pako 3.x gzip/inflate bundle (built from npm pako 3.0.1) */
 var pako = (() => {
   var __defProp = Object.defineProperty;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -23,6 +22,7 @@ var pako = (() => {
   var entry_exports = {};
   __export(entry_exports, {
     Inflate: () => Inflate,
+    gzip: () => gzip,
     inflate: () => inflate,
     inflateRaw: () => inflateRaw,
     ungzip: () => inflate
@@ -48,6 +48,7 @@ var pako = (() => {
   var HEAP_SIZE$1 = 573;
   var MAX_BITS = 15;
   var Buf_size = 16;
+  var MAX_BL_BITS = 7;
   var END_BLOCK = 256;
   var REP_3_6 = 16;
   var REPZ_3_10 = 17;
@@ -170,6 +171,26 @@ var pako = (() => {
   zero$1(base_length);
   var base_dist = new Array(D_CODES);
   zero$1(base_dist);
+  var StaticTreeDesc = class {
+    constructor(static_tree, extra_bits, extra_base, elems, max_length) {
+      this.static_tree = static_tree;
+      this.extra_bits = extra_bits;
+      this.extra_base = extra_base;
+      this.elems = elems;
+      this.max_length = max_length;
+      this.has_stree = static_tree && static_tree.length;
+    }
+  };
+  var static_l_desc;
+  var static_d_desc;
+  var static_bl_desc;
+  var TreeDesc = class {
+    constructor(dyn_tree, stat_desc) {
+      this.dyn_tree = dyn_tree;
+      this.max_code = 0;
+      this.stat_desc = stat_desc;
+    }
+  };
   var d_code = (dist) => {
     return dist < 256 ? _dist_code[dist] : _dist_code[256 + (dist >>> 7)];
   };
@@ -199,6 +220,17 @@ var pako = (() => {
       res <<= 1;
     } while (--len > 0);
     return res >>> 1;
+  };
+  var bi_flush = (s) => {
+    if (s.bi_valid === 16) {
+      put_short(s, s.bi_buf);
+      s.bi_buf = 0;
+      s.bi_valid = 0;
+    } else if (s.bi_valid >= 8) {
+      s.pending_buf[s.pending++] = s.bi_buf & 255;
+      s.bi_buf >>= 8;
+      s.bi_valid -= 8;
+    }
   };
   var gen_bitlen = (s, desc) => {
     const tree = desc.dyn_tree;
@@ -268,6 +300,60 @@ var pako = (() => {
       if (len === 0) continue;
       tree[n * 2] = bi_reverse(next_code[len]++, len);
     }
+  };
+  var tr_static_init = () => {
+    let n;
+    let bits;
+    let length;
+    let code;
+    let dist;
+    const bl_count = new Array(16);
+    length = 0;
+    for (code = 0; code < LENGTH_CODES - 1; code++) {
+      base_length[code] = length;
+      for (n = 0; n < 1 << extra_lbits[code]; n++) _length_code[length++] = code;
+    }
+    _length_code[length - 1] = code;
+    dist = 0;
+    for (code = 0; code < 16; code++) {
+      base_dist[code] = dist;
+      for (n = 0; n < 1 << extra_dbits[code]; n++) _dist_code[dist++] = code;
+    }
+    dist >>= 7;
+    for (; code < D_CODES; code++) {
+      base_dist[code] = dist << 7;
+      for (n = 0; n < 1 << extra_dbits[code] - 7; n++) _dist_code[256 + dist++] = code;
+    }
+    for (bits = 0; bits <= MAX_BITS; bits++) bl_count[bits] = 0;
+    n = 0;
+    while (n <= 143) {
+      static_ltree[n * 2 + 1] = 8;
+      n++;
+      bl_count[8]++;
+    }
+    while (n <= 255) {
+      static_ltree[n * 2 + 1] = 9;
+      n++;
+      bl_count[9]++;
+    }
+    while (n <= 279) {
+      static_ltree[n * 2 + 1] = 7;
+      n++;
+      bl_count[7]++;
+    }
+    while (n <= 287) {
+      static_ltree[n * 2 + 1] = 8;
+      n++;
+      bl_count[8]++;
+    }
+    gen_codes(static_ltree, 287, bl_count);
+    for (n = 0; n < D_CODES; n++) {
+      static_dtree[n * 2 + 1] = 5;
+      static_dtree[n * 2] = bi_reverse(n, 5);
+    }
+    static_l_desc = new StaticTreeDesc(static_ltree, extra_lbits, 257, L_CODES, MAX_BITS);
+    static_d_desc = new StaticTreeDesc(static_dtree, extra_dbits, 0, D_CODES, MAX_BITS);
+    static_bl_desc = new StaticTreeDesc(new Array(0), extra_blbits, 0, BL_CODES, MAX_BL_BITS);
   };
   var init_block = (s) => {
     let n;
@@ -467,11 +553,11 @@ var pako = (() => {
     return max_blindex;
   };
   var send_all_trees = (s, lcodes, dcodes, blcodes) => {
-    let rank;
+    let rank2;
     send_bits(s, lcodes - 257, 5);
     send_bits(s, dcodes - 1, 5);
     send_bits(s, blcodes - 4, 4);
-    for (rank = 0; rank < blcodes; rank++) send_bits(s, s.bl_tree[bl_order[rank] * 2 + 1], 3);
+    for (rank2 = 0; rank2 < blcodes; rank2++) send_bits(s, s.bl_tree[bl_order[rank2] * 2 + 1], 3);
     send_tree(s, s.dyn_ltree, lcodes - 1);
     send_tree(s, s.dyn_dtree, dcodes - 1);
   };
@@ -483,6 +569,19 @@ var pako = (() => {
     for (n = 32; n < LITERALS; n++) if (s.dyn_ltree[n * 2] !== 0) return Z_TEXT;
     return Z_BINARY;
   };
+  var static_init_done = false;
+  var _tr_init = (s) => {
+    if (!static_init_done) {
+      tr_static_init();
+      static_init_done = true;
+    }
+    s.l_desc = new TreeDesc(s.dyn_ltree, static_l_desc);
+    s.d_desc = new TreeDesc(s.dyn_dtree, static_d_desc);
+    s.bl_desc = new TreeDesc(s.bl_tree, static_bl_desc);
+    s.bi_buf = 0;
+    s.bi_valid = 0;
+    init_block(s);
+  };
   var _tr_stored_block = (s, buf, stored_len, last) => {
     send_bits(s, (STORED_BLOCK << 1) + (last ? 1 : 0), 3);
     bi_windup(s);
@@ -490,6 +589,11 @@ var pako = (() => {
     put_short(s, ~stored_len);
     if (stored_len) s.pending_buf.set(s.window.subarray(buf, buf + stored_len), s.pending);
     s.pending += stored_len;
+  };
+  var _tr_align = (s) => {
+    send_bits(s, STATIC_TREES << 1, 3);
+    send_code(s, END_BLOCK, static_ltree);
+    bi_flush(s);
   };
   var _tr_flush_block = (s, buf, stored_len, last) => {
     let opt_lenb, static_lenb;
@@ -570,13 +674,36 @@ var pako = (() => {
     "-5": "buffer error",
     "-6": "incompatible version"
   };
+  var MAX_MEM_LEVEL = 9;
+  var HEAP_SIZE = 573;
   var MIN_MATCH = 3;
   var MAX_MATCH = 258;
   var MIN_LOOKAHEAD = 262;
+  var PRESET_DICT = 32;
+  var INIT_STATE = 42;
+  var GZIP_STATE = 57;
+  var EXTRA_STATE = 69;
+  var NAME_STATE = 73;
+  var COMMENT_STATE = 91;
+  var HCRC_STATE = 103;
+  var BUSY_STATE = 113;
+  var FINISH_STATE = 666;
   var BS_NEED_MORE = 1;
   var BS_BLOCK_DONE = 2;
   var BS_FINISH_STARTED = 3;
   var BS_FINISH_DONE = 4;
+  var OS_CODE = 3;
+  var err = (strm, errorCode) => {
+    strm.msg = messages_default[errorCode];
+    return errorCode;
+  };
+  var rank = (f) => {
+    return f * 2 - (f > 4 ? 9 : 0);
+  };
+  var zero = (buf) => {
+    let len = buf.length;
+    while (--len >= 0) buf[len] = 0;
+  };
   var slide_hash = (s) => {
     let n, m;
     let p;
@@ -624,6 +751,13 @@ var pako = (() => {
     _tr_flush_block(s, s.block_start >= 0 ? s.block_start : -1, s.strstart - s.block_start, last);
     s.block_start = s.strstart;
     flush_pending(s.strm);
+  };
+  var put_byte = (s, b) => {
+    s.pending_buf[s.pending++] = b;
+  };
+  var putShortMSB = (s, b) => {
+    s.pending_buf[s.pending++] = b >>> 8 & 255;
+    s.pending_buf[s.pending++] = b & 255;
   };
   var read_buf = (strm, buf, start, size) => {
     let len = strm.avail_in;
@@ -917,6 +1051,88 @@ var pako = (() => {
     }
     return BS_BLOCK_DONE;
   };
+  var deflate_rle = (s, flush) => {
+    let bflush;
+    let prev;
+    let scan, strend;
+    const _win = s.window;
+    for (; ; ) {
+      if (s.lookahead <= MAX_MATCH) {
+        fill_window(s);
+        if (s.lookahead <= MAX_MATCH && flush === 0) return BS_NEED_MORE;
+        if (s.lookahead === 0) break;
+      }
+      s.match_length = 0;
+      if (s.lookahead >= MIN_MATCH && s.strstart > 0) {
+        scan = s.strstart - 1;
+        prev = _win[scan];
+        if (prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan]) {
+          strend = s.strstart + MAX_MATCH;
+          do
+            ;
+          while (prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && scan < strend);
+          s.match_length = MAX_MATCH - (strend - scan);
+          if (s.match_length > s.lookahead) s.match_length = s.lookahead;
+        }
+      }
+      if (s.match_length >= MIN_MATCH) {
+        bflush = _tr_tally(s, 1, s.match_length - MIN_MATCH);
+        s.lookahead -= s.match_length;
+        s.strstart += s.match_length;
+        s.match_length = 0;
+      } else {
+        bflush = _tr_tally(s, 0, s.window[s.strstart]);
+        s.lookahead--;
+        s.strstart++;
+      }
+      if (bflush) {
+        flush_block_only(s, false);
+        if (s.strm.avail_out === 0) return BS_NEED_MORE;
+      }
+    }
+    s.insert = 0;
+    if (flush === 4) {
+      flush_block_only(s, true);
+      if (s.strm.avail_out === 0) return BS_FINISH_STARTED;
+      return BS_FINISH_DONE;
+    }
+    if (s.sym_next) {
+      flush_block_only(s, false);
+      if (s.strm.avail_out === 0) return BS_NEED_MORE;
+    }
+    return BS_BLOCK_DONE;
+  };
+  var deflate_huff = (s, flush) => {
+    let bflush;
+    for (; ; ) {
+      if (s.lookahead === 0) {
+        fill_window(s);
+        if (s.lookahead === 0) {
+          if (flush === 0) return BS_NEED_MORE;
+          break;
+        }
+      }
+      s.match_length = 0;
+      bflush = _tr_tally(s, 0, s.window[s.strstart]);
+      s.lookahead--;
+      s.strstart++;
+      if (bflush) {
+        flush_block_only(s, false);
+        if (s.strm.avail_out === 0) return BS_NEED_MORE;
+      }
+    }
+    s.insert = 0;
+    if (flush === 4) {
+      flush_block_only(s, true);
+      if (s.strm.avail_out === 0) return BS_FINISH_STARTED;
+      return BS_FINISH_DONE;
+    }
+    if (s.sym_next) {
+      flush_block_only(s, false);
+      if (s.strm.avail_out === 0) return BS_NEED_MORE;
+    }
+    return BS_BLOCK_DONE;
+  };
   var Config = class {
     constructor(good_length, max_lazy, nice_length, max_chain, func) {
       this.good_length = good_length;
@@ -938,6 +1154,422 @@ var pako = (() => {
     new Config(32, 128, 258, 1024, deflate_slow),
     new Config(32, 258, 258, 4096, deflate_slow)
   ];
+  var lm_init = (s) => {
+    s.window_size = 2 * s.w_size;
+    zero(s.head);
+    s.max_lazy_match = configuration_table[s.level].max_lazy;
+    s.good_match = configuration_table[s.level].good_length;
+    s.nice_match = configuration_table[s.level].nice_length;
+    s.max_chain_length = configuration_table[s.level].max_chain;
+    s.strstart = 0;
+    s.block_start = 0;
+    s.lookahead = 0;
+    s.insert = 0;
+    s.match_length = s.prev_length = MIN_MATCH - 1;
+    s.match_available = 0;
+    s.ins_h = 0;
+  };
+  var DeflateState = class {
+    constructor() {
+      this.strm = null;
+      this.status = 0;
+      this.pending_buf = null;
+      this.pending_buf_size = 0;
+      this.pending_out = 0;
+      this.pending = 0;
+      this.wrap = 0;
+      this.gzhead = null;
+      this.gzindex = 0;
+      this.method = 8;
+      this.last_flush = -1;
+      this.w_size = 0;
+      this.w_bits = 0;
+      this.w_mask = 0;
+      this.window = null;
+      this.window_size = 0;
+      this.prev = null;
+      this.head = null;
+      this.ins_h = 0;
+      this.legacy_hash = 0;
+      this.hash_size = 0;
+      this.hash_bits = 0;
+      this.hash_mask = 0;
+      this.hash_shift = 0;
+      this.block_start = 0;
+      this.match_length = 0;
+      this.prev_match = 0;
+      this.match_available = 0;
+      this.strstart = 0;
+      this.match_start = 0;
+      this.lookahead = 0;
+      this.prev_length = 0;
+      this.max_chain_length = 0;
+      this.max_lazy_match = 0;
+      this.level = 0;
+      this.strategy = 0;
+      this.good_match = 0;
+      this.nice_match = 0;
+      this.dyn_ltree = new Uint16Array(HEAP_SIZE * 2);
+      this.dyn_dtree = /* @__PURE__ */ new Uint16Array(122);
+      this.bl_tree = /* @__PURE__ */ new Uint16Array(78);
+      zero(this.dyn_ltree);
+      zero(this.dyn_dtree);
+      zero(this.bl_tree);
+      this.l_desc = null;
+      this.d_desc = null;
+      this.bl_desc = null;
+      this.bl_count = /* @__PURE__ */ new Uint16Array(16);
+      this.heap = /* @__PURE__ */ new Uint16Array(573);
+      zero(this.heap);
+      this.heap_len = 0;
+      this.heap_max = 0;
+      this.depth = /* @__PURE__ */ new Uint16Array(573);
+      zero(this.depth);
+      this.sym_buf = 0;
+      this.lit_bufsize = 0;
+      this.sym_next = 0;
+      this.sym_end = 0;
+      this.opt_len = 0;
+      this.static_len = 0;
+      this.matches = 0;
+      this.insert = 0;
+      this.bi_buf = 0;
+      this.bi_valid = 0;
+    }
+  };
+  var deflateStateCheck = (strm) => {
+    if (!strm) return 1;
+    const s = strm.state;
+    if (!s || s.strm !== strm || s.status !== INIT_STATE && s.status !== GZIP_STATE && s.status !== EXTRA_STATE && s.status !== NAME_STATE && s.status !== COMMENT_STATE && s.status !== HCRC_STATE && s.status !== BUSY_STATE && s.status !== FINISH_STATE) return 1;
+    return 0;
+  };
+  var deflateResetKeep = (strm) => {
+    if (deflateStateCheck(strm)) return err(strm, -2);
+    strm.total_in = strm.total_out = 0;
+    strm.data_type = 2;
+    const s = strm.state;
+    s.pending = 0;
+    s.pending_out = 0;
+    if (s.wrap < 0) s.wrap = -s.wrap;
+    s.status = s.wrap === 2 ? GZIP_STATE : s.wrap ? INIT_STATE : BUSY_STATE;
+    strm.adler = s.wrap === 2 ? 0 : 1;
+    s.last_flush = -2;
+    _tr_init(s);
+    return 0;
+  };
+  var deflateReset = (strm) => {
+    const ret = deflateResetKeep(strm);
+    if (ret === 0) lm_init(strm.state);
+    return ret;
+  };
+  var deflateInit2 = (strm, level, method, windowBits, memLevel, strategy, legacyHash) => {
+    if (!strm) return -2;
+    let wrap = 1;
+    if (level === -1) level = 6;
+    if (windowBits < 0) {
+      wrap = 0;
+      windowBits = -windowBits;
+    } else if (windowBits > 15) {
+      wrap = 2;
+      windowBits -= 16;
+    }
+    if (memLevel < 1 || memLevel > MAX_MEM_LEVEL || method !== 8 || windowBits < 8 || windowBits > 15 || level < 0 || level > 9 || strategy < 0 || strategy > 4 || windowBits === 8 && wrap !== 1) return err(strm, -2);
+    if (windowBits === 8) windowBits = 9;
+    const s = new DeflateState();
+    strm.state = s;
+    s.strm = strm;
+    s.status = INIT_STATE;
+    s.wrap = wrap;
+    s.gzhead = null;
+    s.w_bits = windowBits;
+    s.w_size = 1 << s.w_bits;
+    s.w_mask = s.w_size - 1;
+    s.legacy_hash = legacyHash ? 1 : 0;
+    s.hash_bits = memLevel + 7;
+    if (!s.legacy_hash && s.hash_bits < 15) s.hash_bits = 15;
+    s.hash_size = 1 << s.hash_bits;
+    s.hash_mask = s.hash_size - 1;
+    s.hash_shift = ~~((s.hash_bits + MIN_MATCH - 1) / MIN_MATCH);
+    s.window = new Uint8Array(s.w_size * 2);
+    s.head = new Uint16Array(s.hash_size);
+    s.prev = new Uint16Array(s.w_size);
+    s.lit_bufsize = 1 << memLevel + 6;
+    s.pending_buf_size = s.lit_bufsize * 4;
+    s.pending_buf = new Uint8Array(s.pending_buf_size);
+    s.sym_buf = s.lit_bufsize;
+    s.sym_end = (s.lit_bufsize - 1) * 3;
+    s.level = level;
+    s.strategy = strategy;
+    s.method = method;
+    return deflateReset(strm);
+  };
+  var deflate$1 = (strm, flush) => {
+    if (deflateStateCheck(strm) || flush > 5 || flush < 0) return strm ? err(strm, -2) : -2;
+    const s = strm.state;
+    if (!strm.output || strm.avail_in !== 0 && !strm.input || s.status === FINISH_STATE && flush !== 4) return err(strm, strm.avail_out === 0 ? -5 : -2);
+    const old_flush = s.last_flush;
+    s.last_flush = flush;
+    if (s.pending !== 0) {
+      flush_pending(strm);
+      if (strm.avail_out === 0) {
+        s.last_flush = -1;
+        return 0;
+      }
+    } else if (strm.avail_in === 0 && rank(flush) <= rank(old_flush) && flush !== 4) return err(strm, -5);
+    if (s.status === FINISH_STATE && strm.avail_in !== 0) return err(strm, -5);
+    if (s.status === INIT_STATE && s.wrap === 0) s.status = BUSY_STATE;
+    if (s.status === INIT_STATE) {
+      let header = 8 + (s.w_bits - 8 << 4) << 8;
+      let level_flags = -1;
+      if (s.strategy >= 2 || s.level < 2) level_flags = 0;
+      else if (s.level < 6) level_flags = 1;
+      else if (s.level === 6) level_flags = 2;
+      else level_flags = 3;
+      header |= level_flags << 6;
+      if (s.strstart !== 0) header |= PRESET_DICT;
+      header += 31 - header % 31;
+      putShortMSB(s, header);
+      if (s.strstart !== 0) {
+        putShortMSB(s, strm.adler >>> 16);
+        putShortMSB(s, strm.adler & 65535);
+      }
+      strm.adler = 1;
+      s.status = BUSY_STATE;
+      flush_pending(strm);
+      if (s.pending !== 0) {
+        s.last_flush = -1;
+        return 0;
+      }
+    }
+    if (s.status === GZIP_STATE) {
+      strm.adler = 0;
+      put_byte(s, 31);
+      put_byte(s, 139);
+      put_byte(s, 8);
+      if (!s.gzhead) {
+        put_byte(s, 0);
+        put_byte(s, 0);
+        put_byte(s, 0);
+        put_byte(s, 0);
+        put_byte(s, 0);
+        put_byte(s, s.level === 9 ? 2 : s.strategy >= 2 || s.level < 2 ? 4 : 0);
+        put_byte(s, OS_CODE);
+        s.status = BUSY_STATE;
+        flush_pending(strm);
+        if (s.pending !== 0) {
+          s.last_flush = -1;
+          return 0;
+        }
+      } else {
+        put_byte(s, (s.gzhead.text ? 1 : 0) + (s.gzhead.hcrc ? 2 : 0) + (!s.gzhead.extra ? 0 : 4) + (!s.gzhead.name ? 0 : 8) + (!s.gzhead.comment ? 0 : 16));
+        put_byte(s, s.gzhead.time & 255);
+        put_byte(s, s.gzhead.time >> 8 & 255);
+        put_byte(s, s.gzhead.time >> 16 & 255);
+        put_byte(s, s.gzhead.time >> 24 & 255);
+        put_byte(s, s.level === 9 ? 2 : s.strategy >= 2 || s.level < 2 ? 4 : 0);
+        put_byte(s, s.gzhead.os & 255);
+        if (s.gzhead.extra && s.gzhead.extra.length) {
+          put_byte(s, s.gzhead.extra.length & 255);
+          put_byte(s, s.gzhead.extra.length >> 8 & 255);
+        }
+        if (s.gzhead.hcrc) strm.adler = crc32(strm.adler, s.pending_buf, s.pending, 0);
+        s.gzindex = 0;
+        s.status = EXTRA_STATE;
+      }
+    }
+    if (s.status === EXTRA_STATE) {
+      if (s.gzhead.extra) {
+        let beg = s.pending;
+        let left = (s.gzhead.extra.length & 65535) - s.gzindex;
+        while (s.pending + left > s.pending_buf_size) {
+          let copy = s.pending_buf_size - s.pending;
+          s.pending_buf.set(s.gzhead.extra.subarray(s.gzindex, s.gzindex + copy), s.pending);
+          s.pending = s.pending_buf_size;
+          if (s.gzhead.hcrc && s.pending > beg) strm.adler = crc32(strm.adler, s.pending_buf, s.pending - beg, beg);
+          s.gzindex += copy;
+          flush_pending(strm);
+          if (s.pending !== 0) {
+            s.last_flush = -1;
+            return 0;
+          }
+          beg = 0;
+          left -= copy;
+        }
+        let gzhead_extra = new Uint8Array(s.gzhead.extra);
+        s.pending_buf.set(gzhead_extra.subarray(s.gzindex, s.gzindex + left), s.pending);
+        s.pending += left;
+        if (s.gzhead.hcrc && s.pending > beg) strm.adler = crc32(strm.adler, s.pending_buf, s.pending - beg, beg);
+        s.gzindex = 0;
+      }
+      s.status = NAME_STATE;
+    }
+    if (s.status === NAME_STATE) {
+      if (s.gzhead.name) {
+        let beg = s.pending;
+        let val;
+        do {
+          if (s.pending === s.pending_buf_size) {
+            if (s.gzhead.hcrc && s.pending > beg) strm.adler = crc32(strm.adler, s.pending_buf, s.pending - beg, beg);
+            flush_pending(strm);
+            if (s.pending !== 0) {
+              s.last_flush = -1;
+              return 0;
+            }
+            beg = 0;
+          }
+          if (s.gzindex < s.gzhead.name.length) val = s.gzhead.name.charCodeAt(s.gzindex++) & 255;
+          else val = 0;
+          put_byte(s, val);
+        } while (val !== 0);
+        if (s.gzhead.hcrc && s.pending > beg) strm.adler = crc32(strm.adler, s.pending_buf, s.pending - beg, beg);
+        s.gzindex = 0;
+      }
+      s.status = COMMENT_STATE;
+    }
+    if (s.status === COMMENT_STATE) {
+      if (s.gzhead.comment) {
+        let beg = s.pending;
+        let val;
+        do {
+          if (s.pending === s.pending_buf_size) {
+            if (s.gzhead.hcrc && s.pending > beg) strm.adler = crc32(strm.adler, s.pending_buf, s.pending - beg, beg);
+            flush_pending(strm);
+            if (s.pending !== 0) {
+              s.last_flush = -1;
+              return 0;
+            }
+            beg = 0;
+          }
+          if (s.gzindex < s.gzhead.comment.length) val = s.gzhead.comment.charCodeAt(s.gzindex++) & 255;
+          else val = 0;
+          put_byte(s, val);
+        } while (val !== 0);
+        if (s.gzhead.hcrc && s.pending > beg) strm.adler = crc32(strm.adler, s.pending_buf, s.pending - beg, beg);
+      }
+      s.status = HCRC_STATE;
+    }
+    if (s.status === HCRC_STATE) {
+      if (s.gzhead.hcrc) {
+        if (s.pending + 2 > s.pending_buf_size) {
+          flush_pending(strm);
+          if (s.pending !== 0) {
+            s.last_flush = -1;
+            return 0;
+          }
+        }
+        put_byte(s, strm.adler & 255);
+        put_byte(s, strm.adler >> 8 & 255);
+        strm.adler = 0;
+      }
+      s.status = BUSY_STATE;
+      flush_pending(strm);
+      if (s.pending !== 0) {
+        s.last_flush = -1;
+        return 0;
+      }
+    }
+    if (strm.avail_in !== 0 || s.lookahead !== 0 || flush !== 0 && s.status !== FINISH_STATE) {
+      let bstate = s.level === 0 ? deflate_stored(s, flush) : s.strategy === 2 ? deflate_huff(s, flush) : s.strategy === 3 ? deflate_rle(s, flush) : configuration_table[s.level].func(s, flush);
+      if (bstate === BS_FINISH_STARTED || bstate === BS_FINISH_DONE) s.status = FINISH_STATE;
+      if (bstate === BS_NEED_MORE || bstate === BS_FINISH_STARTED) {
+        if (strm.avail_out === 0) s.last_flush = -1;
+        return 0;
+      }
+      if (bstate === BS_BLOCK_DONE) {
+        if (flush === 1) _tr_align(s);
+        else if (flush !== 5) {
+          _tr_stored_block(s, 0, 0, false);
+          if (flush === 3) {
+            zero(s.head);
+            if (s.lookahead === 0) {
+              s.strstart = 0;
+              s.block_start = 0;
+              s.insert = 0;
+            }
+          }
+        }
+        flush_pending(strm);
+        if (strm.avail_out === 0) {
+          s.last_flush = -1;
+          return 0;
+        }
+      }
+    }
+    if (flush !== 4) return 0;
+    if (s.wrap <= 0) return 1;
+    if (s.wrap === 2) {
+      put_byte(s, strm.adler & 255);
+      put_byte(s, strm.adler >> 8 & 255);
+      put_byte(s, strm.adler >> 16 & 255);
+      put_byte(s, strm.adler >> 24 & 255);
+      put_byte(s, strm.total_in & 255);
+      put_byte(s, strm.total_in >> 8 & 255);
+      put_byte(s, strm.total_in >> 16 & 255);
+      put_byte(s, strm.total_in >> 24 & 255);
+    } else {
+      putShortMSB(s, strm.adler >>> 16);
+      putShortMSB(s, strm.adler & 65535);
+    }
+    flush_pending(strm);
+    if (s.wrap > 0) s.wrap = -s.wrap;
+    return s.pending !== 0 ? 0 : 1;
+  };
+  var deflateEnd = (strm) => {
+    if (deflateStateCheck(strm)) return -2;
+    const status = strm.state.status;
+    strm.state = null;
+    return status === BUSY_STATE ? err(strm, -3) : 0;
+  };
+  var deflateSetDictionary = (strm, dictionary) => {
+    let dictLength = dictionary.length;
+    if (deflateStateCheck(strm)) return -2;
+    const s = strm.state;
+    const wrap = s.wrap;
+    if (wrap === 2 || wrap === 1 && s.status !== INIT_STATE || s.lookahead) return -2;
+    if (wrap === 1) strm.adler = adler32(strm.adler, dictionary, dictLength, 0);
+    s.wrap = 0;
+    if (dictLength >= s.w_size) {
+      if (wrap === 0) {
+        zero(s.head);
+        s.strstart = 0;
+        s.block_start = 0;
+        s.insert = 0;
+      }
+      let tmpDict = new Uint8Array(s.w_size);
+      tmpDict.set(dictionary.subarray(dictLength - s.w_size, dictLength), 0);
+      dictionary = tmpDict;
+      dictLength = s.w_size;
+    }
+    const avail = strm.avail_in;
+    const next = strm.next_in;
+    const input = strm.input;
+    strm.avail_in = dictLength;
+    strm.next_in = 0;
+    strm.input = dictionary;
+    fill_window(s);
+    while (s.lookahead >= MIN_MATCH) {
+      let str = s.strstart;
+      let n = s.lookahead - (MIN_MATCH - 1);
+      do {
+        INSERT_STRING(s, str);
+        str++;
+      } while (--n);
+      s.strstart = str;
+      s.lookahead = MIN_MATCH - 1;
+      fill_window(s);
+    }
+    s.strstart += s.lookahead;
+    s.block_start = s.strstart;
+    s.insert = s.lookahead;
+    s.lookahead = 0;
+    s.match_length = s.prev_length = MIN_MATCH - 1;
+    s.match_available = 0;
+    strm.next_in = next;
+    strm.input = input;
+    strm.avail_in = avail;
+    s.wrap = wrap;
+    return 0;
+  };
   var BAD$1 = 16209;
   var TYPE$1 = 16191;
   function inflate_fast(strm, start) {
@@ -2426,6 +3058,192 @@ var pako = (() => {
     }
     return result;
   };
+  var toString$1 = Object.prototype.toString;
+  var defaultOptions$1 = {
+    level: -1,
+    chunkSize: 16384,
+    windowBits: 15,
+    memLevel: 8,
+    strategy: 0,
+    raw: false,
+    gzip: false,
+    legacyHash: false,
+    dictionary: /* @__PURE__ */ new Uint8Array(0)
+  };
+  var Deflate = class {
+    options;
+    /**
+    * Error code after deflate finishes. {@link Z_OK} on success.
+    * You will not need it in real life, because deflate errors
+    * are possible only on wrong options or bad custom `onData` / `onEnd`
+    * handlers.
+    */
+    err;
+    /** Error message, if {@link Deflate.err} is not {@link Z_OK}. */
+    msg;
+    ended;
+    started;
+    /**
+    * Chunks of output data, if {@link Deflate.onData} not overridden.
+    * @internal
+    */
+    chunks;
+    strm;
+    /**
+    * Compressed result, generated by default {@link Deflate.onData}
+    * and {@link Deflate.onEnd} handlers. Filled after you push last chunk
+    * (call {@link Deflate.push} with {@link Z_FINISH} / `true` param).
+    */
+    result;
+    /**
+    * Creates a new deflator instance with the specified params. Throws an
+    * exception on bad params. See {@link DeflateOptions} for the list of
+    * supported options.
+    *
+    * @example
+    * ```javascript
+    * import { Deflate } from 'pako'
+    *
+    * const chunk1 = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    * const chunk2 = new Uint8Array([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
+    *
+    * const deflate = new Deflate({ level: 3 })
+    *
+    * deflate.push(chunk1, false)
+    * deflate.push(chunk2, true)  // true -> last chunk
+    *
+    * if (deflate.err) throw new Error(deflate.err)
+    *
+    * console.log(deflate.result)
+    * ```
+    */
+    constructor(options = {}) {
+      this.options = Object.assign({}, defaultOptions$1, options);
+      const opt = this.options;
+      if (opt.raw && opt.windowBits > 0) opt.windowBits = -opt.windowBits;
+      else if (opt.gzip && opt.windowBits > 0 && opt.windowBits < 16) opt.windowBits += 16;
+      this.err = 0;
+      this.msg = "";
+      this.ended = false;
+      this.started = false;
+      this.chunks = [];
+      this.result = /* @__PURE__ */ new Uint8Array(0);
+      this.strm = new ZStream();
+      this.strm.avail_out = 0;
+      let status = deflateInit2(this.strm, opt.level, 8, opt.windowBits, opt.memLevel, opt.strategy, opt.legacyHash);
+      if (status !== 0) throw new Error(messages_default[status]);
+      if (toString$1.call(opt.dictionary) === "[object ArrayBuffer]") opt.dictionary = new Uint8Array(opt.dictionary);
+      const dictionary = opt.dictionary;
+      if (dictionary.length) {
+        if (opt.gzip) throw new Error("dictionary is not supported with gzip");
+        status = deflateSetDictionary(this.strm, dictionary);
+        if (status !== 0) throw new Error(messages_default[status]);
+      }
+    }
+    /**
+    * Sends input data to the deflate pipe, generating {@link Deflate.onData} calls
+    * with new compressed chunks. Returns `true` on success. The last data block must
+    * have `flush_mode` {@link Z_FINISH} (or `true`). That will flush the internal
+    * pending buffers and call {@link Deflate.onEnd}.
+    *
+    * On failure, calls {@link Deflate.onEnd} with the error code and returns false.
+    *
+    * @param data input data. Strings will be converted to utf8 byte sequence.
+    * @param flush_mode 0..6 for corresponding {@link Z_NO_FLUSH}..{@link Z_TREES} modes.
+    *   See constants. Skipped or `false` means {@link Z_NO_FLUSH}, `true` means {@link Z_FINISH}.
+    *
+    * @example
+    * ```javascript
+    * push(chunk, false) // push one of data chunks
+    * ...
+    * push(chunk, true)  // push last chunk
+    * ```
+    */
+    push(data, flush_mode = false) {
+      const strm = this.strm;
+      const chunkSize = this.options.chunkSize;
+      let status;
+      let _flush_mode;
+      if (this.ended) return false;
+      if (typeof flush_mode === "number") _flush_mode = flush_mode;
+      else _flush_mode = flush_mode === true ? 4 : 0;
+      if (typeof data === "string") strm.input = new TextEncoder().encode(data);
+      else if (toString$1.call(data) === "[object ArrayBuffer]") strm.input = new Uint8Array(data);
+      else strm.input = data;
+      strm.next_in = 0;
+      strm.avail_in = strm.input.length;
+      if (!this.started) {
+        this.started = true;
+        this.onStart(strm);
+      }
+      for (; ; ) {
+        if (strm.avail_out === 0) {
+          strm.output = new Uint8Array(chunkSize);
+          strm.next_out = 0;
+          strm.avail_out = chunkSize;
+        }
+        if ((_flush_mode === 2 || _flush_mode === 3) && strm.avail_out <= 6) {
+          this.onData(strm.output.subarray(0, strm.next_out));
+          strm.avail_out = 0;
+          continue;
+        }
+        status = deflate$1(strm, _flush_mode);
+        if (status === -2) break;
+        if (status === 1) {
+          if (strm.next_out > 0) this.onData(strm.output.subarray(0, strm.next_out));
+          status = deflateEnd(this.strm);
+          break;
+        }
+        if (strm.avail_out === 0) {
+          this.onData(strm.output);
+          continue;
+        }
+        if (_flush_mode > 0 && strm.next_out > 0) {
+          this.onData(strm.output.subarray(0, strm.next_out));
+          strm.avail_out = 0;
+          continue;
+        }
+        if (strm.avail_in === 0) return true;
+      }
+      this.err = status;
+      this.msg = strm.msg || messages_default[status];
+      this.ended = true;
+      this.onEnd(status);
+      return status === 0;
+    }
+    /**
+    * Called once before the first low-level deflate call.
+    */
+    onStart(strm) {
+    }
+    /**
+    * By default, stores data blocks in the {@link Deflate.chunks} property and glues
+    * them in {@link Deflate.onEnd}. Override this handler if you need another behaviour.
+    */
+    onData(chunk) {
+      this.chunks.push(chunk);
+    }
+    /**
+    * Called once after you tell deflate that the input stream is
+    * complete ({@link Z_FINISH}). By default, joins the collected {@link Deflate.chunks}
+    * into the {@link Deflate.result} property.
+    *
+    * @param status deflate status. {@link Z_OK} on success, other if not.
+    */
+    onEnd(status) {
+      if (status === 0) this.result = flattenChunks(this.chunks);
+      this.chunks = [];
+    }
+  };
+  function deflate(input, options = {}) {
+    const deflator = new Deflate(options);
+    deflator.push(input, true);
+    if (deflator.err) throw new Error(deflator.msg);
+    return deflator.result;
+  }
+  function gzip(input, options = {}) {
+    return deflate(input, Object.assign({}, options, { gzip: true }));
+  }
   var toString = Object.prototype.toString;
   var defaultOptions = {
     chunkSize: 1024 * 64,

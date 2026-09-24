@@ -19,19 +19,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [4.5.4] - 2026-09-24
+
+### Added
+
+- Browser-level UI test suite (`tests/ui`, Playwright) exercising every
+  toolbar button, export/send dialog settings (including both Send compression
+  modes), current/legacy/gzip import flows, and a real cross-instance REST send
+  on Joomla 5 and 6 — with a hard
+  failure on uncaught JS errors or console errors. Run via
+  `tests/scripts/run-ui-tests.sh` or `./scripts/check-tests.sh --ui`.
+- `ui-tests` CI job running the Playwright suite on every push/PR.
+- PHP 8.5 Joomla 5/6 runtime integration using a digest-pinned official
+  multi-platform PHP Apache image combined with Joomla's official CMS source,
+  verifying the full import/export/send suite under the supported runtime.
+- Unit coverage for the shared Table export/import helpers.
+
 ### Changed
 
+- Expanded the vendored pako bundle with gzip support so the Send compression
+  setting can compress the JSON request body; the receiver already accepts
+  gzip-wrapped JSON.
 - Consolidated repeated Table-class tag and association queries, export
   scaffolding, related-record exports, association import normalisation and
   keep-id update SQL into shared helpers in `Table.php`, reducing SonarCloud
   production duplication without changing XML or database behaviour.
 
-### Added
-
-- Added unit coverage for the shared Table export/import helpers.
-
 ### Fixed
 
+- Export/Send toolbar dialogs: the `cid[]` checkbox selector in the dialog
+  OK handler used `&quot;` entities, which are not decoded inside an inline
+  `<script>` block — `querySelectorAll()` threw a SyntaxError and pressing
+  Export did nothing. Also guards against the iframe `jform_cid` field not
+  being loaded yet.
+- Export dialog field filtering no longer hides the Send form controls, and
+  hidden fallback fields keep their DOM ids so Joomla `showon` dependencies do
+  not crash on the Users export dialog.
+- Export requests now ignore empty, zero, or non-numeric `cid` values. This
+  fixes an HTTP 500 / SQL syntax error when exporting from an empty Fields
+  list.
+- Fixed the menu-to-article related export class reference for case-sensitive
+  autoloading.
+- Featured article import no longer inserts a duplicate `#__content_frontpage`
+  row, and featured-up/featured-down values are written into the same insert
+  row instead of being appended as malformed value sets.
+- The browser import now snapshots the dialog settings before starting the
+  asynchronous per-record import, so all records use the selected options. Gzip
+  uploads are decompressed as bytes in the browser and sent to chunked import
+  with an XML filename, preventing Joomla's installer from unpacking the
+  already-decompressed fragments a second time.
+- The import file validator now rejects browser XML parser errors and accepts
+  only the same supported J2XML document versions as the server-side importer.
+- Content import now makes the `com_content` form paths available in the API
+  context, allowing Joomla's article save workflow to create the required
+  workflow association for new articles.
+- Category-only imports now derive the category extensions from the XML records,
+  so imported categories are not silently skipped when article import is off.
+- Send: the remote URL concatenation dropped the `/` separator, producing
+  `https://hostapi/index.php/...` — sends to remote sites now reach the
+  REST import endpoint correctly. The compression switch now gzips the JSON
+  envelope when enabled, and the Webservices endpoint decodes it. The message
+  renderer also accepts DOM elements from the dialog iframe instead of treating
+  them as CSS selectors.
+- The Webservices import controller now returns cleanly after early JSON error
+  responses, recognises both `CONTENT_TYPE` and `HTTP_CONTENT_TYPE`, and no
+  longer masks post-save exceptions once the workflow path is registered.
+- The system plugin service provider stores the dispatcher in a variable before
+  passing it by reference to the plugin constructor, avoiding a PHP 8.5 notice
+  on every administrator request.
 - Corrected SonarCloud AutoScan directory exclusions to use glob patterns so
   test-only helpers are removed from production issue analysis.
 
@@ -242,7 +299,7 @@ that commit.
 ### Fixed
 
 - **Issue #72: Import HTTP 500 on Joomla 5.2+** — fixed class alias and API compatibility issues that caused fatal errors during import
-- **Issue #71: Import articles from J3 to J5** — articles now import correctly from J3-era XML format (version 21.12.0) into Joomla 5
+- **Issue #71: Import articles from J3 to J5** — articles now import correctly from J3-era J2XML XML format (version 12.5.0) into Joomla 5
 - **Issue #70: Import users on J5** — user import now works correctly, including handling of multiple group assignments and empty params
 - **Joomla 6 compatibility: all J\* legacy class aliases migrated** — replaced all `JFactory`, `JLog`, `JText`, `JComponentHelper`, `JPluginHelper`, `JRoute`, `JFile`, `JFolder`, `JHtml`, `JTable*`, `JController*`, `JModel*`, `JViewLegacy`, `JToolBarHelper`, `JSession`, `JRegistry`, `JVersion`, `JUri`, `JClientHelper`, `JFilterOutput`, `JUserHelper`, `JArrayHelper`, `JDate`, `JError`, `JHelperTags`, `JLanguageAssociations`, `JLanguageMultilang`, `JApplicationCli`, `JResponse`, `JFilesystemHelper`, `JInstallerHelper` with fully-qualified namespaced Joomla CMS classes throughout the codebase
 - **User import: UserFactory not set** — `User::prepareData` now uses Joomla's MVC factory instead of instantiating `UserModel` directly
@@ -271,7 +328,7 @@ that commit.
   - **mysql-integration**: Docker Compose Joomla 5 + 6 with MySQL 8.0; runs `tests/scripts/run-all-tests.sh` (82 assertions covering install, import, export, send, round-trip)
   - **postgresql-integration**: Docker Compose Joomla 5 + 6 with PostgreSQL 16; runs `tests/scripts/run-postgresql-smoke.sh` (install, import, export smoke test)
 - **Docker-based integration test suite** — `tests/docker/docker-compose.yml` (MySQL) and `tests/docker/docker-compose.postgresql.yml` (PostgreSQL) with Joomla 5 + 6 containers (PHP 8.4, MySQL 8.0 / PostgreSQL 16); `tests/scripts/run-all-tests.sh` verifies issues #72, #71, #70 and Joomla 6 compatibility
-- **Test fixtures** — `tests/fixtures/articles-j3.xml`, `users-j3.xml`, `categories-j3.xml`, `all-content-types.xml`, `keep-id.xml` with J3-era XML format (version 21.12.0)
+- **Test fixtures** — current-format `all-content-types.xml` (`21.12.0`) and legacy J2XML `12.5.0` compatibility fixtures for articles, users, and categories.
 - **PHPUnit unit test** — `tests/unit/ImportSettingsTest.php` with `tests/unit/bootstrap.php` for import settings validation
 - **Test scripts** — `tests/scripts/` includes `install-plugin.sh` (web-installer upload), `uninstall-plugin.sh`, `setup-joomla.sh`, `test-issue-70.sh`, `test-issue-71.sh`, `test-issue-72.sh`, `test-import-articles.php`, `test-export-import-roundtrip.sh`, `test-php84-deprecations.sh`, `run-all-tests.sh`, `run-postgresql-smoke.sh`
 - **PHPStan static analysis** — committed `phpstan.neon` config with `stubs/joomla.php` scan file declaring the Joomla CMS framework symbols used by J2XML (classes, functions, constants, legacy J\* aliases); `phpstan-baseline.neon` suppresses known pre-existing issues; pre-commit hook updated to use the committed config

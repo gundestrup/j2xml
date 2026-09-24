@@ -2,7 +2,7 @@
 # =============================================================================
 # Test: Issue #70 — Cannot import users on Joomla 5
 #
-# Imports users-j3.xml into Joomla 5, then verifies the users exist.
+# Imports legacy-j2xml-12.5-users.xml into Joomla 5, then verifies the users exist.
 # =============================================================================
 
 set -euo pipefail
@@ -11,7 +11,7 @@ echo "--- Test: Issue #70 (Import users on J5) ---"
 
 # Copy fixture
 docker exec j2xml-joomla5 mkdir -p /tmp/j2xml-test
-docker cp /fixtures/users-j3.xml j2xml-joomla5:/tmp/j2xml-test/users-j3.xml
+docker cp /fixtures/legacy-j2xml-12.5-users.xml j2xml-joomla5:/tmp/j2xml-test/legacy-j2xml-12.5-users.xml
 
 # Count users before import
 BEFORE=$(mysql -h "$JOOMLA5_DB_HOST" -u"$DB_USER" -p"$DB_PASS" "$JOOMLA5_DB" -e "SELECT COUNT(*) FROM _users" -s 2>/dev/null)
@@ -28,7 +28,7 @@ OUTPUT=$(docker exec j2xml-joomla5 bash -c '
     \$app = JFactory::getApplication(\"administrator\");
     \$app->initialiseApp();
 
-    \$xml = simplexml_load_file(\"/tmp/j2xml-test/users-j3.xml\");
+    \$xml = simplexml_load_file(\"/tmp/j2xml-test/legacy-j2xml-12.5-users.xml\");
     \$params = new JRegistry();
     \$params->set(\"users\", 1);
     \$params->set(\"content\", 0);

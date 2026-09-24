@@ -46,6 +46,7 @@ use Joomla\Database\DatabaseInterface;
  */
 class Importer
 {
+    public const SUPPORTED_XML_VERSIONS = ['211200', '190200', '150900', '120500'];
 
     protected string $nullDate = '';
 
@@ -175,7 +176,17 @@ class Importer
         $import_categories = $params->get('categories', 1);
         if ($import_categories && !$import_content)
         {
-            Category::import($xml, $params);
+            $defaultExtension = $params->get('extension') ?: 'com_content';
+            $categories = $xml->xpath('//j2xml/category') ?: [];
+            $extensions = array_unique(array_map(
+                static fn($category) => trim((string) $category->extension) ?: $defaultExtension,
+                $categories
+            ));
+            foreach ($extensions as $extension)
+            {
+                $params->set('extension', $extension);
+                Category::import($xml, $params);
+            }
         }
         if ($import_content)
         {
@@ -244,6 +255,6 @@ class Importer
      */
     public function isSupported(string $version): bool
     {
-        return in_array($version, ["211200", "190200", "150900", "120500"]);
+        return in_array($version, self::SUPPORTED_XML_VERSIONS, true);
     }
 }

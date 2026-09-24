@@ -41,11 +41,18 @@ document.addEventListener('DOMContentLoaded', function () {
     function handleFile(file) {
         const reader = new FileReader();
         reader.onload = function () {
+            const bytes = new Uint8Array(this.result);
             let data;
-            try {
-                data = pako.ungzip(this.result, {toText: true});
-            } catch (err) {
-                data = this.result;
+            if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
+                try {
+                    data = pako.ungzip(bytes, {toText: true});
+                } catch (err) {
+                    Joomla.renderMessages({error: [Joomla.Text._('LIB_J2XML_MSG_FILE_FORMAT_UNKNOWN')]});
+                    fileInput.value = '';
+                    return;
+                }
+            } else {
+                data = new TextDecoder('utf-8').decode(bytes);
             }
 
             // Strip any content before the XML declaration
@@ -84,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const filenameField = document.getElementById('j2xml_filename');
             const dataField = document.getElementById('j2xml_data');
             if (filenameField) {
-                filenameField.value = file.name;
+                filenameField.value = file.name.replace(/\.gz$/i, '');
             }
             if (dataField) {
                 dataField.value = btoa(unescape(encodeURIComponent(data)));
@@ -97,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             fileInput.value = '';
         };
-        reader.readAsText(file, 'UTF-8');
+        reader.readAsArrayBuffer(file);
     }
 
     if (button) {

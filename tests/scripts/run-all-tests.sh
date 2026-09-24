@@ -43,6 +43,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 FIXTURES_DIR="$(cd "$SCRIPT_DIR/../fixtures" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 COOKIE_FILE="/tmp/j2xml-test-cookies.txt"
+IMPORT_RESPONSE_FILE="/tmp/j2xml-import-response-$$.html"
 
 # Joomla URLs
 JOOMLA5_URL="${JOOMLA5_URL:-http://localhost:8085}"
@@ -172,7 +173,7 @@ joomla_import() {
     fi
 
     local http_code
-    http_code=$(curl -s -L -c "$COOKIE_FILE" -b "$COOKIE_FILE" -o /dev/null -w "%{http_code}" \
+    http_code=$(curl -s -L -c "$COOKIE_FILE" -b "$COOKIE_FILE" -o "$IMPORT_RESPONSE_FILE" -w "%{http_code}" \
         -X POST "$joomla_url/administrator/index.php?option=com_j2xml&task=import.import" \
         -H "X-CSRF-Token: ${token}" \
         -F "task=import.import" \
@@ -201,6 +202,94 @@ joomla_import() {
         2>/dev/null)
 
     echo "$http_code"
+}
+
+# Named-argument wrapper for tests where the option under test must be explicit;
+# the positional joomla_import() signature is easy to miscount otherwise.
+joomla_import_named() {
+    local joomla_url="$1" xml_file="$2"
+    shift 2
+
+    local content_flag=1 categories_flag=1 users_flag=0 tags_flag=0 menus_flag=0 modules_flag=0
+    local contacts_flag=0 fields_flag=0 viewlevels_flag=0 images_flag=0 password_flag=0
+    local keep_id_flag=0 keep_category_flag=1 force_category=0 keep_user_id_flag=0
+    local superusers_flag=0 usernotes_flag=0 weblinks_flag=0 keep_data_flag=0
+    local option key value
+
+    for option in "$@"; do
+        key="${option%%=*}"
+        value="${option#*=}"
+        case "$key" in
+            content) content_flag="$value" ;;
+            categories) categories_flag="$value" ;;
+            users) users_flag="$value" ;;
+            tags) tags_flag="$value" ;;
+            menus) menus_flag="$value" ;;
+            modules) modules_flag="$value" ;;
+            contacts) contacts_flag="$value" ;;
+            fields) fields_flag="$value" ;;
+            viewlevels) viewlevels_flag="$value" ;;
+            images) images_flag="$value" ;;
+            password) password_flag="$value" ;;
+            keep_id) keep_id_flag="$value" ;;
+            keep_category) keep_category_flag="$value" ;;
+            force_category) force_category="$value" ;;
+            keep_user_id) keep_user_id_flag="$value" ;;
+            superusers) superusers_flag="$value" ;;
+            usernotes) usernotes_flag="$value" ;;
+            weblinks) weblinks_flag="$value" ;;
+            keep_data) keep_data_flag="$value" ;;
+            *) echo "Unknown import option: $key"; return 1 ;;
+        esac
+    done
+
+    joomla_import "$joomla_url" "$xml_file" \
+        "$content_flag" "$categories_flag" "$users_flag" "$tags_flag" "$menus_flag" "$modules_flag" \
+        "$contacts_flag" "$fields_flag" "$viewlevels_flag" "$images_flag" "$password_flag" \
+        "$keep_id_flag" "$keep_category_flag" "$force_category" "$keep_user_id_flag" \
+        "$superusers_flag" "$usernotes_flag" "$weblinks_flag" "$keep_data_flag"
+}
+
+import_response_summary() {
+    [[ -f "$IMPORT_RESPONSE_FILE" ]] || return 0
+    python3 -c "
+import html.parser, re, sys
+class TextParser(html.parser.HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.parts = []
+    def handle_data(self, data):
+        self.parts.append(data)
+match = re.search(r'<div id=\"system-message-container\".*?<noscript>(.*?)</noscript>', open(sys.argv[1], encoding='utf-8', errors='replace').read(), re.S)
+if match:
+    parser = TextParser()
+    parser.feed(match.group(1))
+    print(' '.join(''.join(parser.parts).split()), end='')
+" "$IMPORT_RESPONSE_FILE"
+}
+
+create_gzip_import_fixture() {
+    GZIP_IMPORT_ALIAS="j2xml-gzip-import-$$"
+    GZIP_IMPORT_FILE="/tmp/${GZIP_IMPORT_ALIAS}.xml.gz"
+    gzip -c > "$GZIP_IMPORT_FILE" <<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<j2xml version="21.12.0"><content><id>0</id><title>J2XML Gzip Import Regression</title><alias>${GZIP_IMPORT_ALIAS}</alias><introtext><![CDATA[<p>gzip import marker</p>]]></introtext><fulltext><![CDATA[]]></fulltext><state>1</state><catid>2</catid><created>2025-01-01 00:00:00</created><modified>2025-01-01 00:00:00</modified><language>*</language><access>1</access><publish_up>2025-01-01 00:00:00</publish_up><publish_down>0000-00-00 00:00:00</publish_down></content></j2xml>
+XML
+}
+
+test_gzip_import() {
+    local url="$1" container="$2" db="$3" label="$4"
+    local code present
+    code=$(joomla_import_named "$url" "$GZIP_IMPORT_FILE" content=2 categories=0 users=0 tags=0 menus=0 modules=0 contacts=0 fields=0 viewlevels=0 images=0)
+    present=$(db_scalar "$container" "$db" "SELECT COUNT(*) FROM #__content WHERE alias='$GZIP_IMPORT_ALIAS' AND introtext LIKE '%gzip import marker%'")
+    if { [[ "$code" = "200" ]] || [[ "$code" = "303" ]]; } && [[ "$present" -eq 1 ]]; then
+        pass "$label: gzip-compressed XML imported the expected article"
+    else
+        fail "$label: gzip import failed (HTTP $code; matching article: $present; messages: $(import_response_summary))"
+    fi
+
+    db_exec "$container" "$db" "DELETE FROM #__workflow_associations WHERE extension='com_content.article' AND item_id IN (SELECT id FROM #__content WHERE alias='$GZIP_IMPORT_ALIAS')" >/dev/null
+    db_exec "$container" "$db" "DELETE FROM #__content WHERE alias='$GZIP_IMPORT_ALIAS'" >/dev/null
 }
 
 # =============================================================================
@@ -235,6 +324,7 @@ joomla_export() {
     local export_images="${4:-0}"
     local db_container="${5:-$J5_CONTAINER}"
     local db_name="${6:-joomla5}"
+    local export_password="${7:-0}"
     local export_file="/tmp/j2xml-export-${content_type}-$$.xml"
 
     local export_url="$joomla_url/administrator/index.php?option=com_j2xml&task=${content_type}.display&format=raw"
@@ -296,6 +386,7 @@ joomla_export() {
         -F "jform[export_fields]=1" \
         -F "jform[export_images]=${export_images}" \
         -F "jform[export_users]=1" \
+        -F "jform[export_password]=${export_password}" \
         -F "jform[export_tags]=1" \
         2>/dev/null)
 
@@ -329,7 +420,7 @@ create_export_test_fixtures() {
     local image_data="j2xml-export-image-fixture"
 
     docker exec "$container" bash -c "mkdir -p /var/www/html/images/j2xml-tests && printf '%s' '$image_data' > /var/www/html/$image_path" 2>/dev/null
-    local fulltext_column='`fulltext`'
+    local fulltext_column="\`fulltext\`"
     [[ "${DB_DRIVER:-mysql}" = "pgsql" ]] && fulltext_column='"fulltext"'
     db_exec "$container" "$db" "DELETE FROM #__content WHERE alias IN ('j2xml-ui-selection-one', 'j2xml-ui-selection-two', 'j2xml-ui-selection-three')"
     db_exec "$container" "$db" "INSERT INTO #__content (title, alias, introtext, ${fulltext_column}, state, catid, created, created_by, modified, modified_by, publish_up, access, language, images, urls, attribs, metadata, metakey, metadesc, version, hits, ordering, featured) VALUES ('J2XML UI Selection One', 'j2xml-ui-selection-one', '<p>Must not be selected</p>', '', 1, 2, NOW(), 1, NOW(), 1, NOW(), 1, '*', '{}', '{}', '{}', '{}', '', '', 1, 0, 0, 0), ('J2XML UI Selection Two', 'j2xml-ui-selection-two', '<p><img src=\"images/j2xml-tests/export-image.png\"></p>', '', 1, 2, NOW(), 1, NOW(), 1, NOW(), 1, '*', '{\"image_intro\":\"images/j2xml-tests/export-image.png\"}', '{}', '{}', '{}', '', '', 1, 0, 0, 0), ('J2XML UI Selection Three', 'j2xml-ui-selection-three', '<p>Must be selected</p>', '', 1, 2, NOW(), 1, NOW(), 1, NOW(), 1, '*', '{}', '{}', '{}', '{}', '', '', 1, 0, 0, 0)"
@@ -527,7 +618,7 @@ fi
 # request below verifies the browser-produced cid list reaches the raw export
 # endpoint correctly.
 ARTICLES_HTML_J5=$(curl -s -b "$COOKIE_FILE" "$JOOMLA5_URL/administrator/index.php?option=com_content&view=articles" 2>/dev/null)
-if [[ "$ARTICLES_HTML_J5" == *'name=&quot;cid[]&quot;'* ]] && \
+if [[ "$ARTICLES_HTML_J5" == *'name="cid[]"'* ]] && \
    [[ "$ARTICLES_HTML_J5" == *'id="j2xmlExportOpen"'* ]] && \
    [[ "$ARTICLES_HTML_J5" == *'joomla-dialog'* ]]; then
     pass "UI J5: Export dropdown contains the checkbox selector and export dialog"
@@ -595,8 +686,9 @@ fi
 header "Phase 4: Import all content types into Joomla 5 (Import feature)"
 
 info "Importing comprehensive fixture (all content types)..."
-HTTP_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" \
-    1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 1 0 0)
+HTTP_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" \
+    content=1 categories=1 users=1 tags=1 menus=1 modules=1 contacts=1 fields=1 viewlevels=1 \
+    images=0 password=0 keep_id=0 keep_category=1 keep_user_id=0 superusers=1 usernotes=0 weblinks=0 keep_data=0)
 
 if [[ "$HTTP_CODE" = "200" ]] || [[ "$HTTP_CODE" = "303" ]]; then
     pass "Import: All content types imported (HTTP $HTTP_CODE)"
@@ -605,68 +697,100 @@ else
 fi
 
 # Verify articles imported
-ARTICLE_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_content")
-if [[ "$ARTICLE_COUNT" -ge 4 ]] 2>/dev/null; then
-    pass "Import: $ARTICLE_COUNT articles in J5 database (default + imported)"
+ARTICLE_COUNT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__content WHERE alias IN ('fixture-article-one','fixture-article-two','fixture-keep-id-article')")
+if [[ "$ARTICLE_COUNT" -eq 3 ]] 2>/dev/null; then
+    pass "Import: All three comprehensive-fixture articles are present"
 else
-    fail "Import: Only $ARTICLE_COUNT articles in J5 database (expected 4+)"
+    fail "Import: Expected three comprehensive-fixture articles, found $ARTICLE_COUNT"
 fi
 
 # Verify users imported
-USER_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_users")
-if [[ "$USER_COUNT" -ge 3 ]] 2>/dev/null; then
-    pass "Import: $USER_COUNT users in J5 database (1 admin + 2 imported)"
+USER_COUNT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__users WHERE username IN ('fixtureuser1','fixtureuser2')")
+if [[ "$USER_COUNT" -eq 2 ]] 2>/dev/null; then
+    pass "Import: Both fixture users are present"
 else
-    fail "Import: Only $USER_COUNT users in J5 database (expected 3+)"
+    fail "Import: Expected both fixture users, found $USER_COUNT"
 fi
 
 # Verify categories imported
-CAT_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_categories")
-if [[ "$CAT_COUNT" -ge 4 ]] 2>/dev/null; then
-    pass "Import: $CAT_COUNT categories in J5 database (default + imported)"
+CAT_COUNT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__categories WHERE extension IN ('com_content','com_contact') AND alias IN ('test-category-articles','test-category-contacts')")
+if [[ "$CAT_COUNT" -eq 2 ]] 2>/dev/null; then
+    pass "Import: Both fixture categories are present in their extensions"
 else
-    fail "Import: Only $CAT_COUNT categories in J5 database (expected 4+)"
+    fail "Import: Expected both fixture categories, found $CAT_COUNT"
 fi
 
 # Verify tags imported
-TAG_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_tags")
-if [[ "$TAG_COUNT" -ge 2 ]] 2>/dev/null; then
-    pass "Import: $TAG_COUNT tags in J5 database"
+TAG_COUNT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__tags WHERE alias IN ('test-tag-one','test-tag-two')")
+if [[ "$TAG_COUNT" -eq 2 ]] 2>/dev/null; then
+    pass "Import: Both fixture tags are present"
 else
-    fail "Import: Only $TAG_COUNT tags in J5 database (expected 2+)"
+    fail "Import: Expected both fixture tags, found $TAG_COUNT"
 fi
 
 # Verify contacts imported
-CONTACT_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_contact_details")
-if [[ "$CONTACT_COUNT" -ge 1 ]] 2>/dev/null; then
-    pass "Import: $CONTACT_COUNT contacts in J5 database"
+CONTACT_COUNT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__contact_details WHERE alias='fixture-contact-one'")
+if [[ "$CONTACT_COUNT" -eq 1 ]] 2>/dev/null; then
+    pass "Import: Fixture contact is present"
 else
-    fail "Import: Only $CONTACT_COUNT contacts in J5 database (expected 1+)"
+    fail "Import: Expected fixture contact, found $CONTACT_COUNT"
 fi
 
 # Verify modules imported
-MODULE_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_modules")
-if [[ "$MODULE_COUNT" -ge 1 ]] 2>/dev/null; then
-    pass "Import: $MODULE_COUNT modules in J5 database (default + imported)"
+MODULE_COUNT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__modules WHERE title='Test Custom Module' AND module='mod_custom'")
+if [[ "$MODULE_COUNT" -eq 1 ]] 2>/dev/null; then
+    pass "Import: Fixture custom module is present"
 else
-    fail "Import: Only $MODULE_COUNT modules in J5 database"
+    fail "Import: Expected fixture custom module, found $MODULE_COUNT"
 fi
 
 # Verify menu types imported
-MENUTYPE_COUNT=$(db_count "$J5_CONTAINER" "$JOOMLA5_DB" menu_types)
-if [[ "${MENUTYPE_COUNT:-0}" -ge 1 ]] 2>/dev/null; then
-    pass "Import: $MENUTYPE_COUNT menu types in J5 database"
+MENUTYPE_COUNT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__menu_types WHERE menutype='testmenu'")
+MENU_ITEM_COUNT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__menu WHERE alias='test-menu-item-one'")
+if [[ "$MENUTYPE_COUNT" -eq 1 && "$MENU_ITEM_COUNT" -eq 1 ]]; then
+    pass "Import: Fixture menu type and menu item are present"
 else
-    fail "Import: Only $MENUTYPE_COUNT menu types in J5 database (expected 1+)"
+    fail "Import: Fixture menu records missing (type: $MENUTYPE_COUNT; item: $MENU_ITEM_COUNT)"
 fi
 
-# Verify fields imported
-FIELD_COUNT=$(db_count "$J5_CONTAINER" "joomla5" "joom_fields")
-if [[ "$FIELD_COUNT" -ge 1 ]] 2>/dev/null; then
-    pass "Import: $FIELD_COUNT custom fields in J5 database"
+FIELD_COUNT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__fields WHERE name='test-field-text'")
+FIELDGROUP_COUNT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__fields_groups WHERE title='Test Field Group' AND context='com_content.article'")
+VIEWLEVEL_COUNT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__viewlevels WHERE title='Test View Level'")
+if [[ "$FIELD_COUNT" -eq 1 && "$FIELDGROUP_COUNT" -eq 1 && "$VIEWLEVEL_COUNT" -eq 1 ]]; then
+    pass "Import: Fixture field, field group, and view level are present"
 else
-    fail "Import: Only $FIELD_COUNT custom fields in J5 database (expected 1+)"
+    fail "Import: Fixture fields/access records missing (field: $FIELD_COUNT; group: $FIELDGROUP_COUNT; view level: $VIEWLEVEL_COUNT)"
 fi
+
+USERNOTE_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" content=0 categories=0 usernotes=1)
+USERNOTE_PRESENT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__user_notes WHERE subject='J2XML User Note Setting'")
+if { [[ "$USERNOTE_CODE" = "200" ]] || [[ "$USERNOTE_CODE" = "303" ]]; } && [[ "$USERNOTE_PRESENT" -eq 1 ]]; then
+    pass "Import J5: usernotes option imports the fixture note"
+else
+    fail "Import J5: usernotes option failed (HTTP: $USERNOTE_CODE; present: $USERNOTE_PRESENT)"
+fi
+
+PASSWORD_FIXTURE_HASH='$2y$12$.UlQCDw9Ye2Yh/J1XcFAmOmj458sMn9OzqJObVDoCEEmf5IXGwgY2'
+PASSWORD_IMPORT_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" content=0 categories=0 users=2 password=1)
+PASSWORD_IMPORTED=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__users WHERE username='fixtureuser1' AND password='$PASSWORD_FIXTURE_HASH'")
+if { [[ "$PASSWORD_IMPORT_CODE" = "200" ]] || [[ "$PASSWORD_IMPORT_CODE" = "303" ]]; } && [[ "$PASSWORD_IMPORTED" -eq 1 ]]; then
+    pass "Import J5: password=1 imports the fixture password hash"
+else
+    fail "Import J5: password=1 did not import the fixture password hash (HTTP: $PASSWORD_IMPORT_CODE; matching users: $PASSWORD_IMPORTED)"
+fi
+
+PASSWORD_PRESERVE_HASH=$(docker exec "$J5_CONTAINER" php -r 'echo password_hash("j2xml-preserve-password", PASSWORD_BCRYPT);')
+db_exec "$J5_CONTAINER" "$JOOMLA5_DB" "UPDATE #__users SET password='$PASSWORD_PRESERVE_HASH' WHERE username='fixtureuser1'" >/dev/null
+PASSWORD_DISABLED_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" content=0 categories=0 users=2 password=0)
+PASSWORD_PRESERVED=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__users WHERE username='fixtureuser1' AND password='$PASSWORD_PRESERVE_HASH'")
+if { [[ "$PASSWORD_DISABLED_CODE" = "200" ]] || [[ "$PASSWORD_DISABLED_CODE" = "303" ]]; } && [[ "$PASSWORD_PRESERVED" -eq 1 ]]; then
+    pass "Import J5: password=0 preserves the destination user's password"
+else
+    fail "Import J5: password=0 overwrote the destination password (HTTP: $PASSWORD_DISABLED_CODE; preserved matches: $PASSWORD_PRESERVED)"
+fi
+
+create_gzip_import_fixture
+test_gzip_import "$JOOMLA5_URL" "$J5_CONTAINER" "$JOOMLA5_DB" "J5 import"
 
 # Verify each supported standalone export endpoint, not just articles/users.
 # Tags are imported as part of the J2XML document but do not have a standalone
@@ -695,6 +819,15 @@ for export_spec in \
 done
 pass "Import J5: Tags are covered by the comprehensive fixture (standalone tag export is not implemented)"
 
+PASSWORD_USER_ID=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT id FROM #__users WHERE username='fixtureuser1'")
+PASSWORD_EXPORT_HIDDEN=$(joomla_export "$JOOMLA5_URL" users "$PASSWORD_USER_ID" 0 "$J5_CONTAINER" "$JOOMLA5_DB" 0)
+PASSWORD_EXPORT_INCLUDED=$(joomla_export "$JOOMLA5_URL" users "$PASSWORD_USER_ID" 0 "$J5_CONTAINER" "$JOOMLA5_DB" 1)
+if ! grep -q '<password>' <<< "$PASSWORD_EXPORT_HIDDEN" && grep -Fq "$PASSWORD_PRESERVE_HASH" <<< "$PASSWORD_EXPORT_INCLUDED"; then
+    pass "Export J5: password option excludes hashes by default and includes only when enabled"
+else
+    fail "Export J5: password option did not control password-hash serialization"
+fi
+
 # Verify that disabling every import switch is honored. Re-importing the same
 # fixture with all entity flags set to zero must not change any entity counts.
 info "Checking import settings with all entity switches disabled on Joomla 5..."
@@ -706,7 +839,7 @@ NOOP_MODULES_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_modules")
 NOOP_MENUS_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_menu")
 NOOP_CONTACTS_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_contact_details")
 NOOP_FIELDS_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_fields")
-NOOP_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 0 0 0 0 0 0 0 0 0)
+NOOP_IMPORT_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" content=0 categories=0 users=0 tags=0 menus=0 modules=0 contacts=0 fields=0 viewlevels=0 images=0 password=0)
 NOOP_COUNTS_AFTER="$(db_count "$J5_CONTAINER" "joomla5" "joom_content") $(db_count "$J5_CONTAINER" "joomla5" "joom_users") $(db_count "$J5_CONTAINER" "joomla5" "joom_categories") $(db_count "$J5_CONTAINER" "joomla5" "joom_tags") $(db_count "$J5_CONTAINER" "joomla5" "joom_modules") $(db_count "$J5_CONTAINER" "joomla5" "joom_menu") $(db_count "$J5_CONTAINER" "joomla5" "joom_contact_details") $(db_count "$J5_CONTAINER" "joomla5" "joom_fields")"
 NOOP_COUNTS_BEFORE="$NOOP_ARTICLES_BEFORE $NOOP_USERS_BEFORE $NOOP_CATEGORIES_BEFORE $NOOP_TAGS_BEFORE $NOOP_MODULES_BEFORE $NOOP_MENUS_BEFORE $NOOP_CONTACTS_BEFORE $NOOP_FIELDS_BEFORE"
 if { [[ "$NOOP_IMPORT_CODE" = "200" ]] || [[ "$NOOP_IMPORT_CODE" = "303" ]]; } && [[ "$NOOP_COUNTS_BEFORE" = "$NOOP_COUNTS_AFTER" ]]; then
@@ -715,23 +848,46 @@ else
     fail "Import J5: Disabled entity switches changed data (before: $NOOP_COUNTS_BEFORE; after: $NOOP_COUNTS_AFTER; HTTP: $NOOP_IMPORT_CODE)"
 fi
 
-OVERWRITE_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 2 2 2 1 2 2 2 2 2 0 0)
-if [[ "$OVERWRITE_IMPORT_CODE" = "200" ]] || [[ "$OVERWRITE_IMPORT_CODE" = "303" ]]; then
-    pass "Import J5: Existing-record overwrite settings (content, categories, users, contacts, menus, modules, fields) completed"
+db_exec "$J5_CONTAINER" "$JOOMLA5_DB" "UPDATE #__content SET introtext='<p>stale article value</p>' WHERE alias='fixture-article-one'" >/dev/null
+db_exec "$J5_CONTAINER" "$JOOMLA5_DB" "UPDATE #__categories SET description='<p>stale category value</p>' WHERE alias='test-category-articles'" >/dev/null
+db_exec "$J5_CONTAINER" "$JOOMLA5_DB" "UPDATE #__users SET email='stale@example.com' WHERE username='fixtureuser1'" >/dev/null
+OVERWRITE_IMPORT_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" content=2 categories=2 users=2 tags=1 menus=2 modules=2 contacts=2 fields=2 viewlevels=2)
+OVERWRITE_ARTICLE_MATCH=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__content WHERE alias='fixture-article-one' AND introtext LIKE '%This is fixture article one intro text.%'")
+OVERWRITE_CATEGORY_MATCH=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__categories WHERE alias='test-category-articles' AND description LIKE '%Test category for articles%'")
+OVERWRITE_USER_MATCH=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__users WHERE username='fixtureuser1' AND email='fixtureuser1@example.com'")
+if { [[ "$OVERWRITE_IMPORT_CODE" = "200" ]] || [[ "$OVERWRITE_IMPORT_CODE" = "303" ]]; } && [[ "$OVERWRITE_ARTICLE_MATCH" -eq 1 && "$OVERWRITE_CATEGORY_MATCH" -eq 1 && "$OVERWRITE_USER_MATCH" -eq 1 ]]; then
+    pass "Import J5: overwrite options restore article, category, and user fixture values"
 else
-    fail "Import J5: Existing-record overwrite settings failed (HTTP $OVERWRITE_IMPORT_CODE)"
+    fail "Import J5: overwrite effects not applied (HTTP $OVERWRITE_IMPORT_CODE; article $OVERWRITE_ARTICLE_MATCH; category $OVERWRITE_CATEGORY_MATCH; user $OVERWRITE_USER_MATCH)"
 fi
 
-NEWER_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/articles-j3.xml" 3 0 0 0 0 0 0 0 0 0 0)
-if [[ "$NEWER_IMPORT_CODE" = "200" ]] || [[ "$NEWER_IMPORT_CODE" = "303" ]]; then
-    pass "Import J5: Overwrite-if-newer article setting completed"
+LEGACY_ARTICLE_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/legacy-j2xml-12.5-articles.xml" content=3 categories=0 users=0 tags=0 menus=0 modules=0 contacts=0 fields=0 viewlevels=0 images=0)
+LEGACY_ARTICLE_DECODED=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__content WHERE alias='test-article-special-chars' AND introtext LIKE '%Article with special chars: & < > \"quotes\"%'")
+if { [[ "$LEGACY_ARTICLE_CODE" = "200" ]] || [[ "$LEGACY_ARTICLE_CODE" = "303" ]]; } && [[ "$LEGACY_ARTICLE_DECODED" -eq 1 ]]; then
+    pass "Legacy J2XML 12.5: article imported and HTML entities decoded"
 else
-    fail "Import J5: Overwrite-if-newer article setting failed (HTTP $NEWER_IMPORT_CODE)"
+    fail "Legacy J2XML 12.5: article import/decode failed (HTTP $LEGACY_ARTICLE_CODE; decoded matches: $LEGACY_ARTICLE_DECODED)"
 fi
 
-KEEP_ID_IMPORT_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 2 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0 0)
+LEGACY_CATEGORY_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/legacy-j2xml-12.5-categories.xml" content=0 categories=2 users=0 tags=0 menus=0 modules=0 contacts=0 fields=0 viewlevels=0)
+LEGACY_CATEGORY_PRESENT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__categories WHERE extension='com_content' AND alias='test-category'")
+if { [[ "$LEGACY_CATEGORY_CODE" = "200" ]] || [[ "$LEGACY_CATEGORY_CODE" = "303" ]]; } && [[ "$LEGACY_CATEGORY_PRESENT" -eq 1 ]]; then
+    pass "Legacy J2XML 12.5: category imported on Joomla 5"
+else
+    fail "Legacy J2XML 12.5: category import failed (HTTP $LEGACY_CATEGORY_CODE; present: $LEGACY_CATEGORY_PRESENT)"
+fi
+
+LEGACY_USER_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/legacy-j2xml-12.5-users.xml" content=0 categories=0 users=2 tags=0 menus=0 modules=0 contacts=0 fields=0 viewlevels=0)
+LEGACY_USER_GROUPS=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__user_usergroup_map AS m INNER JOIN #__users AS u ON u.id=m.user_id WHERE u.username='testuser2'")
+if { [[ "$LEGACY_USER_CODE" = "200" ]] || [[ "$LEGACY_USER_CODE" = "303" ]]; } && [[ "$LEGACY_USER_GROUPS" -ge 2 ]]; then
+    pass "Legacy J2XML 12.5: user imported with multiple group assignments"
+else
+    fail "Legacy J2XML 12.5: user/group import failed (HTTP $LEGACY_USER_CODE; group memberships: $LEGACY_USER_GROUPS)"
+fi
+
+KEEP_ID_IMPORT_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" content=0 categories=0 users=2 keep_user_id=1 superusers=1)
 KEEP_ID_USER=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT username FROM #__users WHERE id=50")
-KEEP_CONTENT_ID_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/keep-id.xml" 2 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0)
+KEEP_CONTENT_ID_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/keep-id.xml" content=2 categories=0 keep_id=1)
 KEEP_ID_ARTICLE=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT alias FROM #__content WHERE id=1903")
 if { [[ "$KEEP_ID_IMPORT_CODE" = "200" ]] || [[ "$KEEP_ID_IMPORT_CODE" = "303" ]]; } && { [[ "$KEEP_CONTENT_ID_CODE" = "200" ]] || [[ "$KEEP_CONTENT_ID_CODE" = "303" ]]; } && [[ "$KEEP_ID_ARTICLE" = "j2xml-keep-id-only-article" ]] && [[ "$KEEP_ID_USER" = "fixtureuser1" ]]; then
     pass "Import J5: keep_id and keep_user_id preserve source IDs"
@@ -739,15 +895,16 @@ else
     fail "Import J5: keep_id/keep_user_id did not preserve source IDs (user HTTP: $KEEP_ID_IMPORT_CODE; content HTTP: $KEEP_CONTENT_ID_CODE; article: $KEEP_ID_ARTICLE; user: $KEEP_ID_USER)"
 fi
 
-FORCE_CATEGORY_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 2 2 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0)
-FORCED_ARTICLE_CATEGORY=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT catid FROM #__content WHERE alias='fixture-article-one'")
-if { [[ "$FORCE_CATEGORY_CODE" = "200" ]] || [[ "$FORCE_CATEGORY_CODE" = "303" ]]; } && [[ "$FORCED_ARTICLE_CATEGORY" = "2" ]]; then
+FORCE_CATEGORY_ID=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT id FROM #__categories WHERE extension='com_content' AND path='uncategorised'")
+FORCE_CATEGORY_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" content=2 categories=2 keep_category=2 force_category="$FORCE_CATEGORY_ID")
+FORCED_ARTICLE_COUNT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__content WHERE alias='fixture-article-one' AND catid=$FORCE_CATEGORY_ID")
+if { [[ "$FORCE_CATEGORY_CODE" = "200" ]] || [[ "$FORCE_CATEGORY_CODE" = "303" ]]; } && [[ "$FORCED_ARTICLE_COUNT" -gt 0 ]]; then
     pass "Import J5: keep_category force-to setting assigns the selected category"
 else
-    fail "Import J5: keep_category force-to setting failed (HTTP: $FORCE_CATEGORY_CODE; catid: $FORCED_ARTICLE_CATEGORY)"
+    fail "Import J5: keep_category force-to setting failed (HTTP: $FORCE_CATEGORY_CODE; expected catid: $FORCE_CATEGORY_ID; matching rows: $FORCED_ARTICLE_COUNT; messages: $(import_response_summary))"
 fi
 
-SUPERUSER_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 2 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0)
+SUPERUSER_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" content=0 categories=0 users=2 superusers=1)
 SUPERUSER_PRESENT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__users WHERE username='fixturesuperuser'")
 if { [[ "$SUPERUSER_CODE" = "200" ]] || [[ "$SUPERUSER_CODE" = "303" ]]; } && [[ "$SUPERUSER_PRESENT" -eq 1 ]]; then
     pass "Import J5: superusers setting permits superuser imports when enabled"
@@ -755,24 +912,16 @@ else
     fail "Import J5: superusers setting failed (HTTP: $SUPERUSER_CODE; present: $SUPERUSER_PRESENT)"
 fi
 
-USERNOTE_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0)
-USERNOTE_PRESENT=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__user_notes WHERE subject='J2XML User Note Setting'")
-if { [[ "$USERNOTE_CODE" = "200" ]] || [[ "$USERNOTE_CODE" = "303" ]]; } && [[ "$USERNOTE_PRESENT" -ge 1 ]]; then
-    pass "Import J5: usernotes setting imports user notes"
-else
-    fail "Import J5: usernotes setting failed (HTTP: $USERNOTE_CODE; present: $USERNOTE_PRESENT)"
-fi
-
-KEEP_DATA_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 2 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1)
+KEEP_DATA_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" content=2 categories=0 keep_data=1)
 KEEP_DATA_MODIFIED=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT modified FROM #__content WHERE alias='fixture-keep-id-article'")
-if [[ "$KEEP_DATA_CODE" = "200" ]] || [[ "$KEEP_DATA_CODE" = "303" ]]; then
-    pass "Import J5: keep_data setting completed (modified: $KEEP_DATA_MODIFIED)"
+if { [[ "$KEEP_DATA_CODE" = "200" ]] || [[ "$KEEP_DATA_CODE" = "303" ]]; } && [[ "$KEEP_DATA_MODIFIED" = "2024-03-01 10:00:00" ]]; then
+    pass "Import J5: keep_data restores the fixture's modified timestamp"
 else
-    fail "Import J5: keep_data setting failed (HTTP: $KEEP_DATA_CODE; modified: $KEEP_DATA_MODIFIED)"
+    fail "Import J5: keep_data did not restore the fixture's modified timestamp (HTTP: $KEEP_DATA_CODE; modified: $KEEP_DATA_MODIFIED)"
 fi
 
 WEBLINKS_ENABLED=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT COUNT(*) FROM #__extensions WHERE name='com_weblinks' AND enabled=1")
-WEBLINKS_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1 0)
+WEBLINKS_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" content=0 categories=0 weblinks=1)
 if [[ "$WEBLINKS_ENABLED" -eq 0 ]] 2>/dev/null && { [[ "$WEBLINKS_CODE" = "200" ]] || [[ "$WEBLINKS_CODE" = "303" ]]; }; then
     pass "Import J5: weblinks setting safely no-ops when com_weblinks is unavailable"
 elif [[ "$WEBLINKS_ENABLED" -gt 0 ]] 2>/dev/null; then
@@ -785,7 +934,7 @@ fi
 # that references categories, users, tags, groups, access levels and
 # associations by name/path instead of numeric id.
 info "Importing name/path-reference fixture (resolver coverage)..."
-NAMEREF_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/name-refs.xml" 1 1 1 1 0 0 1 1 1 0 0 0 1 0 0 0 1 0 0)
+NAMEREF_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/name-refs.xml" content=1 categories=1 users=1 tags=1 menus=0 modules=0 contacts=1 fields=1 viewlevels=1 keep_category=1 usernotes=1)
 if [[ "$NAMEREF_CODE" = "200" ]] || [[ "$NAMEREF_CODE" = "303" ]]; then
     pass "Import J5: name/path-reference fixture accepted (HTTP $NAMEREF_CODE)"
 else
@@ -842,7 +991,7 @@ fi
 # rejected gracefully without changing data.
 info "Testing malformed XML and unsupported-version imports..."
 ERR_ARTICLES_BEFORE=$(db_count "$J5_CONTAINER" "joomla5" "joom_content")
-MALFORMED_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/malformed.xml" 1 1 1 1 1 1 1 1 1 0 0 0 1 0 0 0 1 0 0)
+MALFORMED_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/malformed.xml" content=1 categories=1)
 ERR_ARTICLES_AFTER=$(db_count "$J5_CONTAINER" "joomla5" "joom_content")
 if [[ "$ERR_ARTICLES_AFTER" -eq "$ERR_ARTICLES_BEFORE" ]] 2>/dev/null; then
     pass "Import J5: malformed XML rejected without data changes (HTTP $MALFORMED_CODE)"
@@ -850,7 +999,7 @@ else
     fail "Import J5: malformed XML changed data (articles $ERR_ARTICLES_BEFORE → $ERR_ARTICLES_AFTER)"
 fi
 
-BADVERSION_CODE=$(joomla_import "$JOOMLA5_URL" "$FIXTURES_DIR/unsupported-version.xml" 1 1 1 1 1 1 1 1 1 0 0 0 1 0 0 0 1 0 0)
+BADVERSION_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/unsupported-version.xml" content=1 categories=1)
 ERR_ARTICLES_AFTER2=$(db_count "$J5_CONTAINER" "joomla5" "joom_content")
 if [[ "$ERR_ARTICLES_AFTER2" -eq "$ERR_ARTICLES_AFTER" ]] 2>/dev/null; then
     pass "Import J5: unsupported format version rejected without data changes (HTTP $BADVERSION_CODE)"
@@ -934,7 +1083,7 @@ fi
 
 # Send an article via REST API
 info "Sending article from Joomla 5 to Joomla 6 via REST API..."
-ARTICLE_XML=$(cat "$FIXTURES_DIR/articles-j3.xml")
+ARTICLE_XML=$(cat "$FIXTURES_DIR/legacy-j2xml-12.5-articles.xml")
 
 REST_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$REST_URL" \
     -H "Content-Type: application/xml" \
@@ -1030,21 +1179,21 @@ BADTOKEN_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$REST_URL" \
     -H "X-Joomla-Token: invalid-token" \
     -d '<?xml version="1.0"?><j2xml version="21.12.0"></j2xml>' \
     2>/dev/null)
-if [[ "$BADTOKEN_CODE" -ge 400 ]] && [[ "$BADTOKEN_CODE" -lt 500 ]] 2>/dev/null; then
+if [[ "$BADTOKEN_CODE" =~ ^[0-9]+$ ]] && [[ "$BADTOKEN_CODE" -ge 400 && "$BADTOKEN_CODE" -lt 500 ]]; then
     pass "Send: invalid token rejected (HTTP $BADTOKEN_CODE)"
 else
     fail "Send: invalid token not rejected as expected (HTTP $BADTOKEN_CODE)"
 fi
 
 # =============================================================================
-# Phase 7: Test on Joomla 6 (PHP 8.4)
+# Phase 7: Test on Joomla 6
 # =============================================================================
-header "Phase 7: Joomla 6 / PHP 8.4 compatibility"
+header "Phase 7: Joomla 6 runtime compatibility"
 
 joomla_login "$JOOMLA6_URL" "Joomla 6" || { skip "Cannot login to Joomla 6"; }
 
 info "Importing the selected UI export into Joomla 6 with images enabled..."
-SELECTED_IMPORT_CODE=$(joomla_import "$JOOMLA6_URL" /tmp/j2xml-selected-ui.xml 1 0 0 0 0 0 0 0 0 1)
+SELECTED_IMPORT_CODE=$(joomla_import_named "$JOOMLA6_URL" /tmp/j2xml-selected-ui.xml content=1 categories=0 images=1)
 if [[ "$SELECTED_IMPORT_CODE" = "200" ]] || [[ "$SELECTED_IMPORT_CODE" = "303" ]]; then
     J6_SELECTED_COUNT=$(db_scalar "$J6_CONTAINER" "$JOOMLA6_DB" "SELECT COUNT(*) FROM #__content WHERE alias IN ('j2xml-ui-selection-two','j2xml-ui-selection-three')")
     J6_IMAGE_CONTENT=$(docker exec "$J6_CONTAINER" cat /var/www/html/images/j2xml-tests/export-image.png 2>/dev/null)
@@ -1059,14 +1208,18 @@ fi
 
 # Import on Joomla 6
 info "Importing all content types into Joomla 6..."
-HTTP_CODE=$(joomla_import "$JOOMLA6_URL" "$FIXTURES_DIR/all-content-types.xml" \
-    1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 1 0 0)
+HTTP_CODE=$(joomla_import_named "$JOOMLA6_URL" "$FIXTURES_DIR/all-content-types.xml" \
+    content=1 categories=1 users=1 tags=1 menus=1 modules=1 contacts=1 fields=1 viewlevels=1 \
+    images=0 password=0 keep_id=0 keep_category=1 keep_user_id=0 superusers=1 usernotes=0 weblinks=0 keep_data=0)
 
 if [[ "$HTTP_CODE" = "200" ]] || [[ "$HTTP_CODE" = "303" ]]; then
     pass "J6: All content types imported (HTTP $HTTP_CODE)"
 else
     fail "J6: Failed to import all content types (HTTP $HTTP_CODE)"
 fi
+
+test_gzip_import "$JOOMLA6_URL" "$J6_CONTAINER" "$JOOMLA6_DB" "J6 import"
+rm -f "$GZIP_IMPORT_FILE"
 
 # Verify articles on J6
 J6_ARTICLE_COUNT=$(db_count "$J6_CONTAINER" "joomla6" "joom_content")
@@ -1140,12 +1293,13 @@ else
     fail "Modal J6: Export button does NOT use direct iframe DOM access"
 fi
 
-# Check that the onclick attribute doesn't contain raw double quotes inside
-# (name="cid[]" breaks HTML parsing when inside a double-quoted attribute)
-if grep -q 'name=&quot;cid\[\]&quot;' <<< "$ARTICLES_HTML_J6"; then
-    pass "Modal J6: onclick uses &quot; entities for cid[] selector"
-elif grep -q 'name="cid\[\]"' <<< "$ARTICLES_HTML_J6"; then
-    fail "Modal J6: onclick has raw double quotes in cid[] selector (breaks HTML parsing)"
+# Check that the onclick uses raw double quotes in the cid[] selector. The code
+# is echoed inside an inline <script> block where HTML entities are not decoded,
+# so &quot; would reach querySelectorAll literally and throw a SyntaxError.
+if grep -q 'name="cid\[\]"' <<< "$ARTICLES_HTML_J6"; then
+    pass "Modal J6: onclick uses raw double quotes in cid[] selector"
+elif grep -q 'name=&quot;cid\[\]&quot;' <<< "$ARTICLES_HTML_J6"; then
+    fail "Modal J6: onclick has &quot; entities in cid[] selector (invalid inside <script>)"
 fi
 
 # Check that J2XML JavaScript assets are actually loaded on the page

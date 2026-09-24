@@ -27,8 +27,9 @@ return new class () implements ServiceProviderInterface {
             function (Container $container) {
                 require_once JPATH_PLUGINS . '/system/j2xml/j2xml.php';
 
+                $dispatcher = $container->get(DispatcherInterface::class);
                 $plugin = new \plgSystemJ2xml(
-                    $container->get(DispatcherInterface::class),
+                    $dispatcher,
                     (array) PluginHelper::getPlugin('system', 'j2xml')
                 );
                 $plugin->setApplication(Factory::getApplication());

@@ -106,7 +106,7 @@ class Menu extends \eshiol\J2xml\Table\Table
         {
             if (isset($args['view']) && ($args['view'] == 'article'))
             {
-                \eshiol\J2XML\Table\Content::export($args['id'], $xml, $options);
+                \eshiol\J2xml\Table\Content::export($args['id'], $xml, $options);
             }
         }
 

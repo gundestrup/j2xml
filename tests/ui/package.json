@@ -1,0 +1,11 @@
+{
+    "name": "j2xml-ui-tests",
+    "private": true,
+    "description": "Browser-level UI tests for J2XML admin integration (Playwright)",
+    "scripts": {
+        "test": "playwright test"
+    },
+    "devDependencies": {
+        "@playwright/test": "1.63.0"
+    }
+}

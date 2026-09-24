@@ -26,7 +26,8 @@
             "uri": "lib_eshiol_j2xml/j2xml.js",
             "dependencies": [
                 "lib_eshiol_j2xml.base64",
-                "lib_eshiol_j2xml.version_compare"
+                "lib_eshiol_j2xml.version_compare",
+                "lib_eshiol_j2xml.pako_inflate"
             ]
         }
     ]

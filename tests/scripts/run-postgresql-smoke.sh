@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-FIXTURE="$ROOT_DIR/tests/fixtures/articles-j3.xml"
+FIXTURE="$ROOT_DIR/tests/fixtures/legacy-j2xml-12.5-articles.xml"
 COOKIE_DIR="${TMPDIR:-/tmp}/j2xml-pg-cookies"
 mkdir -p "$COOKIE_DIR"
 
