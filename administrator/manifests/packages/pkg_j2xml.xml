@@ -24,4 +24,7 @@
 		<folder type="file" id="j2xml">cli_j2xml.zip</folder>
 		-->
 	</files>
+	<updateservers>
+		<server type="extension" name="J2XML Updates">https://raw.githubusercontent.com/gundestrup/j2xml/main/update.xml</server>
+	</updateservers>
 </extension>

@@ -1,0 +1,84 @@
+name: Update server stream
+
+# Regenerates update.xml (the Joomla update-site stream served from
+# raw.githubusercontent.com/gundestrup/j2xml/main/update.xml) whenever a
+# release is published. Hashes are taken from the published asset itself so
+# they always match what Joomla downloads.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published stable release tag to validate (for example v4.5.4)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-server-stream
+  cancel-in-progress: false
+
+jobs:
+  update-stream:
+    name: Regenerate update.xml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Check release tag and stream versions
+        id: tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+        shell: bash
+        run: |
+          tag_version=0.0.0
+          if [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            tag_version="$(git show "${RELEASE_TAG}:VERSION" | tr -d '[:space:]')"
+          fi
+          main_version="$(tr -d '[:space:]' < VERSION)"
+          stream_version="$(python3 -c 'import sys, xml.etree.ElementTree as ET; print(ET.parse(sys.argv[1]).findtext("./update/version", default="0.0.0"))' update.xml)"
+          scripts/check-update-release.sh "$RELEASE_TAG" "$tag_version" "$main_version" "$stream_version" >> "$GITHUB_OUTPUT"
+
+      - name: Download released package
+        if: steps.tag.outputs.match == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+        run: gh release download "$RELEASE_TAG" -p pkg_j2xml.zip -D /tmp/pkg --clobber
+
+      - name: Regenerate update.xml
+        if: steps.tag.outputs.match == 'true'
+        env:
+          RELEASE_VERSION: ${{ steps.tag.outputs.version }}
+        run: bash scripts/build-update-xml.sh /tmp/pkg/pkg_j2xml.zip update.xml "$RELEASE_VERSION"
+
+      - name: Validate generated update stream
+        if: steps.tag.outputs.match == 'true'
+        run: scripts/validate-update-xml.sh
+
+      - name: Show dry-run result
+        if: steps.tag.outputs.match == 'true' && github.event_name == 'workflow_dispatch'
+        run: git diff -- update.xml
+
+      - name: Commit update stream
+        if: steps.tag.outputs.match == 'true' && github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add update.xml
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore: update stream to ${RELEASE_TAG}"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main

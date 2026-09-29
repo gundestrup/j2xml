@@ -153,6 +153,25 @@ else
 fi
 
 # -------------------------------------------------------------------
+# 6b. Update stream
+# -------------------------------------------------------------------
+echo "=== Update stream ==="
+stream_errors=0
+if [[ -f update.xml ]]; then
+    scripts/validate-update-xml.sh || stream_errors=$((stream_errors + 1))
+    bash tests/scripts/test-build-update-xml.sh || stream_errors=$((stream_errors + 1))
+else
+    echo "FAIL: update.xml missing"
+    stream_errors=1
+fi
+bash tests/scripts/test-check-update-release.sh || stream_errors=$((stream_errors + 1))
+if [[ $stream_errors -eq 0 ]]; then
+    ok "Update stream"
+else
+    fail "Update stream"
+fi
+
+# -------------------------------------------------------------------
 # 7. PHPUnit
 # -------------------------------------------------------------------
 echo "=== PHPUnit ==="

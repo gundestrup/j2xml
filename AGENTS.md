@@ -17,7 +17,7 @@ Joomla's Webservices REST API.
 - **Target platforms:** Joomla! **5 and 6** with **PHP 8.4 and 8.5**.
   (The upstream `eshiol/j2xml` targets Joomla 3.x/4.x; this fork drops
   older PHP/Joomla support to focus on modern versions.)
-- **Package name (Joomla):** `pkg_j2xml` (release version **4.5.4**).
+- **Package name (Joomla):** `pkg_j2xml` (release version **4.5.5**).
 - **Language:** PHP (no runtime JS build pipeline; Composer is used for
   development-only PHPUnit/PHPStan tooling, while runtime dependencies remain
   vendored as Joomla libraries).
@@ -180,6 +180,51 @@ commit the zips. For a release, run the release check and attach all five
 archives to the GitHub release as assets: `pkg_j2xml.zip`, `com_j2xml.zip`,
 `lib_eshiol_J2xml.zip`, `plg_system_j2xml.zip`, and
 `plg_webservices_j2xml.zip`.
+
+### Joomla update server (`update.xml`)
+
+The package manifest registers `<updateservers>` pointing at
+`https://raw.githubusercontent.com/gundestrup/j2xml/main/update.xml`, so
+Joomla sites can find and install new releases from the Extension Update
+view. `update.xml` at the repository root is the update stream — it
+describes the **latest published release** and embeds the published
+`pkg_j2xml.zip` SHA-256/384/512 hashes (Joomla aborts the update on a
+mismatch).
+
+The `update-server.yml` workflow checks out `main`, validates the
+published tag against the `VERSION` recorded in that tag, and regenerates
+and commits `update.xml` from the published asset. It skips an older
+release if the stream already advertises a newer version. A manual
+`workflow_dispatch` with a published tag performs the same download,
+generation, and validation as a **dry run**; it never commits or pushes.
+The release decision logic is unit-tested by
+`tests/scripts/test-check-update-release.sh`. To regenerate manually (e.g.
+after an out-of-band release), download the release asset and run:
+
+```bash
+gh release download vX.Y.Z -p pkg_j2xml.zip -D /tmp/pkg --clobber
+./scripts/build-update-xml.sh /tmp/pkg/pkg_j2xml.zip update.xml X.Y.Z
+```
+
+Do not hand-edit `update.xml`, and do not bump it before the release is
+published — an update stream advertising a missing asset makes Joomla
+updates fail with "error connecting to the server". Sites installed
+before this feature learn the update URL only after one manual update to
+a release that ships the manifest change.
+
+Stream correctness is enforced by `scripts/validate-update-xml.sh`
+(structure + manifest URL consistency, run by `check-quality.sh` and CI)
+and `tests/scripts/test-build-update-xml.sh` (generator output). The
+integration suite's `tests/scripts/test-update-server.sh` serves synthetic
+releases from the Joomla container and drives the authenticated
+`com_installer` find/update controller. It verifies discovery and package
+installation, child extension presence, no offer for same/lower versions or
+unsupported platform/PHP, and rejection of tampered hashes without changing
+the installed version. Lessons baked in: packages install with
+`client_id=0` so the stream needs `<client>site</client>` (a client mismatch
+leaves the update unattached, `extension_id=0`); Joomla disables a broken
+update site (`enabled=0`) after a failed fetch; and update streams must
+never rely on downgrade installs — Joomla does not support them.
 
 **CI** runs on every push and pull request via GitHub Actions
 (`.github/workflows/ci.yml`) with separate quality, security, integration,

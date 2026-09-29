@@ -1428,6 +1428,25 @@ check_runtime_warnings "$J5_CONTAINER" "J5"
 check_runtime_warnings "$J6_CONTAINER" "J6"
 
 # =============================================================================
+# Phase 7b: Update server — synthetic release discovery and install
+# =============================================================================
+header "Phase 7b: Update server (synthetic A -> B release)"
+
+if J2XML_CONTAINER="$J5_CONTAINER" J2XML_URL="$JOOMLA5_URL" bash "$SCRIPT_DIR/test-update-server.sh" 5 > /tmp/j2xml-update-5.log 2>&1; then
+    pass "Update server J5: discovered and installed synthetic update"
+else
+    fail "Update server J5: synthetic update flow failed"
+    cat /tmp/j2xml-update-5.log | tail -30
+fi
+
+if J2XML_CONTAINER="$J6_CONTAINER" J2XML_URL="$JOOMLA6_URL" bash "$SCRIPT_DIR/test-update-server.sh" 6 > /tmp/j2xml-update-6.log 2>&1; then
+    pass "Update server J6: discovered and installed synthetic update"
+else
+    fail "Update server J6: synthetic update flow failed"
+    cat /tmp/j2xml-update-6.log | tail -30
+fi
+
+# =============================================================================
 # Phase 8: Uninstall and verify clean removal
 # =============================================================================
 header "Phase 8: Uninstall J2XML and verify clean removal"

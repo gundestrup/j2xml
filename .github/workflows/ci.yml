@@ -88,6 +88,12 @@ jobs:
             [[ "$file" = "tests/fixtures/malformed.xml" ]] && continue
             xmllint --noout "$file"
           done < <(git ls-files '*.xml' -z)
+      - name: Update stream checks
+        shell: bash
+        run: |
+          scripts/validate-update-xml.sh
+          bash tests/scripts/test-build-update-xml.sh
+          bash tests/scripts/test-check-update-release.sh
 
   semgrep:
     name: Semgrep security scan
