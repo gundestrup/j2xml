@@ -21,6 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **PostgreSQL**: quote `item_id` when repointing `#__fields_values` rows on
+  import — the column is `varchar`, so PostgreSQL rejected the unquoted
+  integer comparison (`operator does not exist: character varying = integer`)
+  while MySQL silently coerced. Custom-field values were left pointing at the
+  old article id on PG.
+- **CI**: `install-plugin.sh` could report a successful install as failed —
+  `echo "$RESULT_HTML" | grep -q` under `pipefail` SIGPIPEd on large pages,
+  flipping the success check to false. Switched to here-strings.
+
 ---
 
 ## [4.5.4] - 2026-09-24

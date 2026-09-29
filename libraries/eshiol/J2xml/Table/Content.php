@@ -725,7 +725,7 @@ class Content extends Table
         self::updateColumn($db, '#__workflow_associations', 'item_id', $newid, $id, [$db->quoteName('extension') . ' = ' . $db->quote($context)]);
 
         // Field
-        self::updateColumn($db, '#__fields_values', 'item_id', $newid, $id);
+        self::updateColumn($db, '#__fields_values', 'item_id', $db->quote((string) $newid), $db->quote((string) $id));
 
         // History
         $query = $db->getQuery()->clear()

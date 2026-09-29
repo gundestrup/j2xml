@@ -100,20 +100,20 @@ RESULT_HTML=$(cat /tmp/j2xml-install-result-$VERSION.html 2>/dev/null || echo ""
 INSTALL_WARNINGS=""
 
 # Check for success message
-if echo "$RESULT_HTML" | grep -q "Installation of the package was successful\|alert-success"; then
+if grep -q "Installation of the package was successful\|alert-success" <<<"$RESULT_HTML"; then
     echo "[install] Installation appears successful (success message found)"
-elif echo "$RESULT_HTML" | grep -q "alert-danger\|alert-error"; then
+elif grep -q "alert-danger\|alert-error" <<<"$RESULT_HTML"; then
     echo "[install] Installation may have failed (error message found)"
     # Try to extract the error message
-    echo "$RESULT_HTML" | grep -o 'alert-danger[^<]*<[^>]*>[^<]*' | head -3
+    grep -o -m3 'alert-danger[^<]*<[^>]*>[^<]*' <<<"$RESULT_HTML"
 fi
 
 # Check for installer warnings (alert-warning class or JInstaller: messages)
 # These are non-fatal but indicate packaging problems (e.g. missing language files)
 # Specifically look for "File does not exist" which means the manifest references
 # a file that is not in the package zip.
-WARNINGS_HTML=$(echo "$RESULT_HTML" | grep -io 'alert-warning[^<]*<[^>]*>[^<]*' | grep -i 'File does not exist\|JInstaller' | head -10 || true)
-INSTALLER_WARNINGS=$(echo "$RESULT_HTML" | grep -io 'JInstaller[^<]*File does not exist[^<]*' | head -10 || true)
+WARNINGS_HTML=$(grep -io 'alert-warning[^<]*<[^>]*>[^<]*' <<<"$RESULT_HTML" | grep -i 'File does not exist\|JInstaller' | head -10 || true)
+INSTALLER_WARNINGS=$(grep -io -m10 'JInstaller[^<]*File does not exist[^<]*' <<<"$RESULT_HTML" || true)
 
 if [[ -n "$WARNINGS_HTML" ]] || [[ -n "$INSTALLER_WARNINGS" ]]; then
     echo "[install] WARNING: Installer warnings detected:"
