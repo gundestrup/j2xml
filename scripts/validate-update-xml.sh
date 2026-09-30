@@ -21,6 +21,7 @@ errors=0
 fail() { echo "FAIL: $1" >&2; errors=$((errors + 1)); }
 field() { xmllint --xpath "string($1)" "$XML" 2>/dev/null; }
 
+command -v xmllint >/dev/null || { echo "FAIL: xmllint required (apt: libxml2-utils, brew: libxml2)" >&2; exit 1; }
 [[ -f "$XML" ]] || { echo "FAIL: update.xml missing" >&2; exit 1; }
 xmllint --noout "$XML" 2>/dev/null || { echo "FAIL: update.xml is not well-formed" >&2; exit 1; }
 

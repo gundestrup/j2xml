@@ -59,6 +59,10 @@ jobs:
           RELEASE_VERSION: ${{ steps.tag.outputs.version }}
         run: bash scripts/build-update-xml.sh /tmp/pkg/pkg_j2xml.zip update.xml "$RELEASE_VERSION"
 
+      - name: Install xmllint
+        if: steps.tag.outputs.match == 'true'
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+
       - name: Validate generated update stream
         if: steps.tag.outputs.match == 'true'
         run: scripts/validate-update-xml.sh

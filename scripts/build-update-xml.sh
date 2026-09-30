@@ -20,6 +20,7 @@ INFO_URL="https://github.com/gundestrup/j2xml/releases/tag/v${VERSION}"
 
 [[ -f "$ZIP" ]] || { echo "ZIP not found: $ZIP" >&2; exit 1; }
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Bad VERSION: $VERSION" >&2; exit 1; }
+command -v shasum >/dev/null || { echo "shasum required (perl-Digest-SHA)" >&2; exit 1; }
 
 sha() { shasum -a "$1" "$ZIP" | awk '{print $1}'; }
 SHA256="$(sha 256)"

@@ -9,6 +9,8 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
+command -v xmllint >/dev/null || { echo "FAIL: xmllint required (apt: libxml2-utils, brew: libxml2)" >&2; exit 1; }
+
 # Synthetic release asset: a real zip so the output is a faithful artifact.
 echo "dummy package payload" >"$TMP/payload.txt"
 (cd "$TMP" && zip -q pkg_j2xml.zip payload.txt)
