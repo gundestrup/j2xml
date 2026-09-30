@@ -17,7 +17,7 @@ Joomla's Webservices REST API.
 - **Target platforms:** Joomla! **5 and 6** with **PHP 8.4 and 8.5**.
   (The upstream `eshiol/j2xml` targets Joomla 3.x/4.x; this fork drops
   older PHP/Joomla support to focus on modern versions.)
-- **Package name (Joomla):** `pkg_j2xml` (release version **4.5.5**).
+- **Package name (Joomla):** `pkg_j2xml` (release version **4.5.6**).
 - **Language:** PHP (no runtime JS build pipeline; Composer is used for
   development-only PHPUnit/PHPStan tooling, while runtime dependencies remain
   vendored as Joomla libraries).
@@ -134,6 +134,22 @@ The package is composed of Joomla extensions bundled together by
   longer referenced); avoid deprecated `each()`, `create_function()`,
   `mb_strtolower()` on null, implicit nullable types, etc. Run the
   pre-commit hook (see §4) to catch these before commit.
+- **Joomla API typing rules:** add return types to overrides freely but
+  never parameter types — PHP fatals when a child narrows an untyped
+  parent parameter — and `return parent::...()` inside a `: void`
+  override is a compile-time error. Verify typed Joomla classes still
+  exist on J6: `Joomla\CMS\Input\Input` is gone there (use
+  `Joomla\Input\Input`).
+- **`->getError()` is intentional** after `Table::store()`/`User::save()`
+  — Joomla swallows the exception internally and it is the only failure
+  channel. Do not refactor these call sites.
+- **Installer script:** `script.php` returns an anonymous class
+  implementing `InstallerScriptInterface` + `DatabaseAwareInterface`.
+  No `ApplicationAwareInterface` exists — use
+  `Factory::getApplication()`.
+- **CLI/test bootstrap:** never `Factory::$user` — resolve
+  `ConsoleApplication`, register it on `Factory::$application`, and call
+  `loadIdentity()` for a test identity (`tests/scripts/bootstrap.php`).
 
 ### XML / manifests
 

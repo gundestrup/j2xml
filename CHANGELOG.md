@@ -23,6 +23,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.5.6] - 2026-09-30
+
+### Security
+
+- Bumped dev-tooling transitive dependencies to clear two Dependabot
+  alerts: `js-yaml` 5.2.2 → 5.4.1 (merge-sequence CPU exhaustion) and
+  `markdown-it` (quadratic `linkify` path). Both come via
+  `markdownlint-cli2` — lint tooling only, no shipped code affected.
+  (PR #2)
+
+### Fixed
+
+- **Update-server workflow**: install `libxml2-utils` on the runner —
+  `xmllint` was absent and the validator misreported the generated
+  stream as malformed XML (`2>/dev/null` hid the command-not-found).
+  `validate-update-xml.sh`, `test-build-update-xml.sh`, and
+  `build-update-xml.sh` now check their tools upfront and fail with a
+  clear message.
+- **SonarCloud S7688**: `check-quality.sh` used a POSIX `[` test where
+  the rest of the script uses `[[`.
+
+### Changed
+
+- Folded the completed deprecated-pattern audit into
+  `README.devel.joomla6.md` (resolution notes) and `AGENTS.md`
+  (conventions), and deleted `README.TODO.deprecated.md`.
+
+---
+
 ## [4.5.5] - 2026-09-29
 
 ### Added

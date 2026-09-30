@@ -33,8 +33,49 @@ The work covered three areas:
    namespaced equivalents.
 
 See [`CHANGELOG.md`](./CHANGELOG.md) for the full list of changes and
-[`README.TODO.deprecated.md`](./README.TODO.deprecated.md) for remaining
-deprecated patterns scheduled for future removal.
+[Deprecated API patterns — resolutions](#deprecated-api-patterns--resolutions)
+below for how the last tracked deprecated patterns were resolved.
+
+---
+
+## Deprecated API patterns — resolutions
+
+All previously tracked deprecated Joomla/PHP patterns are resolved (the
+old `README.TODO.deprecated.md` audit file was deleted once complete).
+The durable rules:
+
+- **Dialogs:** `HTMLHelper::_('bootstrap.renderModal')` was replaced by
+  the `joomla-dialog` web component (`joomla.dialog` asset).
+  Function-valued `popupButtons` must be passed via the constructor —
+  they cannot be expressed through `data-joomla-dialog` JSON — and the
+  element must not be attached to the DOM before `show()`, because
+  `connectedCallback()` renders the layout immediately.
+- **Events:** `triggerEvent()` was replaced by
+  `getDispatcher()->dispatch()`. Use the concrete core event class when
+  one exists (`PrepareDataEvent` for `onContentPrepareData`), generic
+  `Joomla\Event\Event` otherwise.
+- **`->getError()` is intentionally retained** after `Table::store()`
+  and `User::save()` — Joomla catches DB exceptions internally and only
+  exposes the message via `setError()`/`getError()`. Do not "fix" these
+  call sites.
+- **Underscore-prefixed properties** were renamed to typed camelCase
+  (`$excluded`, `$aliases`, `$jsonEncode`, `$option`, `$nullDate`,
+  `$user`, `$userId`, `$now`); Joomla-inherited internals (`$_tbl`)
+  stay as parent API.
+- **Native types on overrides:** add return types freely, but never
+  parameter types — PHP fatals when a child narrows an untyped parent
+  parameter. `return parent::...()` inside a `: void` override is a
+  compile-time error. Verify typed Joomla classes still exist on J6 —
+  `Joomla\CMS\Input\Input` is gone there; use `Joomla\Input\Input`.
+- **Installer script:** `administrator/components/com_j2xml/script.php`
+  returns an anonymous class implementing `InstallerScriptInterface` +
+  `DatabaseAwareInterface` (the only non-deprecated path on J6). No
+  `ApplicationAwareInterface` exists — get the app from
+  `Factory::getApplication()`.
+- **CLI bootstrap:** `Factory::$user` is gone — resolve
+  `ConsoleApplication` from the container, register it on
+  `Factory::$application`, and call `loadIdentity()` for a test user
+  (see `tests/scripts/bootstrap.php`).
 
 ---
 

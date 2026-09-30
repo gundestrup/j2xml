@@ -121,7 +121,7 @@ fi
 # 5. Markdownlint
 # -------------------------------------------------------------------
 echo "=== Markdownlint ==="
-if [ -x node_modules/.bin/markdownlint-cli2 ]; then
+if [[ -x node_modules/.bin/markdownlint-cli2 ]]; then
     if node_modules/.bin/markdownlint-cli2; then
         ok "Markdownlint"
     else
