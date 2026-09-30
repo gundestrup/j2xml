@@ -6,10 +6,10 @@
 		<element>pkg_j2xml</element>
 		<type>package</type>
 		<client>site</client>
-		<version>4.5.5</version>
-		<infourl title="J2XML 4.5.5 release notes">https://github.com/gundestrup/j2xml/releases/tag/v4.5.5</infourl>
+		<version>4.5.6</version>
+		<infourl title="J2XML 4.5.6 release notes">https://github.com/gundestrup/j2xml/releases/tag/v4.5.6</infourl>
 		<downloads>
-			<downloadurl type="full" format="zip">https://github.com/gundestrup/j2xml/releases/download/v4.5.5/pkg_j2xml.zip</downloadurl>
+			<downloadurl type="full" format="zip">https://github.com/gundestrup/j2xml/releases/download/v4.5.6/pkg_j2xml.zip</downloadurl>
 		</downloads>
 		<tags>
 			<tag>stable</tag>
@@ -19,8 +19,8 @@
 		<targetplatform name="joomla" version="[56]\..*"/>
 		<supported_databases mysql="8.0.13" mariadb="10.4" postgresql="12"/>
 		<php_minimum>8.4</php_minimum>
-		<sha256>0e107a159b9a8572c9f23f2eba063f8f7f85649d3267a0ebb4387d8803f3f3ef</sha256>
-		<sha384>a383f2dfd4ae4a2a26aa3d7cdef58ae2c17d59187eebbc85a33d64036805060fd1545e43471248b26771b2e1f8523be5</sha384>
-		<sha512>28e420af00b39724718984f51be4455c890d6335b5d765947ac11b6a13f8b1177346746066c9d1ce01743e55d6feacf22d138a12ab54f927774d384a11e789b6</sha512>
+		<sha256>608d0b693c5e2c0fb4d84a279774a432c32662a0a6e23d9be6c5e828530d95c1</sha256>
+		<sha384>7dd1963535942dd33c9cb1b77a5266d0ee77102a366fd0256ce2aa51543054a26a0459718d29f3eda4b5e8dc5048a8d2</sha384>
+		<sha512>432a700beb71e423a4d3baf0c6bf96acf6197601b407baca8931d01f870338a33553fdfd1b09d78bf720c9a24c622cd5150c9626c2a216051bef01a345398714</sha512>
 	</update>
 </updates>
