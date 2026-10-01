@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Bumped PHPStan 2.2.13 → 2.2.16 (dev tooling only).
+
 ---
 
 ## [4.5.6] - 2026-09-30
