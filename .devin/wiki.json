@@ -1,0 +1,41 @@
+{
+  "repo_notes": [
+    { "content": "Joomla extension package (pkg_j2xml, PHP 8.4/8.5) that exports/imports site content as XML and transfers it between Joomla instances via the Webservices REST API. Fork of eshiol/j2xml targeting Joomla 5 and 6 only — upstream supported 3.x/4.x." },
+    { "content": "Package parts: com_j2xml admin component (export/import/send UI + API), libraries/eshiol/J2xml core library (Exporter, Importer, Table/*, Version), system plugin, webservices plugin (REST import endpoint), cli/j2xml.php standalone importer." },
+    { "content": "Exporter.php turns Joomla rows (content, categories, users, menus, modules, contacts, weblinks, fields, tags, viewlevels, usernotes, images) into J2XML XML; Importer.php parses it and inserts/updates rows in the target instance. Per-entity Table wrappers live in Table/*.php." },
+    { "content": "libraries/eshiol/J2xmlpro/ and Pro manifests/language files are intentionally gitignored — this repo is open-source J2XML, not J2XML Pro. Do not commit Pro code." },
+    { "content": "VERSION file is the single source of truth for the release version; Composer is dev-only tooling (PHPUnit/PHPStan) — runtime deps stay vendored as Joomla libraries." },
+    { "content": "See AGENTS.md for repository layout, coding conventions, build/release flow, and manual testing expectations (Joomla 5/6, MySQL + PostgreSQL)." }
+  ],
+  "pages": [
+    {
+      "title": "Architecture Overview",
+      "purpose": "How the five package parts fit together: admin component UI, core library, system plugin, webservices plugin, CLI — and the export -> XML -> import/send data flow",
+      "page_notes": [{ "content": "Include Mermaid diagram of package structure and the export/import/send paths" }]
+    },
+    {
+      "title": "Core Library",
+      "purpose": "libraries/eshiol/J2xml: Exporter, Importer, Version, and the per-entity Table wrappers — which entities are supported and how XML maps to Joomla rows",
+      "parent": "Architecture Overview"
+    },
+    {
+      "title": "Admin Component",
+      "purpose": "administrator/components/com_j2xml + api/components/com_j2xml: controllers, models, views, export/import/send UI, and Webservices API controllers",
+      "parent": "Architecture Overview"
+    },
+    {
+      "title": "Plugins",
+      "purpose": "plugins/system/j2xml (content preparation + admin UI integration) and plugins/webservices/j2xml (Joomla REST import endpoint)",
+      "parent": "Architecture Overview"
+    },
+    {
+      "title": "CLI Importer",
+      "purpose": "cli/j2xml.php: standalone command-line import path and when to use it vs the admin UI",
+      "parent": "Architecture Overview"
+    },
+    {
+      "title": "Testing and Release",
+      "purpose": "PHPUnit/PHPStan via Composer, Semgrep + CI workflow, VERSION-driven release flow, and manual testing matrix (Joomla 5/6, MySQL + PostgreSQL)"
+    }
+  ]
+}
