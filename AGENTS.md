@@ -280,10 +280,10 @@ and coverage jobs:
   files are configured in the CodeFactor UI under repository
   Settings → Ignore Files (currently `media/lib_eshiol_j2xml/js/*`).
 - **SonarCloud** — static analysis via `sonar-project.properties`
-  (project key: `gundestrup_j2xml`, org: `gundestrup`). CI-based scans exclude
+  (project key: `gundestrup_j2xml`, org: `gundestrup`). The `coverage` CI job
+  runs `sonarqube-scan-action` after merging Clover reports and imports
+  `coverage-combined.xml` (`sonar.php.coverage.reportPaths`). Scans exclude
   `media/**`, `build/**`, `tests/**`, `vendor/**`, and `node_modules/**`.
-  SonarCloud AutoScan uses the root `.sonarcloud.properties` file instead;
-  it classifies `tests/` as test code and excludes it from issue analysis.
   Suppress false positives with `// NOSONAR` on the flagged line.
   Findings are accessible via the SonarCloud REST API (no auth needed for
   public projects):
