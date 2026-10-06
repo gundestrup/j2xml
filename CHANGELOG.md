@@ -21,6 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Dev-tooling audit gate: `scripts/npm-audit.mjs` + `.audit-allow.json`,
+  `npm ci --ignore-scripts`, and `min-release-age=7` — patchable
+  transitive deps are forced to fixed versions via `overrides`
+  (smol-toml, katex); only allowlisted unpatched advisories are
+  tolerated (braces, dev-only, no patched release).
+
 ### Changed
 
 - Bumped PHPStan 2.2.13 → 2.2.16 (dev tooling only).
