@@ -275,7 +275,7 @@ final class TableTest extends TestCase
             public function from($value): self { return $this; }
             public function where($value): self { return $this; }
         };
-        $db = $this->createMock(DatabaseInterface::class);
+        $db = $this->createStub(DatabaseInterface::class);
         $db->method('getQuery')->willReturn($query);
         $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
         $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
@@ -293,7 +293,7 @@ final class TableTest extends TestCase
             public function from($value): self { return $this; }
             public function where($value): self { return $this; }
         };
-        $db = $this->createMock(DatabaseInterface::class);
+        $db = $this->createStub(DatabaseInterface::class);
         $db->method('getQuery')->willReturn($query);
         $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
         $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
@@ -452,7 +452,7 @@ final class TableTest extends TestCase
             public function from($value): self { return $this; }
             public function where($value): self { return $this; }
         };
-        $db = $this->createMock(DatabaseInterface::class);
+        $db = $this->createStub(DatabaseInterface::class);
         $db->method('getQuery')->willReturn($query);
         $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
         $db->method('setQuery')->willReturnSelf();
@@ -469,7 +469,7 @@ final class TableTest extends TestCase
             public function from($value): self { return $this; }
             public function where($value): self { return $this; }
         };
-        $db = $this->createMock(DatabaseInterface::class);
+        $db = $this->createStub(DatabaseInterface::class);
         $db->method('getQuery')->willReturn($query);
         $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
         $db->method('setQuery')->willReturnSelf();
@@ -517,7 +517,7 @@ final class TableTest extends TestCase
     public function testBuildTagAliasUsesSharedTagQuery(): void
     {
         $query = $this->querySpy();
-        $db = $this->createMock(DatabaseInterface::class);
+        $db = $this->createStub(DatabaseInterface::class);
         $db->method('getQuery')->willReturn($query);
         $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
         $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
@@ -538,7 +538,7 @@ final class TableTest extends TestCase
     public function testBuildAssociationAliasUsesSharedAssociationQuery(): void
     {
         $query = $this->querySpy();
-        $db = $this->createMock(DatabaseInterface::class);
+        $db = $this->createStub(DatabaseInterface::class);
         $db->method('getQuery')->willReturn($query);
         $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
         $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
@@ -580,7 +580,7 @@ final class TableTest extends TestCase
     public function testResolveAssociationDataNormalizesAssociationList(): void
     {
         $query = $this->querySpy();
-        $db = $this->createMock(DatabaseInterface::class);
+        $db = $this->createStub(DatabaseInterface::class);
         $db->method('getQuery')->willReturn($query);
         $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
         $db->method('setQuery')->willReturnSelf();
@@ -596,7 +596,7 @@ final class TableTest extends TestCase
     public function testResolveAssociationDataIgnoresStarLanguage(): void
     {
         $query = $this->querySpy();
-        $db = $this->createMock(DatabaseInterface::class);
+        $db = $this->createStub(DatabaseInterface::class);
         $db->method('getQuery')->willReturn($query);
         $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
         $db->method('setQuery')->willReturnSelf();
@@ -612,7 +612,7 @@ final class TableTest extends TestCase
     public function testGetCategorisedItemIdResolvesPath(): void
     {
         $query = $this->querySpy();
-        $db = $this->createMock(DatabaseInterface::class);
+        $db = $this->createStub(DatabaseInterface::class);
         $db->method('getQuery')->willReturn($query);
         $db->method('quoteName')->willReturnCallback(static fn (string $value): string => $value);
         $db->method('quote')->willReturnCallback(static fn ($value): string => "'" . $value . "'");
