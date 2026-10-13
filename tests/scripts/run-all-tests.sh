@@ -886,7 +886,7 @@ else
 fi
 
 KEEP_ID_IMPORT_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/all-content-types.xml" content=0 categories=0 users=2 keep_user_id=1 superusers=1)
-KEEP_ID_USER=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT username FROM #__users WHERE id=50")
+KEEP_ID_USER=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT username FROM #__users WHERE id=2000")
 KEEP_CONTENT_ID_CODE=$(joomla_import_named "$JOOMLA5_URL" "$FIXTURES_DIR/keep-id.xml" content=2 categories=0 keep_id=1)
 KEEP_ID_ARTICLE=$(db_scalar "$J5_CONTAINER" "$JOOMLA5_DB" "SELECT alias FROM #__content WHERE id=1903")
 if { [[ "$KEEP_ID_IMPORT_CODE" = "200" ]] || [[ "$KEEP_ID_IMPORT_CODE" = "303" ]]; } && { [[ "$KEEP_CONTENT_ID_CODE" = "200" ]] || [[ "$KEEP_CONTENT_ID_CODE" = "303" ]]; } && [[ "$KEEP_ID_ARTICLE" = "j2xml-keep-id-only-article" ]] && [[ "$KEEP_ID_USER" = "fixtureuser1" ]]; then
