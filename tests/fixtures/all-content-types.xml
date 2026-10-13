@@ -73,7 +73,7 @@
 
   <!-- Users -->
   <user>
-    <id>50</id>
+    <id>2000</id>
     <name>Fixture User One</name>
     <username>fixtureuser1</username>
     <email>fixtureuser1@example.com</email>
@@ -87,7 +87,7 @@
     <group>2</group>
   </user>
   <user>
-    <id>51</id>
+    <id>2001</id>
     <name>Fixture User Two</name>
     <username>fixtureuser2</username>
     <email>fixtureuser2@example.com</email>
@@ -102,7 +102,7 @@
     <group>3</group>
   </user>
   <user>
-    <id>52</id>
+    <id>2002</id>
     <name>Fixture Super User</name>
     <username>fixturesuperuser</username>
     <email>fixturesuperuser@example.com</email>
@@ -138,10 +138,10 @@
     <state>1</state>
     <catid>uncategorised/test-category-articles</catid>
     <created>2024-01-20 10:00:00</created>
-    <created_by>50</created_by>
+    <created_by>2000</created_by>
     <created_by_alias>Fixture Author</created_by_alias>
     <modified>2024-01-20 10:00:00</modified>
-    <modified_by>50</modified_by>
+    <modified_by>2000</modified_by>
     <metakey>fixture, test, one</metakey>
     <metadesc>Fixture article one for testing.</metadesc>
     <language>*</language>
@@ -160,9 +160,9 @@
     <state>1</state>
     <catid>uncategorised/test-category-articles</catid>
     <created>2024-02-01 14:00:00</created>
-    <created_by>51</created_by>
+    <created_by>2001</created_by>
     <modified>2024-02-01 14:00:00</modified>
-    <modified_by>51</modified_by>
+    <modified_by>2001</modified_by>
     <metakey></metakey>
     <metadesc>Second fixture article.</metadesc>
     <language>*</language>
@@ -181,9 +181,9 @@
     <state>1</state>
     <catid>uncategorised/test-category-articles</catid>
     <created>2024-03-01 10:00:00</created>
-    <created_by>50</created_by>
+    <created_by>2000</created_by>
     <modified>2024-03-01 10:00:00</modified>
-    <modified_by>50</modified_by>
+    <modified_by>2000</modified_by>
     <metakey>keep-id, test</metakey>
     <metadesc>Article used by import settings tests.</metadesc>
     <language>*</language>
@@ -199,14 +199,14 @@
     <id>20</id>
     <name>Fixture Contact One</name>
     <alias>fixture-contact-one</alias>
-    <user_id>50</user_id>
+    <user_id>2000</user_id>
     <catid>uncategorised/test-category-contacts</catid>
     <published>1</published>
     <access>1</access>
     <created>2024-01-25 10:00:00</created>
-    <created_by>50</created_by>
+    <created_by>2000</created_by>
     <modified>2024-01-25 10:00:00</modified>
-    <modified_by>50</modified_by>
+    <modified_by>2000</modified_by>
     <language>*</language>
     <metadesc></metadesc>
     <metakey></metakey>
@@ -264,9 +264,9 @@
     <description>Test field group for articles</description>
     <state>1</state>
     <created_time>2024-01-15 10:00:00</created_time>
-    <created_user_id>50</created_user_id>
+    <created_user_id>2000</created_user_id>
     <modified_time>2024-01-15 10:00:00</modified_time>
-    <modified_by>50</modified_by>
+    <modified_by>2000</modified_by>
     <params>{}</params>
   </fieldgroup>
 
@@ -286,9 +286,9 @@
     <required>0</required>
     <only_use_in_subform>0</only_use_in_subform>
     <created_time>2024-01-15 10:00:00</created_time>
-    <created_user_id>50</created_user_id>
+    <created_user_id>2000</created_user_id>
     <modified_time>2024-01-15 10:00:00</modified_time>
-    <modified_by>50</modified_by>
+    <modified_by>2000</modified_by>
     <group>Test Field Group</group>
   </field>
 </j2xml>
