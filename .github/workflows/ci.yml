@@ -276,6 +276,9 @@ jobs:
   coverage:
     name: Merge and upload coverage
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     needs: [php-quality, mysql-integration, postgresql-integration, php85-runtime-integration]
     if: always()
     steps:
@@ -311,7 +314,7 @@ jobs:
         with:
           files: ./coverage-combined.xml
           disable_search: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: true
           fail_ci_if_error: false
       - name: SonarQube Cloud scan
         uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
