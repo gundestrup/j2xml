@@ -25,10 +25,3 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
-
-  - package-ecosystem: "pip" # CI tools (semgrep) — hashed requirements-ci.txt
-    directory: "/.github"
-    schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 7
