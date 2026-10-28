@@ -18,6 +18,9 @@
 set -euo pipefail
 
 PCOV_VERSION="${PCOV_VERSION:-1.0.12}"
+# pecl.php.net intermittently returns 5xx; retry the install before giving up.
+PCOV_INSTALL_ATTEMPTS="${PCOV_INSTALL_ATTEMPTS:-3}"
+PCOV_RETRY_DELAY="${PCOV_RETRY_DELAY:-15}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PREPEND_FILE="$SCRIPT_DIR/coverage-prepend.php"
 
@@ -45,12 +48,29 @@ while [[ $# -ge 2 ]]; do
     fi
 
     echo "[coverage] Installing pcov-$PCOV_VERSION in $CONTAINER ..."
-    docker exec "$CONTAINER" bash -c "
-        if ! php -m | grep -qi '^pcov$'; then
-            pecl install 'pcov-$PCOV_VERSION' && docker-php-ext-enable pcov
+    installed=0
+    for attempt in $(seq 1 "$PCOV_INSTALL_ATTEMPTS"); do
+        if docker exec "$CONTAINER" bash -c "
+            # A previous attempt may have installed the extension without
+            # enabling it, so try enabling first before hitting pecl again.
+            docker-php-ext-enable pcov 2>/dev/null || true
+            if ! php -m | grep -qi '^pcov$'; then
+                pecl install 'pcov-$PCOV_VERSION' && docker-php-ext-enable pcov
+            fi
+            php -m | grep -qi '^pcov$'
+        "; then
+            installed=1
+            break
         fi
-        php -m | grep -qi '^pcov$'
-    "
+        if [[ $attempt -lt $PCOV_INSTALL_ATTEMPTS ]]; then
+            echo "[coverage] pcov install attempt $attempt/$PCOV_INSTALL_ATTEMPTS failed in $CONTAINER; retrying in ${PCOV_RETRY_DELAY}s ..."
+            sleep "$PCOV_RETRY_DELAY"
+        fi
+    done
+    if [[ $installed -ne 1 ]]; then
+        echo "[coverage] FAIL: pcov could not be installed in $CONTAINER after $PCOV_INSTALL_ATTEMPTS attempts"
+        exit 1
+    fi
 
     echo "[coverage] Installing collector and PHP config in $CONTAINER ..."
     # /tmp/j2xml-cov must be writable by the Apache workers (www-data).

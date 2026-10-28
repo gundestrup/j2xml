@@ -19,6 +19,16 @@
 
 set -euo pipefail
 
+# Emit GitHub Actions annotations in CI so silent coverage loss shows up on
+# the run summary instead of only in step logs.
+if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+    warn() { echo "[coverage] WARNING: $*"; echo "::warning::$*"; }
+    err()  { echo "[coverage] FAIL: $*";    echo "::error::$*"; }
+else
+    warn() { echo "[coverage] WARNING: $*"; }
+    err()  { echo "[coverage] FAIL: $*"; }
+fi
+
 if [[ $# -lt 2 ]]; then
     echo "Usage: $0 <output.xml> <container> [<container> ...]"
     exit 1
@@ -38,14 +48,18 @@ for CONTAINER in "$@"; do
     if docker exec "$CONTAINER" test -d /tmp/j2xml-cov 2>/dev/null; then
         docker cp "$CONTAINER:/tmp/j2xml-cov/." "$dest/" 2>/dev/null || true
         count=$(find "$dest" -name '*.cov' | wc -l | tr -d ' ')
-        echo "[coverage] $CONTAINER: collected $count dump(s)"
+        if [[ "$count" -eq 0 ]]; then
+            warn "$CONTAINER produced no coverage dumps"
+        else
+            echo "[coverage] $CONTAINER: collected $count dump(s)"
+        fi
     else
-        echo "[coverage] WARNING: $CONTAINER has no /tmp/j2xml-cov (was coverage-enable.sh run?)"
+        warn "$CONTAINER has no /tmp/j2xml-cov (was coverage-enable.sh run?)"
     fi
 done
 
 if ! command -v php >/dev/null 2>&1; then
-    echo "[coverage] FAIL: php CLI not found on this host; cannot merge coverage"
+    err "php CLI not found on this host; cannot merge coverage"
     exit 1
 fi
 
@@ -56,8 +70,13 @@ for d in "$RAW_BASE"/*/; do
 done
 
 if [[ ${#dirs[@]} -eq 0 ]]; then
-    echo "[coverage] FAIL: no raw coverage directories under $RAW_BASE"
+    err "no raw coverage directories under $RAW_BASE"
     exit 1
 fi
 
 php "$SCRIPT_DIR/merge-coverage.php" "$OUT" "${dirs[@]}"
+
+if ! grep -q '<file ' "$OUT" 2>/dev/null; then
+    err "merged report $OUT contains no file entries; coverage collection failed"
+    exit 1
+fi
