@@ -10,5 +10,6 @@
     "semgrep.scan.pro_intrafile": false,
     "semgrep.scan.configuration": [
         ".semgrep.yml"
-    ]
+    ],
+    "semgrep.scan.onlyGitDirty": false
 }

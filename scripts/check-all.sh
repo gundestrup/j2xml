@@ -27,9 +27,9 @@ echo "  PHASE 1: Quality checks"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 if ./scripts/check-quality.sh; then
-    printf "${green}✓ Quality checks passed${nc}\n"
+    printf '%b✓ Quality checks passed%b\n' "$green" "$nc"
 else
-    printf "${red}✗ Quality checks FAILED${nc}\n"
+    printf '%b✗ Quality checks FAILED%b\n' "$red" "$nc"
     overall_fail=1
 fi
 echo ""
@@ -40,9 +40,9 @@ echo "  PHASE 2: Integration tests"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 if ./scripts/check-tests.sh; then
-    printf "${green}✓ Integration tests passed${nc}\n"
+    printf '%b✓ Integration tests passed%b\n' "$green" "$nc"
 else
-    printf "${red}✗ Integration tests FAILED${nc}\n"
+    printf '%b✗ Integration tests FAILED%b\n' "$red" "$nc"
     overall_fail=1
 fi
 echo ""
@@ -50,9 +50,9 @@ echo ""
 # Summary
 echo "========================================"
 if [[ $overall_fail -eq 0 ]]; then
-    printf "${green}  ✓ All checks passed — ready for release${nc}\n"
+    printf '%b  ✓ All checks passed — ready for release%b\n' "$green" "$nc"
     exit 0
 else
-    printf "${red}  ✗ Some checks failed — fix before release${nc}\n"
+    printf '%b  ✗ Some checks failed — fix before release%b\n' "$red" "$nc"
     exit 1
 fi

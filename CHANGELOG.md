@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.5.7] - 2026-10-30
 
 ### Security
 
@@ -28,10 +28,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   transitive deps are forced to fixed versions via `overrides`
   (smol-toml, katex); only allowlisted unpatched advisories are
   tolerated (braces, dev-only, no patched release).
+- Added `re2js` override (`^2.8.7`) — markdownlint 0.42.0 pins
+  re2js 2.8.6, affected by GHSA-gg6h-894w-4m9c (quadratic-time
+  lookbehind DoS). Dev-only lint tooling, no shipped code.
 
 ### Changed
 
 - Bumped PHPStan 2.2.13 → 2.2.16 (dev tooling only).
+- Bumped dev/test tooling: PHPUnit 13.4.2 → 13.4.5,
+  PHPStan 2.3.1 → 2.3.4, markdownlint-cli2 0.23.3 → 0.24.0,
+  pako 3.0.1 → 3.0.3 (`pako_inflate.js` rebuilt via
+  `build/pako`), @playwright/test 1.63.0 → 1.64.1.
+- Bumped integration-test Joomla images: 5.4.8 → 5.4.10 and
+  6.1.3 → 6.2.0 (MySQL, PostgreSQL and PHP 8.5 compose files,
+  plus the `Dockerfile.php85` default arg); refreshed the
+  `php:8.5-apache` digest pin.
+- Bumped dev Node from 22 to 24 (`.nvmrc`) — Node 24 is the
+  current Active LTS; CI and UI tests read the pin from
+  `.nvmrc`.
+- Bumped `katex` override `^0.18.2` → `^0.19.1` (dev-only
+  transitive dep, security pin carried forward).
+- Bumped CI actions: sonarqube-scan-action v8.3.0 → v8.4.0,
+  semgrep/semgrep image 1.182.0 → 1.183.0,
+  markdownlint-cli2-action re-pinned at v25.0.0.
+
+### Fixed
+
+- `check-quality.sh` PHPUnit detection — PHPUnit 13.4.5
+  wraps the `OK` result line in ANSI color codes, so the
+  anchored `^OK (` grep reported FAIL on a passing run.
+- All ShellCheck info findings: summary `printf` calls across
+  `check-quality.sh`, `check-tests.sh` and `check-all.sh`
+  now use `%b` (fixes literal `\033` output in the
+  check-tests summary and clears SC2059), the pre-commit
+  PHPStan invocation uses an array instead of word-splitting
+  (SC2086), and a false-positive SC2016 in `release-check.sh`
+  is suppressed. `shellcheck` now exits clean at info level.
+- Pre-commit hook: POSIX `[` tests converted to `[[`
+  throughout, matching the rest of the script suite.
 
 ---
 

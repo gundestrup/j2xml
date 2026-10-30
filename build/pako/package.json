@@ -4,10 +4,10 @@
   "private": true,
   "description": "Build script to produce a browser-compatible pako gzip/inflate bundle for J2XML",
   "scripts": {
-    "build": "esbuild entry.js --bundle --format=iife --global-name=pako --outfile=../../media/lib_eshiol_j2xml/js/pako_inflate.js --banner:js='/* pako 3.x gzip/inflate bundle (built from npm pako 3.0.1) */'"
+    "build": "esbuild entry.js --bundle --format=iife --global-name=pako --outfile=../../media/lib_eshiol_j2xml/js/pako_inflate.js --banner:js='/* pako 3.x gzip/inflate bundle (built from npm pako 3.0.3) */'"
   },
   "devDependencies": {
     "esbuild": "^0.28.0",
-    "pako": "^3.0.1"
+    "pako": "^3.0.3"
   }
 }

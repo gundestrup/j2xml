@@ -226,11 +226,11 @@ fi
 # -------------------------------------------------------------------
 echo ""
 echo "=== Summary ==="
-printf "${green}Passed: %d${nc}\n" "$pass"
+printf '%bPassed: %d%b\n' "$green" "$pass" "$nc"
 if [[ $fail -gt 0 ]]; then
-    printf "${red}Failed: %d${nc}\n" "$fail"
+    printf '%bFailed: %d%b\n' "$red" "$fail" "$nc"
     exit 1
 else
-    printf '%sAll tests passed.%s\n' "$green" "$nc"
+    printf '%bAll tests passed.%b\n' "$green" "$nc"
     exit 0
 fi

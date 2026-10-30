@@ -82,6 +82,7 @@ manifest_version() {
     local archive="$1"
     local manifest="$2"
 
+    # shellcheck disable=SC2016 # $xml is PHP code, not a shell variable
     unzip -p "$archive" "$manifest" \
         | php -r '$xml = simplexml_load_string(stream_get_contents(STDIN)); echo $xml ? (string) $xml->version : "";'
 }

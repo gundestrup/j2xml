@@ -183,7 +183,9 @@ if [[ -x vendor/bin/phpunit ]]; then
         phpunit_out=$(vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-clover coverage.xml 2>&1)
     fi
     echo "$phpunit_out" | tail -10
-    if echo "$phpunit_out" | grep -qE "^OK \(|^OK,"; then
+    # PHPUnit 13.4.5+ wraps the "OK" line in ANSI color codes; strip them
+    # before matching so the anchored pattern still works.
+    if echo "$phpunit_out" | sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' | grep -qE "^OK \(|^OK,"; then
         ok "PHPUnit"
     else
         fail "PHPUnit"
@@ -197,11 +199,11 @@ fi
 # -------------------------------------------------------------------
 echo ""
 echo "=== Summary ==="
-printf "${green}Passed: %d${nc}\n" "$pass"
+printf '%bPassed: %d%b\n' "$green" "$pass" "$nc"
 if [[ $fail -gt 0 ]]; then
-    printf "${red}Failed: %d${nc}\n" "$fail"
+    printf '%bFailed: %d%b\n' "$red" "$fail" "$nc"
     exit 1
 else
-    printf "${green}All checks passed.${nc}\n"
+    printf '%bAll checks passed.%b\n' "$green" "$nc"
     exit 0
 fi

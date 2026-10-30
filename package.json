@@ -3,11 +3,12 @@
   "private": true,
   "description": "Development-only tooling for scripts/check-quality.sh (markdownlint-cli2). Not shipped in the extension package.",
   "devDependencies": {
-    "markdownlint-cli2": "^0.23.3"
+    "markdownlint-cli2": "^0.24.0"
   },
   "overrides": {
     "smol-toml": "^1.9.0",
-    "katex": "^0.18.2",
+    "katex": "^0.19.1",
+    "re2js": "^2.8.7",
     "markdownlint-cli2": {
       "markdown-it": "^15.0.3"
     }

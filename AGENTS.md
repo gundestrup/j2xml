@@ -488,7 +488,7 @@ errors, `console.error`, and relevant HTTP failures. The test runner disables
 Joomla's core system-stats plugin in disposable containers because its optional
 asynchronous telemetry response can produce unrelated JSON parse errors.
 
-Local UI tests and CI use the Node 22 major pinned in `.nvmrc`. CI reads this
+Local UI tests and CI use the Node 24 major pinned in `.nvmrc`. CI reads this
 file; the runner rejects a different local Node major so local and CI runs use
 the same runtime line.
 

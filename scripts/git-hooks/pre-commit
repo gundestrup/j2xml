@@ -28,7 +28,7 @@ error() { printf "${red}[pre-commit]${nc} %s\n" "$*" >&2; }
 # Collect staged PHP files (only added/copied/modified, not deleted)
 staged_php_files=$(git diff --cached --name-only --diff-filter=ACM -- '*.php' || true)
 
-if [ -z "$staged_php_files" ]; then
+if [[ -z "$staged_php_files" ]]; then
 	info "No staged PHP files — skipping checks."
 	exit 0
 fi
@@ -52,7 +52,7 @@ for candidate in \
 	/usr/local/opt/php@8.4/bin/php \
 	/usr/local/opt/php@8.5/bin/php
 do
-	if [ -x "$candidate" ]; then
+	if [[ -x "$candidate" ]]; then
 		php_binaries+=("$candidate")
 	fi
 done
@@ -60,22 +60,22 @@ done
 # Fall back to whatever `php` is on PATH (if not already added).
 # Deduplicate by resolving symlinks so we don't lint twice with the same binary.
 path_php=$(command -v php 2>/dev/null || true)
-if [ -n "$path_php" ]; then
+if [[ -n "$path_php" ]]; then
 	resolved=$(readlink -f "$path_php" 2>/dev/null || echo "$path_php")
 	already=0
 	for existing in "${php_binaries[@]}"; do
 		existing_resolved=$(readlink -f "$existing" 2>/dev/null || echo "$existing")
-		if [ "$resolved" = "$existing_resolved" ]; then
+		if [[ "$resolved" = "$existing_resolved" ]]; then
 			already=1
 			break
 		fi
 	done
-	if [ $already -eq 0 ]; then
+	if [[ $already -eq 0 ]]; then
 		php_binaries+=("$path_php")
 	fi
 fi
 
-if [ ${#php_binaries[@]} -eq 0 ]; then
+if [[ ${#php_binaries[@]} -eq 0 ]]; then
 	error "No PHP binary found. Install PHP 8.4+ (brew install php@8.4)."
 	exit 1
 fi
@@ -94,7 +94,7 @@ for php_bin in "${php_binaries[@]}"; do
 	done <<< "$staged_php_files"
 done
 
-if [ $lint_failed -ne 0 ]; then
+if [[ $lint_failed -ne 0 ]]; then
 	error "PHP lint failed. Fix the errors above or use --no-verify to bypass."
 	exit 1
 fi
@@ -105,7 +105,7 @@ info "PHP lint passed on all ${#php_binaries[@]} PHP binary/binaries."
 # 2. PHPStan static analysis (if installed)
 # ---------------------------------------------------------------------------
 phpstan_bin=$(command -v phpstan 2>/dev/null || true)
-if [ -n "$phpstan_bin" ]; then
+if [[ -n "$phpstan_bin" ]]; then
 	info "Running PHPStan…"
 
 	tmp_dir=""
@@ -117,9 +117,9 @@ if [ -n "$phpstan_bin" ]; then
 	#
 	# When no config exists, fall back to a minimal level-0 config and
 	# analyse only the staged files.
-	if [ -f "phpstan.neon" ] || [ -f "phpstan.neon.dist" ]; then
+	if [[ -f "phpstan.neon" || -f "phpstan.neon.dist" ]]; then
 		phpstan_config_arg=""
-		phpstan_paths=""
+		phpstan_paths=()
 	else
 		tmp_dir=$(mktemp -d -t j2xml-phpstan.XXXXXX)
 		tmp_config="$tmp_dir/phpstan.neon"
@@ -131,13 +131,13 @@ NEON
 		phpstan_config_arg="--configuration=$tmp_config"
 
 		# Pass staged PHP files as the paths to analyse.
-		phpstan_paths=""
+		phpstan_paths=()
 		while IFS= read -r f; do
-			phpstan_paths="$phpstan_paths $f"
+			phpstan_paths+=("$f")
 		done <<< "$staged_php_files"
 	fi
 
-	if ! $phpstan_bin analyse $phpstan_config_arg $phpstan_paths --no-progress --memory-limit=512M --error-format=table; then
+	if ! "$phpstan_bin" analyse ${phpstan_config_arg:+"$phpstan_config_arg"} ${phpstan_paths[@]+"${phpstan_paths[@]}"} --no-progress --memory-limit=512M --error-format=table; then
 		error "PHPStan found issues. Fix them above or use --no-verify to bypass."
 		rm -rf "$tmp_dir" 2>/dev/null || true
 		exit 1
@@ -151,12 +151,12 @@ fi
 # ---------------------------------------------------------------------------
 # 3. Test suite (if one exists)
 # ---------------------------------------------------------------------------
-if [ -f "phpunit.xml" ] || [ -f "phpunit.xml.dist" ]; then
+if [[ -f "phpunit.xml" || -f "phpunit.xml.dist" ]]; then
 	phpunit_bin=$(command -v phpunit 2>/dev/null || true) || \
 	phpunit_bin="vendor/bin/phpunit"
-	if [ -x "$phpunit_bin" ]; then
+	if [[ -x "$phpunit_bin" ]]; then
 		info "Running PHPUnit…"
-		if ! $phpunit_bin; then
+		if ! "$phpunit_bin"; then
 			error "Tests failed. Fix them above or use --no-verify to bypass."
 			exit 1
 		fi
@@ -172,9 +172,9 @@ fi
 # 4. Semgrep security scan (if installed)
 # ---------------------------------------------------------------------------
 semgrep_bin=$(command -v semgrep 2>/dev/null || true)
-if [ -n "$semgrep_bin" ]; then
+if [[ -n "$semgrep_bin" ]]; then
 	info "Running Semgrep security scan…"
-	if ! $semgrep_bin scan --config .semgrep.yml --error libraries/ plugins/ components/ administrator/ cli/ 2>&1; then
+	if ! "$semgrep_bin" scan --config .semgrep.yml --error libraries/ plugins/ components/ administrator/ cli/ 2>&1; then
 		error "Semgrep scan failed. Fix the issues above or use --no-verify to bypass."
 		exit 1
 	fi
