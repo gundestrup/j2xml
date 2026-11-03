@@ -159,8 +159,8 @@ these tests; it forces the whole stack to run under emulation.
 
 ### Running the tests
 
-For Playwright UI tests, use Node 24 as pinned in `.nvmrc` (the same Node major
-used by CI):
+For Playwright UI tests, use the Node release pinned in `.nvmrc` (the same
+Node major used by CI):
 
 ```bash
 nvm install && nvm use

@@ -31,6 +31,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `re2js` override (`^2.8.7`) — markdownlint 0.42.0 pins
   re2js 2.8.6, affected by GHSA-gg6h-894w-4m9c (quadratic-time
   lookbehind DoS). Dev-only lint tooling, no shipped code.
+- Pinned `.nvmrc` to Node `24.22.2` (was floating `24`) —
+  CVE-2026-111497 Brotli decoder out-of-bounds write; code
+  scanning requires a verifiable patch level. Dev/CI runtime
+  only.
+- Dismissed four stale Dependabot alerts (mcp ×3,
+  opentelemetry-api ×1) — the flagged manifest
+  `.github/requirements-ci.txt` was already removed when
+  semgrep moved to the pinned container image.
 
 ### Changed
 
@@ -43,9 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   6.1.3 → 6.2.0 (MySQL, PostgreSQL and PHP 8.5 compose files,
   plus the `Dockerfile.php85` default arg); refreshed the
   `php:8.5-apache` digest pin.
-- Bumped dev Node from 22 to 24 (`.nvmrc`) — Node 24 is the
-  current Active LTS; CI and UI tests read the pin from
-  `.nvmrc`.
+- Bumped dev Node from 22 to 24.22.2 (`.nvmrc`) — Node 24 is
+  the current Active LTS; CI and UI tests read the pin from
+  `.nvmrc` (`run-ui-tests.sh` now extracts the major from a
+  dotted pin).
 - Bumped `katex` override `^0.18.2` → `^0.19.1` (dev-only
   transitive dep, security pin carried forward).
 - Bumped CI actions: sonarqube-scan-action v8.3.0 → v8.4.0,

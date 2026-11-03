@@ -139,10 +139,10 @@ info "API tokens generated for both instances"
 
 # --- 5. Playwright dependencies ----------------------------------------------
 cd "$UI_DIR"
-EXPECTED_NODE_MAJOR="$(tr -d '[:space:]' < "$ROOT_DIR/.nvmrc")"
+EXPECTED_NODE_MAJOR="$(tr -d '[:space:]' < "$ROOT_DIR/.nvmrc" | cut -d. -f1)"
 NODE_MAJOR="$(node -p 'Number(process.versions.node.split(".")[0])')"
 if [[ "$NODE_MAJOR" != "$EXPECTED_NODE_MAJOR" ]]; then
-    die "UI tests require Node $EXPECTED_NODE_MAJOR (see .nvmrc), matching CI; run 'nvm install && nvm use' from the repository root"
+    die "UI tests require Node $(tr -d '[:space:]' < "$ROOT_DIR/.nvmrc") (see .nvmrc), matching CI; run 'nvm install && nvm use' from the repository root"
 fi
 info "Using Node $(node --version), matching CI"
 info "Installing Playwright dependencies from the lockfile..."
