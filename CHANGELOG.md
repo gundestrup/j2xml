@@ -25,9 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Dev-tooling bumps: `semgrep/semgrep` image 1.183.0 → 1.185.0,
   `php:8.5-apache` manifest digest refresh, @playwright/test
-  1.64.1 → 1.65.0, `.nvmrc` Node 24.22.2 → 24.22.3.
-  markdownlint-cli2 0.24.1 held back (published < 7 days ago,
-  `min-release-age=7`).
+  1.64.1 → 1.65.0, `.nvmrc` Node 24.22.2 → 24.22.3,
+  markdownlint-cli2 0.24.0 → 0.24.1 (bumped ahead of the usual
+  7-day release age at maintainer request).
 
 ---
 
