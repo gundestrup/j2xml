@@ -4,7 +4,7 @@ FROM ${JOOMLA_SOURCE_IMAGE} AS joomla-source
 # Pinned to the multi-platform manifest-list digest (linux/amd64 + linux/arm64),
 # so the same pin resolves natively on Apple Silicon and AMD64/CI hosts.
 # To update: docker buildx imagetools inspect php:8.5-apache
-FROM php:8.5-apache@sha256:fce5eaf640e8fb620aac9aaf53efebe5584b3f3c1f2033b78b08be252be92adc
+FROM php:8.5-apache@sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libbz2-dev libfreetype-dev libgmp-dev libicu-dev libjpeg62-turbo-dev libpng-dev libpq-dev libzip-dev \
