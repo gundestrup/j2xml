@@ -797,7 +797,9 @@ Two things are configured, both required per DeepWiki best practice:
 `README.md` contains a DeepWiki badge:
 
 ```markdown
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/gundestrup/j2xml)
+<!-- markdownlint-disable MD033 -->
+[<img src="https://devin.ai/assets/askdeepwiki.png" alt="Ask DeepWiki" height="20"/>](https://deepwiki.com/gundestrup/j2xml)
+<!-- markdownlint-enable MD033 -->
 ```
 
 DeepWiki **auto-refreshes the wiki** when it detects the badge in the repo's

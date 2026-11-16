@@ -3,7 +3,9 @@
 <!-- markdownlint-enable MD013 MD033 -->
 
 [![CI](https://github.com/gundestrup/j2xml/actions/workflows/ci.yml/badge.svg)](https://github.com/gundestrup/j2xml/actions/workflows/ci.yml)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/gundestrup/j2xml)
+<!-- markdownlint-disable MD033 -->
+[<img src="https://devin.ai/assets/askdeepwiki.png" alt="Ask DeepWiki" height="20"/>](https://deepwiki.com/gundestrup/j2xml)
+<!-- markdownlint-enable MD033 -->
 [![PHP](https://img.shields.io/badge/PHP-8.4%20%26%208.5-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![Joomla](https://img.shields.io/badge/Joomla!-5%20%26%206-5091CD?logo=joomla&logoColor=white)](https://www.joomla.org/)
 [![Version](https://img.shields.io/badge/version-4.5.3-blue.svg)](./CHANGELOG.md)
