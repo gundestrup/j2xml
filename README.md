@@ -1,4 +1,6 @@
-# J2XML
+<!-- markdownlint-disable MD013 MD033 -->
+# J2XML <a href="https://gundestrup.github.io/flow/"><img align="right" src="https://gundestrup.github.io/flow/assets/badges/part-of-flow.svg?v=2" alt="Part of Flow software" height="40"></a>
+<!-- markdownlint-enable MD013 MD033 -->
 
 [![CI](https://github.com/gundestrup/j2xml/actions/workflows/ci.yml/badge.svg)](https://github.com/gundestrup/j2xml/actions/workflows/ci.yml)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/gundestrup/j2xml)
